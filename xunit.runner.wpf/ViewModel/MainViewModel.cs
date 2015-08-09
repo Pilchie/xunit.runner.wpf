@@ -20,12 +20,7 @@ namespace xunit.runner.wpf.ViewModel
             if (IsInDesignMode)
             {
                 this.Assemblies.Add(new TestAssemblyViewModel(@"C:\Code\TestAssembly.dll"));
-                this.TestCases.Add("A.B.Test()");
             }
-            ////else
-            ////{
-            ////    // Code runs "for real"
-            ////}
 
             CommandBindings = CreateCommandBindings();
             this.MethodsCaption = "Methods (0)";
@@ -61,7 +56,7 @@ namespace xunit.runner.wpf.ViewModel
         }
 
         public ObservableCollection<TestAssemblyViewModel> Assemblies { get; } = new ObservableCollection<TestAssemblyViewModel>();
-        public ObservableCollection<string> TestCases { get; } = new ObservableCollection<string>();
+        public ObservableCollection<TestCaseViewModel> TestCases { get; } = new ObservableCollection<TestCaseViewModel>();
 
         private void OnExecuteOpen(object sender, ExecutedRoutedEventArgs e)
         {
@@ -88,7 +83,7 @@ namespace xunit.runner.wpf.ViewModel
                 testDiscoveryVisitor.Finished.WaitOne();
 
                 Assemblies.Add(new TestAssemblyViewModel(fileName));
-                TestCases.AddRange(testDiscoveryVisitor.TestCases.Select(tc => tc.DisplayName));
+                TestCases.AddRange(testDiscoveryVisitor.TestCases.Select(tc => new TestCaseViewModel(tc)));
             }
             catch(Exception ex)
             {
