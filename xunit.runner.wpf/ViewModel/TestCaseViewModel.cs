@@ -19,5 +19,7 @@ namespace xunit.runner.wpf.ViewModel
         }
 
         public string DisplayName => testCase.DisplayName;
+
+        public TestState State => TestState.NotRun;
     }
 }

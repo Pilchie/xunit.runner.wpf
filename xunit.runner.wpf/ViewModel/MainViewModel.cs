@@ -15,6 +15,7 @@ namespace xunit.runner.wpf.ViewModel
 {
     public class MainViewModel : ViewModelBase
     {
+        private readonly ObservableCollection<TestCaseViewModel> allTestCases = new ObservableCollection<TestCaseViewModel>();
         public MainViewModel()
         {
             if (IsInDesignMode)
@@ -25,8 +26,14 @@ namespace xunit.runner.wpf.ViewModel
             CommandBindings = CreateCommandBindings();
             this.MethodsCaption = "Methods (0)";
 
+            TestCases = new FilteredCollectionView<TestCaseViewModel, Tuple<string, TestState>>(
+                allTestCases, TestCaseMatches, Tuple.Create(string.Empty, TestState.All), TestComparer.Instance);
+
             this.TestCases.CollectionChanged += TestCases_CollectionChanged;
         }
+
+        private static bool TestCaseMatches(TestCaseViewModel testCase, Tuple<string, TestState> filterTextAndTestState)
+            => testCase.DisplayName.Contains(filterTextAndTestState.Item1) && (testCase.State & filterTextAndTestState.Item2) == filterTextAndTestState.Item2;
 
         private void TestCases_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
@@ -56,7 +63,7 @@ namespace xunit.runner.wpf.ViewModel
         }
 
         public ObservableCollection<TestAssemblyViewModel> Assemblies { get; } = new ObservableCollection<TestAssemblyViewModel>();
-        public ObservableCollection<TestCaseViewModel> TestCases { get; } = new ObservableCollection<TestCaseViewModel>();
+        public FilteredCollectionView<TestCaseViewModel, Tuple<string, TestState>> TestCases { get; }
 
         private void OnExecuteOpen(object sender, ExecutedRoutedEventArgs e)
         {
@@ -83,7 +90,7 @@ namespace xunit.runner.wpf.ViewModel
                 testDiscoveryVisitor.Finished.WaitOne();
 
                 Assemblies.Add(new TestAssemblyViewModel(fileName));
-                TestCases.AddRange(testDiscoveryVisitor.TestCases.Select(tc => new TestCaseViewModel(tc)));
+                allTestCases.AddRange(testDiscoveryVisitor.TestCases.Select(tc => new TestCaseViewModel(tc)));
             }
             catch(Exception ex)
             {
@@ -121,5 +128,24 @@ namespace xunit.runner.wpf.ViewModel
         {
             Application.Current.Shutdown();
         }
+    }
+
+    public enum TestState
+    {
+        All = 0,
+        Passed,
+        Failed,
+        Skipped,
+        NotRun
+    }
+
+    public class TestComparer : IComparer<TestCaseViewModel>
+    {
+        public static TestComparer Instance { get; } = new TestComparer();
+
+        public int Compare(TestCaseViewModel x, TestCaseViewModel y)
+            => StringComparer.Ordinal.Compare(x.DisplayName, y.DisplayName);
+
+        private TestComparer() { }
     }
 }

@@ -87,6 +87,7 @@
     </ApplicationDefinition>
     <Compile Include="CommandBindings.cs" />
     <Compile Include="Extensions.cs" />
+    <Compile Include="FilteredCollectionView.cs" />
     <Compile Include="ViewModel\MainViewModel.cs" />
     <Compile Include="ViewModel\TestCaseViewModel.cs" />
     <Compile Include="ViewModel\TestAssemblyViewModel.cs" />
