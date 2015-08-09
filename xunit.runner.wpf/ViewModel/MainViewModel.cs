@@ -76,6 +76,13 @@ namespace xunit.runner.wpf.ViewModel
             set { Set(ref maximumProgress, value); }
         }
 
+        private TestState currentRunState;
+        public TestState CurrentRunState
+        {
+            get { return currentRunState; }
+            set { Set(ref currentRunState, value); }
+        }
+
         private string searchQuery = string.Empty;
         public string SearchQuery
         {
@@ -204,7 +211,7 @@ namespace xunit.runner.wpf.ViewModel
             private readonly Func<bool> isCancelRequested;
             private readonly IEnumerable<TestCaseViewModel> testCases;
 
-            public event EventHandler TestFinished;
+            public event EventHandler<TestStateEventArgs> TestFinished;
 
             public TestRunVisitor(IEnumerable<TestCaseViewModel> testCases, Func<bool> isCancelRequested)
             {
@@ -216,7 +223,7 @@ namespace xunit.runner.wpf.ViewModel
             {
                 var testCase = testCases.Single(tc => tc.DisplayName == testFailed.TestCase.DisplayName);
                 testCase.State = TestState.Failed;
-                TestFinished?.Invoke(this, EventArgs.Empty);
+                TestFinished?.Invoke(this, TestStateEventArgs.Failed);
                 return !isCancelRequested();
             }
 
@@ -224,7 +231,7 @@ namespace xunit.runner.wpf.ViewModel
             {
                 var testCase = testCases.Single(tc => tc.DisplayName == testPassed.TestCase.DisplayName);
                 testCase.State = TestState.Passed;
-                TestFinished?.Invoke(this, EventArgs.Empty);
+                TestFinished?.Invoke(this, TestStateEventArgs.Passed);
                 return !isCancelRequested();
             }
 
@@ -232,7 +239,7 @@ namespace xunit.runner.wpf.ViewModel
             {
                 var testCase = testCases.Single(tc => tc.DisplayName == testSkipped.TestCase.DisplayName);
                 testCase.State = TestState.Skipped;
-                TestFinished?.Invoke(this, EventArgs.Empty);
+                TestFinished?.Invoke(this, TestStateEventArgs.Skipped);
                 return !isCancelRequested();
             }
         }
@@ -312,9 +319,13 @@ namespace xunit.runner.wpf.ViewModel
             }
         }
 
-        private void TestRunVisitor_TestFinished(object sender, EventArgs e)
+        private void TestRunVisitor_TestFinished(object sender, TestStateEventArgs e)
         {
             TestsCompleted++;
+            if (e.State > CurrentRunState)
+            {
+                CurrentRunState = e.State;
+            }
         }
 
         private bool CanExecuteCancel() => IsBusy && !IsCancelRequested;
@@ -325,13 +336,17 @@ namespace xunit.runner.wpf.ViewModel
         }
     }
 
+    /// <summary>
+    /// Note: More severe states are higher numbers.
+    /// <see cref="MainViewModel.TestRunVisitor_TestFinished(object, TestStateEventArgs)"/>
+    /// </summary>
     public enum TestState
     {
         All = 0,
+        NotRun,
         Passed,
-        Failed,
         Skipped,
-        NotRun
+        Failed,
     }
 
     public class TestComparer : IComparer<TestCaseViewModel>

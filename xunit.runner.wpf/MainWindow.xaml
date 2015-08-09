@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:xunit.runner.wpf"
+        xmlns:converters="clr-namespace:xunit.runner.wpf.Converters"
         xmlns:vm="clr-namespace:xunit.runner.wpf.ViewModel"
         mc:Ignorable="d"
         DataContext="{Binding Main, Source={StaticResource Locator}}"
@@ -12,6 +13,10 @@
         ResizeMode="CanResizeWithGrip"
         Height="600"
         Width="525">
+
+    <Window.Resources>
+        <converters:TestStateConverter x:Key="TestStateConverter" />
+    </Window.Resources>
 
     <Grid local:CommandBindings.Registration="{Binding CommandBindings}">
         <Grid.RowDefinitions>
@@ -147,12 +152,14 @@
                                 <DataTemplate DataType="vm:TestCaseViewModel">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="50" />
+                                            <ColumnDefinition Width="20" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
 
-                                        <TextBlock Text="{Binding State}"
-                                                   Grid.Column="0" />
+                                        <Image Width="16"
+                                               Margin="2"
+                                               Source="{Binding Path=State, Mode=OneWay, Converter={StaticResource TestStateConverter}}"
+                                               Grid.Column="0" />
                                         <TextBlock Text="{Binding DisplayName}"
                                                    Grid.Column="1" />
                                     </Grid>
@@ -171,11 +178,11 @@
                 </GroupBox>
             </Grid>
 
-            <ProgressBar
-                Minimum="0"
-                Maximum="{Binding MaximumProgress}"
-                Value="{Binding Path=TestsCompleted}"
-                Grid.Column="1"
+            <ProgressBar Foreground="{Binding Path=CurrentRunState, Converter={StaticResource TestStateConverter}, Mode=OneWay}"
+                         Minimum="0"
+                         Maximum="{Binding MaximumProgress}"
+                         Value="{Binding Path=TestsCompleted}"
+                         Grid.Column="1"
                          Grid.Row="1"
                          Margin="3" />
         </Grid>
