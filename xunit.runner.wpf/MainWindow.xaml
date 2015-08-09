@@ -72,6 +72,7 @@
                     <Label Content="Assemblies:"
                            Grid.Row="2" />
                     <ListBox Height="175"
+                             ItemsSource="{Binding Assemblies}"
                              Grid.Row="3" />
                     <Label Content="Traits:"
                            Grid.Row="4" />
@@ -128,7 +129,8 @@
                             <TextBlock Text="0"
                                        Margin="3" />
                         </StackPanel>
-                        <ListBox Grid.Row="1" />
+                        <ListBox ItemsSource="{Binding TestCases}"
+                                 Grid.Row="1" />
                     </Grid>
                 </GroupBox>
 

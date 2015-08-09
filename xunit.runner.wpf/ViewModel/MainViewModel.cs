@@ -3,6 +3,12 @@ using System.Windows.Input;
 using System;
 using System.Windows;
 using GalaSoft.MvvmLight.CommandWpf;
+using Microsoft.Win32;
+using Xunit;
+using Xunit.Abstractions;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace xunit.runner.wpf.ViewModel
 {
@@ -19,14 +25,14 @@ namespace xunit.runner.wpf.ViewModel
             ////    // Code runs "for real"
             ////}
 
+            CommandBindings = CreateCommandBindings();
         }
 
         public ICommand ExitCommand { get; } = new RelayCommand(OnExecuteExit);
 
         public CommandBindingCollection CommandBindings { get; }
-            = CreateCommandBindings();
 
-        private static CommandBindingCollection CreateCommandBindings()
+        private CommandBindingCollection CreateCommandBindings()
         {
             var openBinding = new CommandBinding(ApplicationCommands.Open, OnExecuteOpen);
             CommandManager.RegisterClassCommandBinding(typeof(MainViewModel), openBinding);
@@ -37,9 +43,66 @@ namespace xunit.runner.wpf.ViewModel
             };
         }
 
-        private static void OnExecuteOpen(object sender, ExecutedRoutedEventArgs e)
+        public ObservableCollection<string> Assemblies { get; } = new ObservableCollection<string>();
+        public ObservableCollection<string> TestCases { get; } = new ObservableCollection<string>();
+
+        private void OnExecuteOpen(object sender, ExecutedRoutedEventArgs e)
         {
-            MessageBox.Show("Open clicked");
+            var fileDialog = new OpenFileDialog
+            {
+                DefaultExt = "dll",
+            };
+
+            if (fileDialog.ShowDialog(Application.Current.MainWindow) != true)
+            {
+                return;
+            }
+
+            var fileName = fileDialog.FileName;
+
+            try
+            {
+                var xunit = new XunitFrontController(
+                    useAppDomain: false,
+                    assemblyFileName: fileName,
+                    shadowCopy: false);
+                var testDiscoveryVisitor = new TestDiscoveryVisitor();
+                xunit.Find(includeSourceInformation: false, messageSink: testDiscoveryVisitor, discoveryOptions: TestFrameworkOptions.ForDiscovery());
+                testDiscoveryVisitor.Finished.WaitOne();
+
+                Assemblies.Add(fileName);
+                TestCases.AddRange(testDiscoveryVisitor.TestCases.Select(tc => tc.DisplayName));
+            }
+            catch(Exception ex)
+            {
+                ex.ToString();
+            }
+        }
+
+        private class TestDiscoveryVisitor : TestMessageVisitor<IDiscoveryCompleteMessage>
+        {
+            public IList<ITestCase> TestCases { get; } = new List<ITestCase>();
+            public IDictionary<string, IList<string>> Traits { get; } = new Dictionary<string, IList<string>>();
+
+            protected override bool Visit(ITestCaseDiscoveryMessage testCaseDiscovered)
+            {
+                var testCase = testCaseDiscovered.TestCase;
+                TestCases.Add(testCase);
+
+                foreach (var k in testCase.Traits.Keys)
+                {
+                    IList<string> value;
+                    if (!Traits.TryGetValue(k, out value))
+                    {
+                        value = new List<string>();
+                        Traits[k] = value;
+                    }
+
+                    value.AddRange(testCase.Traits[k]);
+                }
+
+                return true;
+            }
         }
 
         private static void OnExecuteExit()
