@@ -181,10 +181,11 @@ namespace xunit.runner.wpf.ViewModel
                 using (AssemblyHelper.SubscribeResolve())
                 {
                     var xunit = new XunitFrontController(
-                        useAppDomain: false,
+                        useAppDomain: true,
                         assemblyFileName: fileName,
                         shadowCopy: false);
-                    using (var testDiscoveryVisitor = new TestDiscoveryVisitor())
+
+                    using (var testDiscoveryVisitor = new TestDiscoveryVisitor(xunit))
                     {
                         xunit.Find(includeSourceInformation: false, messageSink: testDiscoveryVisitor, discoveryOptions: TestFrameworkOptions.ForDiscovery());
                         testDiscoveryVisitor.Finished.WaitOne();
@@ -202,14 +203,21 @@ namespace xunit.runner.wpf.ViewModel
 
         private class TestDiscoveryVisitor : TestMessageVisitor<IDiscoveryCompleteMessage>
         {
+            ITestFrameworkDiscoverer discoverer;
+
             public List<TestCaseViewModel> TestCases { get; } = new List<TestCaseViewModel>();
+
+            public TestDiscoveryVisitor(ITestFrameworkDiscoverer discoverer)
+            {
+                this.discoverer = discoverer;
+            }
 
             public IDictionary<string, IList<string>> Traits { get; } = new Dictionary<string, IList<string>>();
 
             protected override bool Visit(ITestCaseDiscoveryMessage testCaseDiscovered)
             {
                 var testCase = testCaseDiscovered.TestCase;
-                TestCases.Add(new TestCaseViewModel(testCase, testCaseDiscovered.TestAssembly.Assembly.AssemblyPath));
+                TestCases.Add(new TestCaseViewModel(discoverer.Serialize(testCase), testCase.DisplayName, testCaseDiscovered.TestAssembly.Assembly.AssemblyPath));
 
                 foreach (var k in testCase.Traits.Keys)
                 {
@@ -328,13 +336,13 @@ namespace xunit.runner.wpf.ViewModel
                 {
                     var xunit = new XunitFrontController(
                         assemblyFileName: assembly.Key,
-                        useAppDomain: false,
+                        useAppDomain: true,
                         shadowCopy: false);
 
                     using (var testRunVisitor = new TestRunVisitor(allTestCases, () => IsCancelRequested))
                     {
                         testRunVisitor.TestFinished += TestRunVisitor_TestFinished;
-                        xunit.RunTests(assembly.Select(tcvm => tcvm.TestCase).ToArray(), testRunVisitor, TestFrameworkOptions.ForExecution());
+                        xunit.RunTests(assembly.Select(tcvm => xunit.Deserialize(tcvm.TestCase)).ToArray(), testRunVisitor, TestFrameworkOptions.ForExecution());
                         testRunVisitor.Finished.WaitOne();
                     }
                 }
