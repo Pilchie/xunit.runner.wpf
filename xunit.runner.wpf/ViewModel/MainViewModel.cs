@@ -43,14 +43,14 @@ namespace xunit.runner.wpf.ViewModel
             };
         }
 
-        public ObservableCollection<string> Assemblies { get; } = new ObservableCollection<string>();
+        public ObservableCollection<TestAssemblyViewModel> Assemblies { get; } = new ObservableCollection<TestAssemblyViewModel>();
         public ObservableCollection<string> TestCases { get; } = new ObservableCollection<string>();
 
         private void OnExecuteOpen(object sender, ExecutedRoutedEventArgs e)
         {
             var fileDialog = new OpenFileDialog
             {
-                DefaultExt = "dll",
+                Filter = "Unit Test Assemblies|*.dll",
             };
 
             if (fileDialog.ShowDialog(Application.Current.MainWindow) != true)
@@ -70,12 +70,12 @@ namespace xunit.runner.wpf.ViewModel
                 xunit.Find(includeSourceInformation: false, messageSink: testDiscoveryVisitor, discoveryOptions: TestFrameworkOptions.ForDiscovery());
                 testDiscoveryVisitor.Finished.WaitOne();
 
-                Assemblies.Add(fileName);
+                Assemblies.Add(new TestAssemblyViewModel(fileName));
                 TestCases.AddRange(testDiscoveryVisitor.TestCases.Select(tc => tc.DisplayName));
             }
             catch(Exception ex)
             {
-                ex.ToString();
+                MessageBox.Show(Application.Current.MainWindow, ex.ToString());
             }
         }
 

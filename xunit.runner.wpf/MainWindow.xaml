@@ -73,7 +73,14 @@
                            Grid.Row="2" />
                     <ListBox Height="175"
                              ItemsSource="{Binding Assemblies}"
-                             Grid.Row="3" />
+                             SelectionMode="Extended"
+                             Grid.Row="3">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding DisplayName}" />
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                     <Label Content="Traits:"
                            Grid.Row="4" />
                     <ListBox Grid.Row="5" />
@@ -130,6 +137,7 @@
                                        Margin="3" />
                         </StackPanel>
                         <ListBox ItemsSource="{Binding TestCases}"
+                                 SelectionMode="Extended"
                                  Grid.Row="1" />
                     </Grid>
                 </GroupBox>
