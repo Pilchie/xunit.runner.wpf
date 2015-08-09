@@ -10,12 +10,16 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Collections.Specialized;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace xunit.runner.wpf.ViewModel
 {
     public class MainViewModel : ViewModelBase
     {
         private readonly ObservableCollection<TestCaseViewModel> allTestCases = new ObservableCollection<TestCaseViewModel>();
+        private CancellationTokenSource filterCancellationTokenSource = new CancellationTokenSource();
+
         public MainViewModel()
         {
             if (IsInDesignMode)
@@ -49,6 +53,50 @@ namespace xunit.runner.wpf.ViewModel
         {
             get { return methodsCaption; }
             private set { Set(ref methodsCaption, value); }
+        }
+
+        private string searchQuery = string.Empty;
+        public string SearchQuery
+        {
+            get { return searchQuery; }
+            set
+            {
+                if (Set(ref searchQuery, value))
+                {
+                    FilterAfterDelay();
+                }
+            }
+        }
+
+        private TestState resultFilter = TestState.All;
+        public TestState ResultFilter
+        {
+            get { return resultFilter; }
+            set
+            {
+                if (Set(ref resultFilter, value))
+                {
+                    this.FilterAfterDelay();
+                }
+            }
+        }
+
+        private void FilterAfterDelay()
+        {
+            filterCancellationTokenSource.Cancel();
+            filterCancellationTokenSource = new CancellationTokenSource();
+            var token = filterCancellationTokenSource.Token;
+
+            Task
+                .Delay(TimeSpan.FromMilliseconds(500), token)
+                .ContinueWith(
+                    x =>
+                    {
+                        TestCases.FilterArgument = Tuple.Create(SearchQuery, ResultFilter);
+                    },
+                    token,
+                    TaskContinuationOptions.None,
+                    TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         private CommandBindingCollection CreateCommandBindings()

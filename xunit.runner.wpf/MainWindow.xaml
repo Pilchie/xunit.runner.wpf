@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:xunit.runner.wpf"
+        xmlns:vm="clr-namespace:xunit.runner.wpf.ViewModel"
         mc:Ignorable="d"
         DataContext="{Binding Main, Source={StaticResource Locator}}"
         Title="xUnit.net Test Runner"
@@ -68,7 +69,8 @@
                     </Grid.RowDefinitions>
                     <Label Content="Search:"
                            Grid.Row="0" />
-                    <TextBox Grid.Row="1" />
+                    <TextBox Grid.Row="1"
+                             Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     <Label Content="Assemblies:"
                            Grid.Row="2" />
                     <ListBox Height="175"
@@ -76,7 +78,7 @@
                              SelectionMode="Extended"
                              Grid.Row="3">
                         <ListBox.ItemTemplate>
-                            <DataTemplate>
+                            <DataTemplate DataType="vm:TestCaseViewModel">
                                 <TextBlock Text="{Binding DisplayName}" />
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -138,7 +140,13 @@
                         </StackPanel>
                         <ListBox ItemsSource="{Binding TestCases}"
                                  SelectionMode="Extended"
-                                 Grid.Row="1" />
+                                 Grid.Row="1">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate DataType="vm:TestCaseViewModel">
+                                    <TextBlock Text="{Binding DisplayName}" />
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
                     </Grid>
                 </GroupBox>
 
