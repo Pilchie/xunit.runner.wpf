@@ -75,7 +75,7 @@ namespace xunit.runner.wpf.ViewModel
             try
             {
                 var xunit = new XunitFrontController(
-                    useAppDomain: false,
+                    useAppDomain: true,
                     assemblyFileName: fileName,
                     shadowCopy: false);
                 var testDiscoveryVisitor = new TestDiscoveryVisitor();
