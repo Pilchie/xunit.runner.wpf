@@ -9,6 +9,7 @@ using Xunit.Abstractions;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Collections.Specialized;
 
 namespace xunit.runner.wpf.ViewModel
 {
@@ -16,21 +17,37 @@ namespace xunit.runner.wpf.ViewModel
     {
         public MainViewModel()
         {
-            ////if (IsInDesignMode)
-            ////{
-            ////    // Code runs in Blend --> create design time data.
-            ////}
+            if (IsInDesignMode)
+            {
+                this.Assemblies.Add(new TestAssemblyViewModel(@"C:\Code\TestAssembly.dll"));
+                this.TestCases.Add("A.B.Test()");
+            }
             ////else
             ////{
             ////    // Code runs "for real"
             ////}
 
             CommandBindings = CreateCommandBindings();
+            this.MethodsCaption = "Methods (0)";
+
+            this.TestCases.CollectionChanged += TestCases_CollectionChanged;
+        }
+
+        private void TestCases_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            MethodsCaption = $"Methods ({TestCases.Count})";
         }
 
         public ICommand ExitCommand { get; } = new RelayCommand(OnExecuteExit);
 
         public CommandBindingCollection CommandBindings { get; }
+
+        private string methodsCaption;
+        public string MethodsCaption
+        {
+            get { return methodsCaption; }
+            private set { Set(ref methodsCaption, value); }
+        }
 
         private CommandBindingCollection CreateCommandBindings()
         {

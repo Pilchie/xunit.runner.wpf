@@ -110,7 +110,7 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <GroupBox Header="Methods (0)"
+                <GroupBox Header="{Binding MethodsCaption}"
                           Margin="3"
                           Grid.Row="0">
                     <Grid>
