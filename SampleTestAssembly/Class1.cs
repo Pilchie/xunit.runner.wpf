@@ -14,14 +14,14 @@ namespace SampleTestAssembly
         //[Trait("TraitName1", "TraitValue1")]
         public void Pass()
         {
-            Thread.Sleep(TimeSpan.FromSeconds(5));
+            Thread.Sleep(TimeSpan.FromSeconds(1));
         }
 
         [Fact]
         //[Trait("TraitName1", "TraitValue2")]
         public void Fail()
         {
-            Thread.Sleep(TimeSpan.FromSeconds(5));
+            Thread.Sleep(TimeSpan.FromSeconds(1));
             Assert.True(false);
         }
 
@@ -29,7 +29,7 @@ namespace SampleTestAssembly
         //[Trait("TraitName2", "TraitValue2")]
         public void Skip()
         {
-            Thread.Sleep(TimeSpan.FromSeconds(5));
+            Thread.Sleep(TimeSpan.FromSeconds(1));
         }
     }
 }
