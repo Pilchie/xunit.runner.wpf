@@ -22,7 +22,6 @@ namespace xunit.runner.wpf.ViewModel
 
         private bool isBusy;
         private bool isCancelRequested;
-
         public MainViewModel()
         {
             if (IsInDesignMode)
@@ -47,11 +46,12 @@ namespace xunit.runner.wpf.ViewModel
         private void TestCases_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             MethodsCaption = $"Methods ({TestCases.Count})";
+            MaximumProgress = TestCases.Count;
         }
 
         public ICommand ExitCommand { get; } = new RelayCommand(OnExecuteExit);
-        public ICommand RunCommand { get; }
-        public ICommand CancelCommand { get; }
+        public RelayCommand RunCommand { get; }
+        public RelayCommand CancelCommand { get; }
 
         public CommandBindingCollection CommandBindings { get; }
 
@@ -60,6 +60,20 @@ namespace xunit.runner.wpf.ViewModel
         {
             get { return methodsCaption; }
             private set { Set(ref methodsCaption, value); }
+        }
+
+        private int testsCompleted = -1;
+        public int TestsCompleted
+        {
+            get { return testsCompleted; }
+            set { Set(ref testsCompleted, value); }
+        }
+
+        private int maximumProgress = int.MaxValue;
+        public int MaximumProgress
+        {
+            get { return maximumProgress; }
+            set { Set(ref maximumProgress, value); }
         }
 
         private string searchQuery = string.Empty;
@@ -136,14 +150,19 @@ namespace xunit.runner.wpf.ViewModel
 
             try
             {
-                var xunit = new XunitFrontController(
-                    useAppDomain: true,
-                    assemblyFileName: fileName,
-                    shadowCopy: false);
-                var testDiscoveryVisitor = new TestDiscoveryVisitor();
-                xunit.Find(includeSourceInformation: false, messageSink: testDiscoveryVisitor, discoveryOptions: TestFrameworkOptions.ForDiscovery());
-                testDiscoveryVisitor.Finished.WaitOne();
-                allTestCases.AddRange(testDiscoveryVisitor.TestCases);
+                using (AssemblyHelper.SubscribeResolve())
+                {
+                    var xunit = new XunitFrontController(
+                        useAppDomain: false,
+                        assemblyFileName: fileName,
+                        shadowCopy: false);
+                    using (var testDiscoveryVisitor = new TestDiscoveryVisitor())
+                    {
+                        xunit.Find(includeSourceInformation: false, messageSink: testDiscoveryVisitor, discoveryOptions: TestFrameworkOptions.ForDiscovery());
+                        testDiscoveryVisitor.Finished.WaitOne();
+                        allTestCases.AddRange(testDiscoveryVisitor.TestCases);
+                    }
+                }
 
                 Assemblies.Add(new TestAssemblyViewModel(fileName));
             }
@@ -185,6 +204,8 @@ namespace xunit.runner.wpf.ViewModel
             private readonly Func<bool> isCancelRequested;
             private readonly IEnumerable<TestCaseViewModel> testCases;
 
+            public event EventHandler TestFinished;
+
             public TestRunVisitor(IEnumerable<TestCaseViewModel> testCases, Func<bool> isCancelRequested)
             {
                 this.testCases = testCases;
@@ -195,6 +216,7 @@ namespace xunit.runner.wpf.ViewModel
             {
                 var testCase = testCases.Single(tc => tc.DisplayName == testFailed.TestCase.DisplayName);
                 testCase.State = TestState.Failed;
+                TestFinished?.Invoke(this, EventArgs.Empty);
                 return !isCancelRequested();
             }
 
@@ -202,6 +224,7 @@ namespace xunit.runner.wpf.ViewModel
             {
                 var testCase = testCases.Single(tc => tc.DisplayName == testPassed.TestCase.DisplayName);
                 testCase.State = TestState.Passed;
+                TestFinished?.Invoke(this, EventArgs.Empty);
                 return !isCancelRequested();
             }
 
@@ -209,7 +232,29 @@ namespace xunit.runner.wpf.ViewModel
             {
                 var testCase = testCases.Single(tc => tc.DisplayName == testSkipped.TestCase.DisplayName);
                 testCase.State = TestState.Skipped;
+                TestFinished?.Invoke(this, EventArgs.Empty);
                 return !isCancelRequested();
+            }
+        }
+
+        private bool IsBusy
+        {
+            get { return isBusy; }
+            set
+            {
+                isBusy = value;
+                RunCommand.RaiseCanExecuteChanged();
+                CancelCommand.RaiseCanExecuteChanged();
+            }
+        }
+
+        private bool IsCancelRequested
+        {
+            get { return isCancelRequested; }
+            set
+            {
+                isCancelRequested = value;
+                CancelCommand.RaiseCanExecuteChanged();
             }
         }
 
@@ -219,37 +264,64 @@ namespace xunit.runner.wpf.ViewModel
         }
 
         private bool CanExecuteRun()
-            => !isBusy && TestCases.Any();
+            => !IsBusy && TestCases.Any();
 
-        private void OnExecuteRun()
+        private async void OnExecuteRun()
         {
             try
             {
-                var selectedAssemblies = TestCases.ToLookup(tc => tc.AssemblyFileName);
+                IsBusy = true;
+                testsCompleted = 0;
+                await Task.Run(() => RunTestsInBackground());
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+            finally
+            {
+                IsBusy = false;
+                IsCancelRequested = false;
+            }
+        }
+
+        private void RunTestsInBackground()
+        {
+            foreach (var tc in TestCases)
+            {
+                tc.State = TestState.NotRun;
+            }
+
+            var selectedAssemblies = TestCases.ToLookup(tc => tc.AssemblyFileName);
+            using (AssemblyHelper.SubscribeResolve())
+            {
                 foreach (var assembly in selectedAssemblies)
                 {
                     var xunit = new XunitFrontController(
                         assemblyFileName: assembly.Key,
-                        useAppDomain: true,
+                        useAppDomain: false,
                         shadowCopy: false);
 
-                    var testRunVisitor = new TestRunVisitor(allTestCases, () => isCancelRequested);
-                    xunit.RunTests(assembly.Select(tcvm => tcvm.TestCase).ToArray(), testRunVisitor, TestFrameworkOptions.ForExecution());
-                    testRunVisitor.Finished.WaitOne();
+                    using (var testRunVisitor = new TestRunVisitor(allTestCases, () => IsCancelRequested))
+                    {
+                        testRunVisitor.TestFinished += TestRunVisitor_TestFinished;
+                        xunit.RunTests(assembly.Select(tcvm => tcvm.TestCase).ToArray(), testRunVisitor, TestFrameworkOptions.ForExecution());
+                        testRunVisitor.Finished.WaitOne();
+                    }
                 }
-            }
-            finally
-            {
-                isBusy = false;
-                isCancelRequested = false;
             }
         }
 
-        private bool CanExecuteCancel() => isBusy;
+        private void TestRunVisitor_TestFinished(object sender, EventArgs e)
+        {
+            TestsCompleted++;
+        }
+
+        private bool CanExecuteCancel() => IsBusy && !IsCancelRequested;
 
         private void OnExecuteCancel()
         {
-            this.isCancelRequested = true;
+            this.IsCancelRequested = true;
         }
     }
 

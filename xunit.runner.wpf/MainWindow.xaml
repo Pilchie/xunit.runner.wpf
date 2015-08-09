@@ -147,7 +147,7 @@
                                 <DataTemplate DataType="vm:TestCaseViewModel">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="20" />
+                                            <ColumnDefinition Width="50" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
 
@@ -171,10 +171,13 @@
                 </GroupBox>
             </Grid>
 
-            <ProgressBar Grid.Column="1"
+            <ProgressBar
+                Minimum="0"
+                Maximum="{Binding MaximumProgress}"
+                Value="{Binding Path=TestsCompleted}"
+                Grid.Column="1"
                          Grid.Row="1"
                          Margin="3" />
-
         </Grid>
 
         <StackPanel Grid.Row="2">

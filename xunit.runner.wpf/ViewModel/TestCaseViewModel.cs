@@ -19,7 +19,12 @@ namespace xunit.runner.wpf.ViewModel
 
         public string DisplayName => TestCase.DisplayName;
 
-        public TestState State { get; set; } = TestState.NotRun;
+        private TestState state = TestState.NotRun;
+        public TestState State
+        {
+            get { return state; }
+            set { Set(ref state, value); }
+        }
 
         public string AssemblyFileName { get; }
 
