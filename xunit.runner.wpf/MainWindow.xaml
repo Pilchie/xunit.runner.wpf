@@ -128,23 +128,39 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
-                        <StackPanel Orientation="Horizontal">
-                            <Image Source="Artwork\Passed.ico"
-                                   Height="16"
-                                   Margin="3" />
-                            <TextBlock Text="0"
-                                       Margin="3" />
-                            <Image Source="Artwork\Failed.ico"
-                                   Height="16"
-                                   Margin="3" />
-                            <TextBlock Text="0"
-                                       Margin="3" />
-                            <Image Source="Artwork\Skipped.ico"
-                                   Height="16"
-                                   Margin="3" />
-                            <TextBlock Text="0"
-                                       Margin="3" />
-                        </StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <RadioButton IsChecked="{Binding IsPassedFilterChecked}"
+                                         Margin="3">
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="Artwork\Passed.ico"
+                                           Height="16" />
+                                    <TextBlock Text="{Binding TestsPassed}" />
+                                </StackPanel>
+                            </RadioButton>
+                            <RadioButton IsChecked="{Binding IsFailedFilterChecked}"
+                                         Margin="3"
+                                         Grid.Column="1">
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="Artwork\Failed.ico"
+                                           Height="16" />
+                                    <TextBlock Text="{Binding TestsFailed}" />
+                                </StackPanel>
+                            </RadioButton>
+                            <RadioButton IsChecked="{Binding IsSkippedFilterChecked}"
+                                         Margin="3"
+                                         Grid.Column="2">
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="Artwork\Skipped.ico"
+                                           Height="16" />
+                                    <TextBlock Text="{Binding TestsSkipped}" />
+                                </StackPanel>
+                            </RadioButton>
+                        </Grid>
                         <ListBox ItemsSource="{Binding TestCases}"
                                  SelectionMode="Extended"
                                  Grid.Row="1">

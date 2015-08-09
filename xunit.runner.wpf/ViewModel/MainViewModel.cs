@@ -62,11 +62,32 @@ namespace xunit.runner.wpf.ViewModel
             private set { Set(ref methodsCaption, value); }
         }
 
-        private int testsCompleted = -1;
+        private int testsCompleted = 0;
         public int TestsCompleted
         {
             get { return testsCompleted; }
             set { Set(ref testsCompleted, value); }
+        }
+
+        private int testsPassed = 0;
+        public int TestsPassed
+        {
+            get { return testsPassed; }
+            set { Set(ref testsPassed, value); }
+        }
+
+        private int testsFailed = 0;
+        public int TestsFailed
+        {
+            get { return testsFailed; }
+            set { Set(ref testsFailed, value); }
+        }
+
+        private int testsSkipped = 0;
+        public int TestsSkipped
+        {
+            get { return testsSkipped; }
+            set { Set(ref testsSkipped, value); }
         }
 
         private int maximumProgress = int.MaxValue;
@@ -323,6 +344,19 @@ namespace xunit.runner.wpf.ViewModel
         private void TestRunVisitor_TestFinished(object sender, TestStateEventArgs e)
         {
             TestsCompleted++;
+            switch (e.State)
+            {
+                case TestState.Passed:
+                    TestsPassed++;
+                    break;
+                case TestState.Failed:
+                    TestsFailed++;
+                    break;
+                case TestState.Skipped:
+                    TestsSkipped++;
+                    break;
+            }
+
             if (e.State > CurrentRunState)
             {
                 CurrentRunState = e.State;
@@ -334,6 +368,35 @@ namespace xunit.runner.wpf.ViewModel
         private void OnExecuteCancel()
         {
             this.IsCancelRequested = true;
+        }
+
+        public bool IsPassedFilterChecked
+        {
+            get { return ResultFilter == TestState.Passed; }
+            set { UpdateFilter(value, TestState.Passed); }
+        }
+
+        public bool IsFailedFilterChecked
+        {
+            get { return ResultFilter == TestState.Failed; }
+            set { UpdateFilter(value, TestState.Failed); }
+        }
+
+        public bool IsSkippedFilterChecked
+        {
+            get { return ResultFilter == TestState.Skipped; }
+            set { UpdateFilter(value, TestState.Skipped); }
+        }
+
+        private void UpdateFilter(bool value, TestState newState)
+        {
+            if (value && ResultFilter != newState)
+            {
+                ResultFilter = newState;
+                RaisePropertyChanged(nameof(IsPassedFilterChecked));
+                RaisePropertyChanged(nameof(IsFailedFilterChecked));
+                RaisePropertyChanged(nameof(IsSkippedFilterChecked));
+            }
         }
     }
 
