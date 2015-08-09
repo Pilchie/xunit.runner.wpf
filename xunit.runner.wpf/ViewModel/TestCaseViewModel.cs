@@ -11,15 +11,18 @@ namespace xunit.runner.wpf.ViewModel
 {
     public class TestCaseViewModel : ViewModelBase
     {
-        private readonly ITestCase testCase;
-
-        public TestCaseViewModel(ITestCase testCase)
+        public TestCaseViewModel(ITestCase testCase, string assemblyFileName)
         {
-            this.testCase = testCase;
+            this.TestCase = testCase;
+            this.AssemblyFileName = assemblyFileName;
         }
 
-        public string DisplayName => testCase.DisplayName;
+        public string DisplayName => TestCase.DisplayName;
 
-        public TestState State => TestState.NotRun;
+        public TestState State { get; set; } = TestState.NotRun;
+
+        public string AssemblyFileName { get; }
+
+        public ITestCase TestCase { get; }
     }
 }

@@ -78,7 +78,7 @@
                              SelectionMode="Extended"
                              Grid.Row="3">
                         <ListBox.ItemTemplate>
-                            <DataTemplate DataType="vm:TestCaseViewModel">
+                            <DataTemplate DataType="vm:TestAssemblyViewModel">
                                 <TextBlock Text="{Binding DisplayName}" />
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -97,9 +97,11 @@
                 </Grid.ColumnDefinitions>
 
                 <Button Content="_Run All"
+                        Command="{Binding RunCommand}"
                         Margin="3"
                         Grid.Column="0" />
                 <Button Content="_Cancel"
+                        Command="{Binding CancelCommand}"
                         Margin="0,3,3,3"
                         Grid.Column="1" />
             </Grid>
@@ -143,7 +145,17 @@
                                  Grid.Row="1">
                             <ListBox.ItemTemplate>
                                 <DataTemplate DataType="vm:TestCaseViewModel">
-                                    <TextBlock Text="{Binding DisplayName}" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="20" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Text="{Binding State}"
+                                                   Grid.Column="0" />
+                                        <TextBlock Text="{Binding DisplayName}"
+                                                   Grid.Column="1" />
+                                    </Grid>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>

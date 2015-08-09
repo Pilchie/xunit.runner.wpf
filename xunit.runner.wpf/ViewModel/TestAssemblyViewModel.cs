@@ -17,6 +17,6 @@ namespace xunit.runner.wpf.ViewModel
 
         public string FileName { get; }
 
-        public string DisplayName => Path.GetFileName(FileName);
+        public string DisplayName => Path.GetFileNameWithoutExtension(FileName);
     }
 }
