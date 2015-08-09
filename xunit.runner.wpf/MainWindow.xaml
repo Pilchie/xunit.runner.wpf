@@ -11,7 +11,8 @@
         ResizeMode="CanResizeWithGrip"
         Height="600"
         Width="525">
-    <Grid>
+
+    <Grid local:CommandBindings.Registration="{Binding CommandBindings}">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
@@ -20,7 +21,8 @@
 
         <Menu Grid.Row="0">
             <MenuItem Header="_File">
-                <MenuItem Header="E_xit" />
+                <MenuItem Header="E_xit"
+                          Command="{Binding ExitCommand}" />
             </MenuItem>
             <MenuItem Header="_Assembly">
                 <MenuItem Header="_Open"

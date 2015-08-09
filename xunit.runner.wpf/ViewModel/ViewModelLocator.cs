@@ -46,13 +46,8 @@ namespace xunit.runner.wpf.ViewModel
         }
 
         public MainViewModel Main
-        {
-            get
-            {
-                return ServiceLocator.Current.GetInstance<MainViewModel>();
-            }
-        }
-        
+            => ServiceLocator.Current.GetInstance<MainViewModel>();
+
         public static void Cleanup()
         {
             // TODO Clear the ViewModels

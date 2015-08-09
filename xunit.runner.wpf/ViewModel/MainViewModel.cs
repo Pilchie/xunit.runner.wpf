@@ -2,6 +2,7 @@ using GalaSoft.MvvmLight;
 using System.Windows.Input;
 using System;
 using System.Windows;
+using GalaSoft.MvvmLight.CommandWpf;
 
 namespace xunit.runner.wpf.ViewModel
 {
@@ -17,6 +18,33 @@ namespace xunit.runner.wpf.ViewModel
             ////{
             ////    // Code runs "for real"
             ////}
+
+        }
+
+        public ICommand ExitCommand { get; } = new RelayCommand(OnExecuteExit);
+
+        public CommandBindingCollection CommandBindings { get; }
+            = CreateCommandBindings();
+
+        private static CommandBindingCollection CreateCommandBindings()
+        {
+            var openBinding = new CommandBinding(ApplicationCommands.Open, OnExecuteOpen);
+            CommandManager.RegisterClassCommandBinding(typeof(MainViewModel), openBinding);
+
+            return new CommandBindingCollection
+            {
+                openBinding,
+            };
+        }
+
+        private static void OnExecuteOpen(object sender, ExecutedRoutedEventArgs e)
+        {
+            MessageBox.Show("Open clicked");
+        }
+
+        private static void OnExecuteExit()
+        {
+            Application.Current.Shutdown();
         }
     }
 }
