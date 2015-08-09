@@ -95,6 +95,12 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Artwork\xunit-dot-net-small-logo.png" />
+    <Resource Include="Artwork\Passed.ico" />
+    <Resource Include="Artwork\Skipped.ico" />
+    <Resource Include="Artwork\Failed.ico" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

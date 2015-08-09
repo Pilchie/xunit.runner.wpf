@@ -5,8 +5,154 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:xunit.runner.wpf"
         mc:Ignorable="d"
-        Title="MainWindow" Height="350" Width="525">
+        Title="xUnit.net Test Runner"
+        Icon="Artwork\xunit-dot-net-small-logo.png"
+        ResizeMode="CanResizeWithGrip"
+        Height="600"
+        Width="525">
     <Grid>
-        
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="auto" />
+        </Grid.RowDefinitions>
+
+        <Menu Grid.Row="0">
+            <MenuItem Header="_File">
+                <MenuItem Header="E_xit" />
+            </MenuItem>
+            <MenuItem Header="_Assembly">
+                <MenuItem Header="_Open"
+                          Command="ApplicationCommands.Open" />
+                <MenuItem Header="R_ecent" />
+                <Separator />
+                <MenuItem Header="_Unload" />
+                <MenuItem Header="_Reload" />
+            </MenuItem>
+            <MenuItem Header="_Project">
+                <MenuItem Header="_Open" />
+                <MenuItem Header="_Recent" />
+                <Separator />
+                <MenuItem Header="_Close" />
+                <Separator />
+                <MenuItem Header="_Save" />
+                <MenuItem Header="Save _As..." />
+            </MenuItem>
+        </Menu>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="2*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
+
+            <GroupBox Header="Refinements"
+                      Margin="3"
+                      Grid.Column="0"
+                      Grid.Row="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Label Content="Search:"
+                           Grid.Row="0" />
+                    <TextBox Grid.Row="1" />
+                    <Label Content="Assemblies:"
+                           Grid.Row="2" />
+                    <ListBox Height="175"
+                             Grid.Row="3" />
+                    <Label Content="Traits:"
+                           Grid.Row="4" />
+                    <ListBox Grid.Row="5" />
+                </Grid>
+            </GroupBox>
+
+            <Grid Grid.Column="0"
+                  Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Button Content="_Run All"
+                        Margin="3"
+                        Grid.Column="0" />
+                <Button Content="_Cancel"
+                        Margin="0,3,3,3"
+                        Grid.Column="1" />
+            </Grid>
+
+            <Grid Grid.Column="1"
+                  Grid.Row="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <GroupBox Header="Methods (0)"
+                          Margin="3"
+                          Grid.Row="0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="Artwork\Passed.ico"
+                                   Height="16"
+                                   Margin="3" />
+                            <TextBlock Text="0"
+                                       Margin="3" />
+                            <Image Source="Artwork\Failed.ico"
+                                   Height="16"
+                                   Margin="3" />
+                            <TextBlock Text="0"
+                                       Margin="3" />
+                            <Image Source="Artwork\Skipped.ico"
+                                   Height="16"
+                                   Margin="3" />
+                            <TextBlock Text="0"
+                                       Margin="3" />
+                        </StackPanel>
+                        <ListBox Grid.Row="1" />
+                    </Grid>
+                </GroupBox>
+
+                <GridSplitter Grid.Row="1" />
+
+                <GroupBox Header="Output"
+                          Margin="3"
+                          Grid.Row="2">
+                    <TextBox IsReadOnly="True" />
+                </GroupBox>
+            </Grid>
+
+            <ProgressBar Grid.Column="1"
+                         Grid.Row="1"
+                         Margin="3" />
+
+        </Grid>
+
+        <StackPanel Grid.Row="2">
+            <Border BorderBrush="LightGray"
+                    BorderThickness="1"
+                    Margin="3" />
+            <StatusBar>
+                <StatusBarItem>
+                    <Label />
+                </StatusBarItem>
+            </StatusBar>
+        </StackPanel>
     </Grid>
 </Window>
