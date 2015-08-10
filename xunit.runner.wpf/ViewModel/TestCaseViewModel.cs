@@ -11,13 +11,14 @@ namespace xunit.runner.wpf.ViewModel
 {
     public class TestCaseViewModel : ViewModelBase
     {
-        public TestCaseViewModel(ITestCase testCase, string assemblyFileName)
+        public TestCaseViewModel(string testCase, string displayName, string assemblyFileName)
         {
             this.TestCase = testCase;
+            this.DisplayName = displayName;
             this.AssemblyFileName = assemblyFileName;
         }
 
-        public string DisplayName => TestCase.DisplayName;
+        public string DisplayName { get; }
 
         private TestState state = TestState.NotRun;
         public TestState State
@@ -28,6 +29,6 @@ namespace xunit.runner.wpf.ViewModel
 
         public string AssemblyFileName { get; }
 
-        public ITestCase TestCase { get; }
+        public string TestCase { get; }
     }
 }
