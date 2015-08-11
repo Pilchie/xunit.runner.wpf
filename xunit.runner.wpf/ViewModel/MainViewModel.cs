@@ -315,7 +315,10 @@ namespace xunit.runner.wpf.ViewModel
             try
             {
                 IsBusy = true;
-                testsCompleted = 0;
+                TestsCompleted = 0;
+                TestsPassed = 0;
+                TestsFailed = 0;
+                TestsSkipped = 0;
                 CurrentRunState = TestState.NotRun;
                 await Task.Run(() => RunTestsInBackground());
             }
