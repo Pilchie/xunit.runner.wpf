@@ -180,11 +180,11 @@ namespace xunit.runner.wpf.ViewModel
             {
                 using (AssemblyHelper.SubscribeResolve())
                 {
-                    var xunit = new XunitFrontController(
+                    using (var xunit = new XunitFrontController(
                         useAppDomain: true,
                         assemblyFileName: fileName,
-                        shadowCopy: false);
-
+                        diagnosticMessageSink: new DiagnosticMessageVisitor(),
+                        shadowCopy: false)) 
                     using (var testDiscoveryVisitor = new TestDiscoveryVisitor(xunit))
                     {
                         xunit.Find(includeSourceInformation: false, messageSink: testDiscoveryVisitor, discoveryOptions: TestFrameworkOptions.ForDiscovery());
@@ -198,6 +198,14 @@ namespace xunit.runner.wpf.ViewModel
             catch (Exception ex)
             {
                 MessageBox.Show(Application.Current.MainWindow, ex.ToString());
+            }
+        }
+
+        private class DiagnosticMessageVisitor : TestMessageVisitor
+        {
+            public override bool OnMessage(IMessageSinkMessage message)
+            {
+                return base.OnMessage(message);
             }
         }
 
@@ -334,11 +342,11 @@ namespace xunit.runner.wpf.ViewModel
             {
                 foreach (var assembly in selectedAssemblies)
                 {
-                    var xunit = new XunitFrontController(
+                    using (var xunit = new XunitFrontController(
                         assemblyFileName: assembly.Key,
                         useAppDomain: true,
-                        shadowCopy: false);
-
+                        shadowCopy: false,
+                        diagnosticMessageSink: new DiagnosticMessageVisitor()))
                     using (var testRunVisitor = new TestRunVisitor(allTestCases, () => IsCancelRequested))
                     {
                         testRunVisitor.TestFinished += TestRunVisitor_TestFinished;
