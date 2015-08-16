@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 
 namespace xunit.runner.wpf.ViewModel
 {
@@ -132,6 +133,13 @@ namespace xunit.runner.wpf.ViewModel
         {
             get { return currentRunState; }
             set { Set(ref currentRunState, value); }
+        }
+
+        private string output = string.Empty;
+        public string Output
+        {
+            get { return output; }
+            set { Set(ref output, value); }
         }
 
         public string FilterString
@@ -295,7 +303,19 @@ namespace xunit.runner.wpf.ViewModel
             {
                 var testCase = testCases.Single(tc => tc.DisplayName == testFailed.TestCase.DisplayName);
                 testCase.State = TestState.Failed;
-                TestFinished?.Invoke(this, TestStateEventArgs.Failed);
+                var resultString = new StringBuilder(testFailed.TestCase.DisplayName);
+                resultString.AppendLine(" FAILED:");
+                for (int i = 0; i < testFailed.ExceptionTypes.Length; i++)
+                {
+                    resultString.AppendLine($"\tException type: '{testFailed.ExceptionTypes[i]}', number: '{i}', parent: '{testFailed.ExceptionParentIndices[i]}'");
+                    resultString.AppendLine($"\tException message:");
+                    resultString.AppendLine(testFailed.Messages[i]);
+                    resultString.AppendLine($"\tException stacktrace");
+                    resultString.AppendLine(testFailed.StackTraces[i]);
+                }
+                resultString.AppendLine();
+
+                TestFinished?.Invoke(this, TestStateEventArgs.Failed(resultString.ToString()));
                 return !isCancelRequested();
             }
 
@@ -390,6 +410,7 @@ namespace xunit.runner.wpf.ViewModel
                 TestsFailed = 0;
                 TestsSkipped = 0;
                 CurrentRunState = TestState.NotRun;
+                Output = string.Empty;
                 await Task.Run(() => RunTestsInBackground());
             }
             catch (Exception ex)
@@ -440,6 +461,7 @@ namespace xunit.runner.wpf.ViewModel
                     break;
                 case TestState.Failed:
                     TestsFailed++;
+                    Output = Output + e.Results;
                     break;
                 case TestState.Skipped:
                     TestsSkipped++;

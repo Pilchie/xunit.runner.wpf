@@ -201,7 +201,8 @@
                 <GroupBox Header="Output"
                           Margin="3"
                           Grid.Row="2">
-                    <TextBox IsReadOnly="True" />
+                    <TextBox IsReadOnly="True"
+                             Text="{Binding Output}"/>
                 </GroupBox>
             </Grid>
 
