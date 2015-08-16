@@ -22,7 +22,11 @@ namespace xunit.runner.wpf
     {
         public MainWindow()
         {
+            Instance = this;
+
             InitializeComponent();
         }
+
+        public static Window Instance { get; private set; }
     }
 }

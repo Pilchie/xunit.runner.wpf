@@ -89,11 +89,18 @@
     <Compile Include="Converters\TestStateConverter.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="FilteredCollectionView.cs" />
+    <Compile Include="LoadingDialog.xaml.cs">
+      <DependentUpon>LoadingDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ViewModel\MainViewModel.cs" />
     <Compile Include="ViewModel\TestCaseViewModel.cs" />
     <Compile Include="ViewModel\TestAssemblyViewModel.cs" />
     <Compile Include="ViewModel\TestStateEventArgs.cs" />
     <Compile Include="ViewModel\ViewModelLocator.cs" />
+    <Page Include="LoadingDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -147,6 +154,9 @@
       <Name>SampleTestAssembly</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -22,6 +22,7 @@ namespace xunit.runner.wpf.ViewModel
 
         private bool isBusy;
         private bool isCancelRequested;
+
         public MainViewModel()
         {
             if (IsInDesignMode)
@@ -36,6 +37,7 @@ namespace xunit.runner.wpf.ViewModel
                 allTestCases, TestCaseMatches, Tuple.Create(string.Empty, TestState.All), TestComparer.Instance);
 
             this.TestCases.CollectionChanged += TestCases_CollectionChanged;
+            this.WindowLoadedCommand = new RelayCommand(OnExecuteWindowLoaded);
             this.RunCommand = new RelayCommand(OnExecuteRun, CanExecuteRun);
             this.CancelCommand = new RelayCommand(OnExecuteCancel, CanExecuteCancel);
         }
@@ -50,6 +52,7 @@ namespace xunit.runner.wpf.ViewModel
         }
 
         public ICommand ExitCommand { get; } = new RelayCommand(OnExecuteExit);
+        public ICommand WindowLoadedCommand { get; }
         public RelayCommand RunCommand { get; }
         public RelayCommand CancelCommand { get; }
 
@@ -162,7 +165,7 @@ namespace xunit.runner.wpf.ViewModel
         public ObservableCollection<TestAssemblyViewModel> Assemblies { get; } = new ObservableCollection<TestAssemblyViewModel>();
         public FilteredCollectionView<TestCaseViewModel, Tuple<string, TestState>> TestCases { get; }
 
-        private void OnExecuteOpen(object sender, ExecutedRoutedEventArgs e)
+        private async void OnExecuteOpen(object sender, ExecutedRoutedEventArgs e)
         {
             var fileDialog = new OpenFileDialog
             {
@@ -175,29 +178,47 @@ namespace xunit.runner.wpf.ViewModel
             }
 
             var fileName = fileDialog.FileName;
+            await AddAssemblies(new[] { fileName });
+        }
 
+        private async Task AddAssemblies(IEnumerable<string> fileNames)
+        {
+            var loadingDialog = new LoadingDialog { Owner = MainWindow.Instance };
             try
             {
                 using (AssemblyHelper.SubscribeResolve())
                 {
-                    using (var xunit = new XunitFrontController(
-                        useAppDomain: true,
-                        assemblyFileName: fileName,
-                        diagnosticMessageSink: new DiagnosticMessageVisitor(),
-                        shadowCopy: false)) 
-                    using (var testDiscoveryVisitor = new TestDiscoveryVisitor(xunit))
+                    loadingDialog.Show();
+                    foreach (var fileName in fileNames)
                     {
-                        xunit.Find(includeSourceInformation: false, messageSink: testDiscoveryVisitor, discoveryOptions: TestFrameworkOptions.ForDiscovery());
-                        testDiscoveryVisitor.Finished.WaitOne();
-                        allTestCases.AddRange(testDiscoveryVisitor.TestCases);
+                        loadingDialog.AssemblyFileName = fileName;
+
+                        using (var xunit = new XunitFrontController(
+                            useAppDomain: true,
+                            assemblyFileName: fileName,
+                            diagnosticMessageSink: new DiagnosticMessageVisitor(),
+                            shadowCopy: false))
+                        using (var testDiscoveryVisitor = new TestDiscoveryVisitor(xunit))
+                        {
+                            await Task.Run(() =>
+                            {
+                                xunit.Find(includeSourceInformation: false, messageSink: testDiscoveryVisitor, discoveryOptions: TestFrameworkOptions.ForDiscovery());
+                                testDiscoveryVisitor.Finished.WaitOne();
+                            });
+
+                            allTestCases.AddRange(testDiscoveryVisitor.TestCases);
+                            Assemblies.Add(new TestAssemblyViewModel(fileName));
+                        }
                     }
                 }
-
-                Assemblies.Add(new TestAssemblyViewModel(fileName));
             }
             catch (Exception ex)
             {
                 MessageBox.Show(Application.Current.MainWindow, ex.ToString());
+            }
+            finally
+            {
+                loadingDialog.Close();
             }
         }
 
@@ -305,6 +326,19 @@ namespace xunit.runner.wpf.ViewModel
         private static void OnExecuteExit()
         {
             Application.Current.Shutdown();
+        }
+
+        private async void OnExecuteWindowLoaded()
+        {
+            try
+            {
+                IsBusy = true;
+                await AddAssemblies(Environment.GetCommandLineArgs().Skip(1));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         private bool CanExecuteRun()

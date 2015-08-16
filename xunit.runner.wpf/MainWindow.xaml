@@ -6,6 +6,8 @@
         xmlns:local="clr-namespace:xunit.runner.wpf"
         xmlns:converters="clr-namespace:xunit.runner.wpf.Converters"
         xmlns:vm="clr-namespace:xunit.runner.wpf.ViewModel"
+        xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
+        xmlns:cmd="clr-namespace:GalaSoft.MvvmLight.Command;assembly=GalaSoft.MvvmLight.Platform"
         mc:Ignorable="d"
         DataContext="{Binding Main, Source={StaticResource Locator}}"
         Title="xUnit.net Test Runner"
@@ -13,6 +15,12 @@
         ResizeMode="CanResizeWithGrip"
         Height="600"
         Width="525">
+
+    <i:Interaction.Triggers>
+        <i:EventTrigger EventName="Loaded">
+            <cmd:EventToCommand Command="{Binding WindowLoadedCommand}" />
+        </i:EventTrigger>
+    </i:Interaction.Triggers>
 
     <Window.Resources>
         <converters:TestStateConverter x:Key="TestStateConverter" />
