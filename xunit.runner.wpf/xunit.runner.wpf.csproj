@@ -92,6 +92,7 @@
     <Compile Include="LoadingDialog.xaml.cs">
       <DependentUpon>LoadingDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ViewModel\AssemblyAndConfigFile.cs" />
     <Compile Include="ViewModel\MainViewModel.cs" />
     <Compile Include="ViewModel\SearchQuery.cs" />
     <Compile Include="ViewModel\TestCaseViewModel.cs" />

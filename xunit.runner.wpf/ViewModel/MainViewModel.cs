@@ -13,6 +13,7 @@ using System.Collections.Specialized;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.IO;
 
 namespace xunit.runner.wpf.ViewModel
 {
@@ -29,7 +30,7 @@ namespace xunit.runner.wpf.ViewModel
         {
             if (IsInDesignMode)
             {
-                this.Assemblies.Add(new TestAssemblyViewModel(@"C:\Code\TestAssembly.dll"));
+                this.Assemblies.Add(new TestAssemblyViewModel(new AssemblyAndConfigFile(@"C:\Code\TestAssembly.dll", null)));
             }
 
             CommandBindings = CreateCommandBindings();
@@ -190,10 +191,10 @@ namespace xunit.runner.wpf.ViewModel
             }
 
             var fileName = fileDialog.FileName;
-            await AddAssemblies(new[] { fileName });
+            await AddAssemblies(new[] { new AssemblyAndConfigFile(fileName, configFileName: null) });
         }
 
-        private async Task AddAssemblies(IEnumerable<string> fileNames)
+        private async Task AddAssemblies(IEnumerable<AssemblyAndConfigFile> assemblies)
         {
             var loadingDialog = new LoadingDialog { Owner = MainWindow.Instance };
             try
@@ -201,13 +202,14 @@ namespace xunit.runner.wpf.ViewModel
                 using (AssemblyHelper.SubscribeResolve())
                 {
                     loadingDialog.Show();
-                    foreach (var fileName in fileNames)
+                    foreach (var assembly in assemblies)
                     {
-                        loadingDialog.AssemblyFileName = fileName;
+                        loadingDialog.AssemblyFileName = assembly.AssemblyFileName;
 
                         using (var xunit = new XunitFrontController(
                             useAppDomain: true,
-                            assemblyFileName: fileName,
+                            assemblyFileName: assembly.AssemblyFileName,
+                            configFileName: assembly.ConfigFileName,
                             diagnosticMessageSink: new DiagnosticMessageVisitor(),
                             shadowCopy: false))
                         using (var testDiscoveryVisitor = new TestDiscoveryVisitor(xunit))
@@ -219,7 +221,7 @@ namespace xunit.runner.wpf.ViewModel
                             });
 
                             allTestCases.AddRange(testDiscoveryVisitor.TestCases);
-                            Assemblies.Add(new TestAssemblyViewModel(fileName));
+                            Assemblies.Add(new TestAssemblyViewModel(assembly));
                         }
                     }
                 }
@@ -345,13 +347,35 @@ namespace xunit.runner.wpf.ViewModel
             try
             {
                 IsBusy = true;
-                await AddAssemblies(Environment.GetCommandLineArgs().Skip(1));
+                await AddAssemblies(ParseCommandLine(Environment.GetCommandLineArgs().Skip(1)));
             }
             finally
             {
                 IsBusy = false;
             }
         }
+
+        private IEnumerable<AssemblyAndConfigFile> ParseCommandLine(IEnumerable<string> enumerable)
+        {
+            while (enumerable.Any())
+            {
+                var assemblyFileName = enumerable.First();
+                enumerable = enumerable.Skip(1);
+
+                var configFileName = (string)null;
+                if (IsConfigFile(enumerable.FirstOrDefault()))
+                {
+                    configFileName = enumerable.First();
+                    enumerable = enumerable.Skip(1);
+                }
+
+                yield return new AssemblyAndConfigFile(assemblyFileName, configFileName);
+            }
+        }
+
+        private bool IsConfigFile(string fileName)
+            => (fileName?.EndsWith(".config", StringComparison.OrdinalIgnoreCase) ?? false) ||
+               (fileName?.EndsWith(".json", StringComparison.OrdinalIgnoreCase) ?? false);
 
         private bool CanExecuteRun()
             => !IsBusy && TestCases.Any();
