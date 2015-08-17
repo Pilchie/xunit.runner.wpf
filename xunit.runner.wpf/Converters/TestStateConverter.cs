@@ -16,6 +16,9 @@ namespace xunit.runner.wpf.Converters
         private static ImageSource passedSource;
         private static ImageSource failedSource;
         private static ImageSource skippedSource;
+
+        private static SolidColorBrush skippedBrush = new SolidColorBrush(Color.FromRgb(0xEB, 0xCA, 0x00));
+
         static TestStateConverter()
         {
             passedSource = LoadResourceImage("Passed.ico");
@@ -42,7 +45,7 @@ namespace xunit.runner.wpf.Converters
                     case TestState.Failed:
                         return Brushes.Red;
                     case TestState.Skipped:
-                        return Brushes.Yellow;
+                        return skippedBrush;
                     case TestState.Passed:
                         return Brushes.Green;
                     default:
