@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -6,12 +7,13 @@ using System.IO.Pipes;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 using xunit.runner.data;
 using xunit.runner.wpf.ViewModel;
 
 namespace xunit.runner.wpf.Impl
 {
-    internal sealed class RemoteTestUtil : ITestUtil
+    internal sealed partial class RemoteTestUtil : ITestUtil
     {
         private sealed class Connection : IDisposable
         {
@@ -78,7 +80,7 @@ namespace xunit.runner.wpf.Impl
             var list = new List<TestCaseData>();
 
             using (var connection = StartWorkerProcess(Constants.ActionDiscover, assemblyPath))
-            using (var reader = new BinaryReader(connection.Stream, Encoding.UTF8, leaveOpen: true))
+            using (var reader = new BinaryReader(connection.Stream, Constants.Encoding, leaveOpen: true))
             {
                 try
                 {
@@ -97,11 +99,26 @@ namespace xunit.runner.wpf.Impl
             return list;
         }
 
+        private RunSession Run(Dispatcher dispatcher, string assemblyPath)
+        {
+            var connection = StartWorkerProcess(Constants.ActionRun, assemblyPath);
+            var queue = new ConcurrentQueue<TestResultData>();
+            var backgroundRunner = new BackgroundRunner(queue, new BinaryReader(connection.Stream, Constants.Encoding, leaveOpen: true));
+            Task.Run(backgroundRunner.GoOnBackground);
+
+            return new RunSession(connection, dispatcher, queue);
+        }
+
         #region ITestUtil
 
         List<TestCaseViewModel> ITestUtil.Discover(string assemblyPath)
         {
             return Discover(assemblyPath);
+        }
+
+        ITestRunSession ITestUtil.Run(Dispatcher dispatcher, string assemblyPath)
+        {
+            return Run(dispatcher, assemblyPath);
         }
 
         #endregion

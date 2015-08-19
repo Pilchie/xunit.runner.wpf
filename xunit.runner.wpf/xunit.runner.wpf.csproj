@@ -89,12 +89,13 @@
     <Compile Include="Converters\TestStateConverter.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="FilteredCollectionView.cs" />
+    <Compile Include="Impl\RemoteTestUtil .RunSession.cs" />
+    <Compile Include="Impl\RemoteTestUtil .BackgroundRunner.cs" />
     <Compile Include="Impl\RemoteTestUtil.cs" />
     <Compile Include="ITestUtil.cs" />
     <Compile Include="ViewModel\MainViewModel.cs" />
     <Compile Include="ViewModel\TestCaseViewModel.cs" />
     <Compile Include="ViewModel\TestAssemblyViewModel.cs" />
-    <Compile Include="ViewModel\TestStateEventArgs.cs" />
     <Compile Include="ViewModel\ViewModelLocator.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

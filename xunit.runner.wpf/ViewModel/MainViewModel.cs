@@ -17,6 +17,7 @@ using System.IO.Pipes;
 using System.IO;
 using System.Text;
 using xunit.runner.data;
+using System.Windows.Threading;
 
 namespace xunit.runner.wpf.ViewModel
 {
@@ -203,44 +204,6 @@ namespace xunit.runner.wpf.ViewModel
             }
         }
 
-        private class TestRunVisitor : TestMessageVisitor<ITestAssemblyFinished>
-        {
-            private readonly Func<bool> isCancelRequested;
-            private readonly IEnumerable<TestCaseViewModel> testCases;
-
-            public event EventHandler<TestStateEventArgs> TestFinished;
-
-            public TestRunVisitor(IEnumerable<TestCaseViewModel> testCases, Func<bool> isCancelRequested)
-            {
-                this.testCases = testCases;
-                this.isCancelRequested = isCancelRequested;
-            }
-
-            protected override bool Visit(ITestFailed testFailed)
-            {
-                var testCase = testCases.Single(tc => tc.DisplayName == testFailed.TestCase.DisplayName);
-                testCase.State = TestState.Failed;
-                TestFinished?.Invoke(this, TestStateEventArgs.Failed);
-                return !isCancelRequested();
-            }
-
-            protected override bool Visit(ITestPassed testPassed)
-            {
-                var testCase = testCases.Single(tc => tc.DisplayName == testPassed.TestCase.DisplayName);
-                testCase.State = TestState.Passed;
-                TestFinished?.Invoke(this, TestStateEventArgs.Passed);
-                return !isCancelRequested();
-            }
-
-            protected override bool Visit(ITestSkipped testSkipped)
-            {
-                var testCase = testCases.Single(tc => tc.DisplayName == testSkipped.TestCase.DisplayName);
-                testCase.State = TestState.Skipped;
-                TestFinished?.Invoke(this, TestStateEventArgs.Skipped);
-                return !isCancelRequested();
-            }
-        }
-
         private bool IsBusy
         {
             get { return isBusy; }
@@ -270,7 +233,7 @@ namespace xunit.runner.wpf.ViewModel
         private bool CanExecuteRun()
             => !IsBusy && TestCases.Any();
 
-        private async void OnExecuteRun()
+        private void OnExecuteRun()
         {
             try
             {
@@ -280,7 +243,7 @@ namespace xunit.runner.wpf.ViewModel
                 TestsFailed = 0;
                 TestsSkipped = 0;
                 CurrentRunState = TestState.NotRun;
-                await Task.Run(() => RunTestsInBackground());
+                RunTests();
             }
             catch (Exception ex)
             {
@@ -293,37 +256,26 @@ namespace xunit.runner.wpf.ViewModel
             }
         }
 
-        private void RunTestsInBackground()
+        private void RunTests()
         {
             foreach (var tc in TestCases)
             {
                 tc.State = TestState.NotRun;
             }
 
-            var selectedAssemblies = TestCases.ToLookup(tc => tc.AssemblyFileName);
-            using (AssemblyHelper.SubscribeResolve())
-            {
-                foreach (var assembly in selectedAssemblies)
-                {
-                    using (var xunit = new XunitFrontController(
-                        assemblyFileName: assembly.Key,
-                        useAppDomain: true,
-                        shadowCopy: false,
-                        diagnosticMessageSink: new DiagnosticMessageVisitor()))
-                    using (var testRunVisitor = new TestRunVisitor(allTestCases, () => IsCancelRequested))
-                    {
-                        testRunVisitor.TestFinished += TestRunVisitor_TestFinished;
-                        xunit.RunTests(assembly.Select(tcvm => xunit.Deserialize(tcvm.TestCase)).ToArray(), testRunVisitor, TestFrameworkOptions.ForExecution());
-                        testRunVisitor.Finished.WaitOne();
-                    }
-                }
-            }
+            // Hacky way of using one assembly for now.  Will expand later. 
+            var assemblyPath = TestCases.Select(x => x.AssemblyFileName).First();
+            var session = this.testUtil.Run(Dispatcher.CurrentDispatcher, assemblyPath);
+            session.TestFinished += OnTestFinished;
         }
 
-        private void TestRunVisitor_TestFinished(object sender, TestStateEventArgs e)
+        private void OnTestFinished(object sender, TestResultEventArgs e)
         {
+            var testCase = TestCases.Single(x => x.DisplayName == e.TestCaseDisplayName);
+            testCase.State = e.TestState;
+
             TestsCompleted++;
-            switch (e.State)
+            switch (e.TestState)
             {
                 case TestState.Passed:
                     TestsPassed++;
@@ -336,9 +288,9 @@ namespace xunit.runner.wpf.ViewModel
                     break;
             }
 
-            if (e.State > CurrentRunState)
+            if (e.TestState > CurrentRunState)
             {
-                CurrentRunState = e.State;
+                CurrentRunState = e.TestState;
             }
         }
 
@@ -377,19 +329,6 @@ namespace xunit.runner.wpf.ViewModel
                 RaisePropertyChanged(nameof(IsSkippedFilterChecked));
             }
         }
-    }
-
-    /// <summary>
-    /// Note: More severe states are higher numbers.
-    /// <see cref="MainViewModel.TestRunVisitor_TestFinished(object, TestStateEventArgs)"/>
-    /// </summary>
-    public enum TestState
-    {
-        All = 0,
-        NotRun,
-        Passed,
-        Skipped,
-        Failed,
     }
 
     public class TestComparer : IComparer<TestCaseViewModel>

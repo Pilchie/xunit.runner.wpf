@@ -7,11 +7,17 @@ using System.Threading.Tasks;
 
 namespace xunit.runner.data
 {
+    /// <summary>
+    /// Note: More severe states are higher numbers.
+    /// <see cref="MainViewModel.TestRunVisitor_TestFinished(object, TestStateEventArgs)"/>
+    /// </summary>
     public enum TestState
     {
+        All = 0,
+        NotRun,
         Passed,
+        Skipped,
         Failed,
-        Skipped
     }
 
     public sealed class TestResultData

@@ -44,7 +44,7 @@ namespace xunit.runner.worker
                 assemblyFileName: fileName,
                 diagnosticMessageSink: new MessageVisitor(),
                 shadowCopy: false))
-            using (var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true))
+            using (var writer = new BinaryWriter(stream, Constants.Encoding, leaveOpen: true))
             using (var impl = new Impl(xunit, writer))
             {
                 xunit.Find(includeSourceInformation: false, messageSink: impl, discoveryOptions: TestFrameworkOptions.ForDiscovery());

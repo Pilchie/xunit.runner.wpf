@@ -23,6 +23,7 @@ namespace xunit.runner.worker
 
             private void Process(string displayName, TestState state)
             {
+                Console.WriteLine($"{state} - {displayName}");
                 var result = new TestResultData(displayName, state);
                 result.WriteTo(_writer);
             }
