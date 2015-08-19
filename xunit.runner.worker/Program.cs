@@ -41,7 +41,13 @@ namespace xunit.runner.worker
                         Usage();
                         return ExitError;
                 }
-
+            }
+            catch (Exception ex)
+            {
+                // Errors will happen during a rude shut down from the client. Print out to the screen
+                // for diagnostics and continue on.
+                Console.Error.WriteLine(ex.Message);
+                return ExitError;
             }
             finally
             {
@@ -52,14 +58,14 @@ namespace xunit.runner.worker
         }
 
         private static void Discover(Stream stream, string assemblyPath)
-        { 
-                Console.WriteLine($"discover started: {assemblyPath}");
-                DiscoverUtil.Go(assemblyPath, stream);
-                Console.WriteLine("discover ended");
+        {
+            Console.WriteLine($"discover started: {assemblyPath}");
+            DiscoverUtil.Go(assemblyPath, stream);
+            Console.WriteLine("discover ended");
         }
 
         private static void Run(Stream stream, string assemblyPath)
-        { 
+        {
             Console.WriteLine($"run started: {assemblyPath}");
             RunUtil.Go(assemblyPath, stream);
             Console.WriteLine("run ended");

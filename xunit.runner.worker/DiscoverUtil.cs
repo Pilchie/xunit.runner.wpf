@@ -16,6 +16,7 @@ namespace xunit.runner.worker
         {
             private readonly ITestFrameworkDiscoverer _discoverer;
             private readonly BinaryWriter _writer;
+            private bool _continue = true;
 
             internal Impl(ITestFrameworkDiscoverer discoverer, BinaryWriter writer)
             {
@@ -31,8 +32,18 @@ namespace xunit.runner.worker
                     testCase.DisplayName,
                     testCaseDiscovered.TestAssembly.Assembly.AssemblyPath);
 
-                testCaseData.WriteTo(_writer);
-                return true;
+                try
+                {
+                    testCaseData.WriteTo(_writer);
+                }
+                catch (Exception ex)
+                {
+                    // This happens during a rude shutdown from the client.
+                    Console.Error.WriteLine(ex.Message);
+                    _continue = false;
+                }
+
+                return _continue;
             }
         }
 

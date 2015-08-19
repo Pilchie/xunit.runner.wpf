@@ -15,6 +15,7 @@ namespace xunit.runner.worker
         private class TestRunVisitor : TestMessageVisitor<ITestAssemblyFinished>
         {
             private readonly BinaryWriter _writer;
+            private bool _continue = true;
 
             public TestRunVisitor(BinaryWriter writer)
             {
@@ -25,25 +26,35 @@ namespace xunit.runner.worker
             {
                 Console.WriteLine($"{state} - {displayName}");
                 var result = new TestResultData(displayName, state);
-                result.WriteTo(_writer);
+
+                try
+                {
+                    result.WriteTo(_writer);
+                }
+                catch (Exception ex)
+                {
+                    // This happens during a rude shutdown from the client.
+                    Console.Error.WriteLine(ex.Message);
+                    _continue = false;
+                }
             }
 
             protected override bool Visit(ITestFailed testFailed)
             {
                 Process(testFailed.TestCase.DisplayName, TestState.Failed);
-                return true;
+                return _continue;
             }
 
             protected override bool Visit(ITestPassed testPassed)
             {
                 Process(testPassed.TestCase.DisplayName, TestState.Passed);
-                return true;
+                return _continue;
             }
 
             protected override bool Visit(ITestSkipped testSkipped)
             {
                 Process(testSkipped.TestCase.DisplayName, TestState.Skipped);
-                return true;
+                return _continue;
             }
         }
 
