@@ -120,6 +120,8 @@ namespace xunit.runner.wpf.Impl
             var backgroundRunner = new BackgroundRunner(queue, new BinaryReader(connection.Stream, Constants.Encoding, leaveOpen: true), cancellationToken);
             Task.Run(backgroundRunner.GoOnBackground);
 
+            cancellationToken.Register(() => connection.Stream.Close());
+
             return new RunSession(connection, dispatcher, queue);
         }
 
