@@ -65,7 +65,7 @@ namespace xunit.runner.wpf.Impl
             var processStartInfo = new ProcessStartInfo();
             processStartInfo.FileName = typeof(xunit.runner.worker.Program).Assembly.Location;
             processStartInfo.Arguments = $"{pipeName} {action} {argument}";
-            // processStartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            processStartInfo.WindowStyle = ProcessWindowStyle.Hidden;
 
             var process = Process.Start(processStartInfo);
             try
