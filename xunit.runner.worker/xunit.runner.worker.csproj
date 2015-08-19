@@ -50,8 +50,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DiscoverUtil.cs" />
+    <Compile Include="MessageVisitor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RunUtil.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

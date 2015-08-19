@@ -10,5 +10,7 @@ namespace xunit.runner.data
     {
         public const string PipeName = "xunit.runners.pipe";
         public const string ActionDiscover = "discover";
+        public const string ActionRun = "run";
+        public static readonly Encoding Encoding = Encoding.UTF8;
     }
 }

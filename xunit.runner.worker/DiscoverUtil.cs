@@ -36,20 +36,13 @@ namespace xunit.runner.worker
             }
         }
 
-        private sealed class DiagnosticMessageVisitor : TestMessageVisitor
-        {
-            public override bool OnMessage(IMessageSinkMessage message)
-            {
-                return base.OnMessage(message);
-            }
-        }
-
         internal static void Go(string fileName, Stream stream)
         {
+            using (AssemblyHelper.SubscribeResolve())
             using (var xunit = new XunitFrontController(
                 useAppDomain: true,
                 assemblyFileName: fileName,
-                diagnosticMessageSink: new DiagnosticMessageVisitor(),
+                diagnosticMessageSink: new MessageVisitor(),
                 shadowCopy: false))
             using (var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true))
             using (var impl = new Impl(xunit, writer))

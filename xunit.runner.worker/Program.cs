@@ -22,30 +22,47 @@ namespace xunit.runner.worker
                 return ExitError;
             }
 
-            switch (args[0])
+            Stream stream = null;
+            try
             {
-                case Constants.ActionDiscover:
-                    Discover(args[1]);
-                    break;
-                default:
-                    Usage();
-                    return ExitError;
+                var namedPipeServerStream = new NamedPipeServerStream(Constants.PipeName);
+                namedPipeServerStream.WaitForConnection();
+                stream = namedPipeServerStream;
+
+                switch (args[0])
+                {
+                    case Constants.ActionDiscover:
+                        Discover(stream, args[1]);
+                        break;
+                    case Constants.ActionRun:
+                        Run(stream, args[1]);
+                        break;
+                    default:
+                        Usage();
+                        return ExitError;
+                }
+
+            }
+            finally
+            {
+                stream.Close();
             }
 
             return ExitSuccess;
         }
 
-        private static void Discover(string assemblyPath)
+        private static void Discover(Stream stream, string assemblyPath)
         { 
-            using (var namedPipeServer = new NamedPipeServerStream(Constants.PipeName))
-            {
-                namedPipeServer.WaitForConnection();
                 Console.WriteLine($"discover started: {assemblyPath}");
-                DiscoverUtil.Go(assemblyPath, namedPipeServer);
+                DiscoverUtil.Go(assemblyPath, stream);
                 Console.WriteLine("discover ended");
-                namedPipeServer.Close();
-                Console.WriteLine("pipe closed");
-            }
+        }
+
+        private static void Run(Stream stream, string assemblyPath)
+        { 
+            Console.WriteLine($"run started: {assemblyPath}");
+            RunUtil.Go(assemblyPath, stream);
+            Console.WriteLine("run ended");
         }
 
         private static void Usage()
