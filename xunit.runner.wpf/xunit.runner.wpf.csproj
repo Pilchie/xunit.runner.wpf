@@ -151,6 +151,10 @@
       <Project>{a1f579f4-443e-4f64-bc55-998ab86ff293}</Project>
       <Name>xunit.runner.data</Name>
     </ProjectReference>
+    <ProjectReference Include="..\xunit.runner.worker\xunit.runner.worker.csproj">
+      <Project>{9df97a2b-0eb5-4b12-9f81-69dfac979814}</Project>
+      <Name>xunit.runner.worker</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
