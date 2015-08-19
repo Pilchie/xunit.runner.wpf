@@ -51,7 +51,7 @@ namespace xunit.runner.worker
         {
             using (AssemblyHelper.SubscribeResolve())
             using (var xunit = new XunitFrontController(
-                useAppDomain: true,
+                useAppDomain: false,
                 assemblyFileName: fileName,
                 diagnosticMessageSink: new MessageVisitor(),
                 shadowCopy: false))

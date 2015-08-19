@@ -63,7 +63,7 @@ namespace xunit.runner.worker
             using (AssemblyHelper.SubscribeResolve())
             using (var xunit = new XunitFrontController(
                 assemblyFileName: assemblyPath,
-                useAppDomain: true,
+                useAppDomain: false,
                 shadowCopy: false,
                 diagnosticMessageSink: new MessageVisitor()))
             using (var writer = new BinaryWriter(stream, Constants.Encoding, leaveOpen: true))
