@@ -16,26 +16,28 @@ namespace xunit.runner.worker
 
         public static int Main(string[] args)
         {
-            if (args.Length < 2)
+            if (args.Length < 3)
             {
                 Usage();
                 return ExitError;
             }
 
+            string pipeName = args[0];
+            string action = args[1];
+            string argument = args[2];
+
             Stream stream = null;
             try
             {
-                var namedPipeServerStream = new NamedPipeServerStream(Constants.PipeName);
-                namedPipeServerStream.WaitForConnection();
-                stream = namedPipeServerStream;
+                stream = CreateStream(pipeName);
 
-                switch (args[0])
+                switch (action)
                 {
                     case Constants.ActionDiscover:
-                        Discover(stream, args[1]);
+                        Discover(stream, argument);
                         break;
                     case Constants.ActionRun:
-                        Run(stream, args[1]);
+                        Run(stream, argument);
                         break;
                     default:
                         Usage();
@@ -55,6 +57,18 @@ namespace xunit.runner.worker
             }
 
             return ExitSuccess;
+        }
+
+        private static Stream CreateStream(string pipeName)
+        {
+            if (pipeName == "test")
+            {
+                return new MemoryStream();
+            }
+
+            var namedPipeServerStream = new NamedPipeServerStream(pipeName);
+            namedPipeServerStream.WaitForConnection();
+            return namedPipeServerStream;
         }
 
         private static void Discover(Stream stream, string assemblyPath)

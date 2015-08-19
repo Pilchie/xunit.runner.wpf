@@ -49,17 +49,18 @@ namespace xunit.runner.wpf.Impl
             }
         }
 
-        private Connection StartWorkerProcess(string action, string argument)
+        private static Connection StartWorkerProcess(string action, string argument)
         {
+            var pipeName = $"xunit.runner.wpf.pipe.{Guid.NewGuid()}";
             var processStartInfo = new ProcessStartInfo();
             processStartInfo.FileName = typeof(xunit.runner.worker.Program).Assembly.Location;
-            processStartInfo.Arguments = $"{action} {argument}";
+            processStartInfo.Arguments = $"{pipeName} {action} {argument}";
             processStartInfo.WindowStyle = ProcessWindowStyle.Hidden;
 
             var process = Process.Start(processStartInfo);
             try
             {
-                var stream = new NamedPipeClientStream(Constants.PipeName);
+                var stream = new NamedPipeClientStream(pipeName);
                 stream.Connect();
                 return new Connection(stream, process);
             }
