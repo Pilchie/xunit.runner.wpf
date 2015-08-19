@@ -10,7 +10,7 @@ using xunit.runner.data;
 
 namespace xunit.runner.worker
 {
-    internal sealed class Discover
+    internal sealed class DiscoverUtil
     {
         private sealed class Impl : TestMessageVisitor<IDiscoveryCompleteMessage>
         {

@@ -46,11 +46,11 @@ namespace xunit.runner.wpf.Impl
             }
         }
 
-        private Connection StartWorkerProcess(string argument)
+        private Connection StartWorkerProcess(string action, string argument)
         {
             var processStartInfo = new ProcessStartInfo();
             processStartInfo.FileName = typeof(xunit.runner.worker.Program).Assembly.Location;
-            processStartInfo.Arguments = argument;
+            processStartInfo.Arguments = $"{action} {argument}";
             var process = Process.Start(processStartInfo);
             try
             {
@@ -77,7 +77,7 @@ namespace xunit.runner.wpf.Impl
         {
             var list = new List<TestCaseData>();
 
-            using (var connection = StartWorkerProcess(assemblyPath))
+            using (var connection = StartWorkerProcess(Constants.ActionDiscover, assemblyPath))
             using (var reader = new BinaryReader(connection.Stream, Encoding.UTF8, leaveOpen: true))
             {
                 try

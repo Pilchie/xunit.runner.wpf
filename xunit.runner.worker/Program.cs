@@ -11,20 +11,46 @@ namespace xunit.runner.worker
 {
     public static class Program
     {
-        public static void Main(string[] args)
+        private const int ExitSuccess = 0;
+        private const int ExitError = 1;
+
+        public static int Main(string[] args)
         {
+            if (args.Length < 2)
+            {
+                Usage();
+                return ExitError;
+            }
+
+            switch (args[0])
+            {
+                case Constants.ActionDiscover:
+                    Discover(args[1]);
+                    break;
+                default:
+                    Usage();
+                    return ExitError;
+            }
+
+            return ExitSuccess;
+        }
+
+        private static void Discover(string assemblyPath)
+        { 
             using (var namedPipeServer = new NamedPipeServerStream(Constants.PipeName))
             {
                 namedPipeServer.WaitForConnection();
-                var fileName = args.Length == 0
-                    ? @"C:\Users\jaredpar\Documents\Github\VsVim\Test\VimWpfTest\bin\Debug\Vim.UI.Wpf.UnitTest.dll"
-                    : args[0];
-                Console.WriteLine($"discover started: {fileName}");
-                Discover.Go(fileName, namedPipeServer);
+                Console.WriteLine($"discover started: {assemblyPath}");
+                DiscoverUtil.Go(assemblyPath, namedPipeServer);
                 Console.WriteLine("discover ended");
                 namedPipeServer.Close();
                 Console.WriteLine("pipe closed");
             }
+        }
+
+        private static void Usage()
+        {
+            Console.Error.WriteLine("Need at least two arguments");
         }
     }
 }
