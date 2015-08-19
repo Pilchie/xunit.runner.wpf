@@ -5,6 +5,7 @@ using System.IO.Pipes;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using xunit.runner.data;
 
 namespace xunit.runner.worker
 {
@@ -12,7 +13,7 @@ namespace xunit.runner.worker
     {
         public static void Main(string[] args)
         {
-            using (var namedPipeServer = new NamedPipeServerStream("xunit.pipe"))
+            using (var namedPipeServer = new NamedPipeServerStream(Constants.PipeName))
             {
                 namedPipeServer.WaitForConnection();
                 var fileName = args.Length == 0

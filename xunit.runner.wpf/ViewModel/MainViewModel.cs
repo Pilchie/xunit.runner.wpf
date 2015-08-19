@@ -22,6 +22,7 @@ namespace xunit.runner.wpf.ViewModel
 {
     public class MainViewModel : ViewModelBase
     {
+        private readonly ITestUtil testUtil;
         private readonly ObservableCollection<TestCaseViewModel> allTestCases = new ObservableCollection<TestCaseViewModel>();
         private CancellationTokenSource filterCancellationTokenSource = new CancellationTokenSource();
 
@@ -35,6 +36,7 @@ namespace xunit.runner.wpf.ViewModel
             }
 
             CommandBindings = CreateCommandBindings();
+            this.testUtil = new xunit.runner.wpf.Impl.RemoteTestUtil();
             this.MethodsCaption = "Methods (0)";
 
             TestCases = new FilteredCollectionView<TestCaseViewModel, Tuple<string, TestState>>(
@@ -180,39 +182,11 @@ namespace xunit.runner.wpf.ViewModel
             }
 
             var fileName = fileDialog.FileName;
-            var list = new List<TestCaseData>();
 
             try
             {
-                var processStartInfo = new ProcessStartInfo();
-                processStartInfo.FileName = @"C:\Users\jaredpar\Documents\Github\xunit.runner.wpf\xunit.runner.worker\bin\Debug\xunit.runner.worker.exe";
-                processStartInfo.Arguments = fileName;
-                Process.Start(processStartInfo);
-
-                using (var client = new NamedPipeClientStream(@"xunit.pipe"))
-                {
-                    client.Connect();
-
-                    using (var reader = new BinaryReader(client, Encoding.UTF8, leaveOpen: true))
-                    {
-                        try
-                        {
-                            while (true)
-                            {
-                                var testCaseData = TestCaseData.ReadFrom(reader);
-                                list.Add(testCaseData);
-                            }
-                        }
-                        catch
-                        {
-                            // Hacky way of catching end of stream
-                        }
-                    }
-
-                }
-
-                allTestCases.AddRange(list.Select(x => new TestCaseViewModel(x.SerializedForm, x.DisplayName, x.AssemblyPath)));
-
+                var list = this.testUtil.Discover(fileName);
+                allTestCases.AddRange(list);
                 Assemblies.Add(new TestAssemblyViewModel(fileName));
             }
             catch (Exception ex)
