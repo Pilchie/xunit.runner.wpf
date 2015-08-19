@@ -147,6 +147,10 @@
       <Name>SampleTestAssembly</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="..\xunit.runner.data\xunit.runner.data.csproj">
+      <Project>{a1f579f4-443e-4f64-bc55-998ab86ff293}</Project>
+      <Name>xunit.runner.data</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

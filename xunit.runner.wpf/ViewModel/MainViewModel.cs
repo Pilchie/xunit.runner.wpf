@@ -12,6 +12,11 @@ using System.Linq;
 using System.Collections.Specialized;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Diagnostics;
+using System.IO.Pipes;
+using System.IO;
+using System.Text;
+using xunit.runner.data;
 
 namespace xunit.runner.wpf.ViewModel
 {
@@ -175,23 +180,38 @@ namespace xunit.runner.wpf.ViewModel
             }
 
             var fileName = fileDialog.FileName;
+            var list = new List<TestCaseData>();
 
             try
             {
-                using (AssemblyHelper.SubscribeResolve())
+                var processStartInfo = new ProcessStartInfo();
+                processStartInfo.FileName = @"C:\Users\jaredpar\Documents\Github\xunit.runner.wpf\xunit.runner.worker\bin\Debug\xunit.runner.worker.exe";
+                processStartInfo.Arguments = fileName;
+                Process.Start(processStartInfo);
+
+                using (var client = new NamedPipeClientStream(@"xunit.pipe"))
                 {
-                    using (var xunit = new XunitFrontController(
-                        useAppDomain: true,
-                        assemblyFileName: fileName,
-                        diagnosticMessageSink: new DiagnosticMessageVisitor(),
-                        shadowCopy: false)) 
-                    using (var testDiscoveryVisitor = new TestDiscoveryVisitor(xunit))
+                    client.Connect();
+
+                    using (var reader = new BinaryReader(client, Encoding.UTF8, leaveOpen: true))
                     {
-                        xunit.Find(includeSourceInformation: false, messageSink: testDiscoveryVisitor, discoveryOptions: TestFrameworkOptions.ForDiscovery());
-                        testDiscoveryVisitor.Finished.WaitOne();
-                        allTestCases.AddRange(testDiscoveryVisitor.TestCases);
+                        try
+                        {
+                            while (true)
+                            {
+                                var testCaseData = TestCaseData.ReadFrom(reader);
+                                list.Add(testCaseData);
+                            }
+                        }
+                        catch
+                        {
+                            // Hacky way of catching end of stream
+                        }
                     }
+
                 }
+
+                allTestCases.AddRange(list.Select(x => new TestCaseViewModel(x.SerializedForm, x.DisplayName, x.AssemblyPath)));
 
                 Assemblies.Add(new TestAssemblyViewModel(fileName));
             }
@@ -206,40 +226,6 @@ namespace xunit.runner.wpf.ViewModel
             public override bool OnMessage(IMessageSinkMessage message)
             {
                 return base.OnMessage(message);
-            }
-        }
-
-        private class TestDiscoveryVisitor : TestMessageVisitor<IDiscoveryCompleteMessage>
-        {
-            ITestFrameworkDiscoverer discoverer;
-
-            public List<TestCaseViewModel> TestCases { get; } = new List<TestCaseViewModel>();
-
-            public TestDiscoveryVisitor(ITestFrameworkDiscoverer discoverer)
-            {
-                this.discoverer = discoverer;
-            }
-
-            public IDictionary<string, IList<string>> Traits { get; } = new Dictionary<string, IList<string>>();
-
-            protected override bool Visit(ITestCaseDiscoveryMessage testCaseDiscovered)
-            {
-                var testCase = testCaseDiscovered.TestCase;
-                TestCases.Add(new TestCaseViewModel(discoverer.Serialize(testCase), testCase.DisplayName, testCaseDiscovered.TestAssembly.Assembly.AssemblyPath));
-
-                foreach (var k in testCase.Traits.Keys)
-                {
-                    IList<string> value;
-                    if (!Traits.TryGetValue(k, out value))
-                    {
-                        value = new List<string>();
-                        Traits[k] = value;
-                    }
-
-                    value.AddRange(testCase.Traits[k]);
-                }
-
-                return true;
             }
         }
 
