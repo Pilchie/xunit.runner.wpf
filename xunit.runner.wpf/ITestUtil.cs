@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 using xunit.runner.data;
@@ -20,7 +21,7 @@ namespace xunit.runner.wpf
         /// <summary>
         /// Begin a run of a unit test for the given assembly.
         /// </summary>
-        ITestRunSession Run(Dispatcher dispatcher, string assemblyPath);
+        ITestRunSession Run(Dispatcher dispatcher, string assemblyPath, CancellationToken cancellationToken = default(CancellationToken));
     }
 
     internal sealed class TestResultEventArgs : EventArgs
@@ -37,6 +38,16 @@ namespace xunit.runner.wpf
 
     internal interface ITestRunSession
     {
+        bool IsRunning { get; }
+
+        /// <summary>
+        /// Raised when an idividual test is finished running.
+        /// </summary>
         event EventHandler<TestResultEventArgs> TestFinished;
+
+        /// <summary>
+        /// Raised when the session has finished executing all of the specified tests.
+        /// </summary>
+        event EventHandler SessionFinished;
     }
 }

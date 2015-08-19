@@ -6,6 +6,7 @@ using System.IO;
 using System.IO.Pipes;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using xunit.runner.data;
 using xunit.runner.wpf.ViewModel;
@@ -18,11 +19,13 @@ namespace xunit.runner.wpf.Impl
         {
             private readonly ConcurrentQueue<TestResultData> _resultQueue;
             private readonly BinaryReader _reader;
+            private readonly CancellationToken _cancellationToken;
 
-            internal BackgroundRunner(ConcurrentQueue<TestResultData> resultQueue, BinaryReader reader)
+            internal BackgroundRunner(ConcurrentQueue<TestResultData> resultQueue, BinaryReader reader, CancellationToken cancellationToken)
             {
                 _resultQueue = resultQueue;
                 _reader = reader;
+                _cancellationToken = cancellationToken;
             }
 
             /// <summary>
@@ -32,7 +35,7 @@ namespace xunit.runner.wpf.Impl
             /// <returns></returns>
             internal Task GoOnBackground()
             {
-                while (true)
+                while (!_cancellationToken.IsCancellationRequested)
                 {
                     TestResultData result;
                     try

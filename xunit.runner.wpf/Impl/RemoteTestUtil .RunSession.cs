@@ -24,6 +24,7 @@ namespace xunit.runner.wpf.Impl
             private readonly DispatcherTimer _timer;
             private bool _closed;
             private event EventHandler<TestResultEventArgs> _testFinished;
+            private event EventHandler _sessionFinished;
 
             internal RunSession(Connection connection, Dispatcher dispatcher, ConcurrentQueue<TestResultData> resultQueue)
             {
@@ -58,14 +59,24 @@ namespace xunit.runner.wpf.Impl
                 _closed = true;
                 _timer.Stop();
                 ((IDisposable)_connection).Dispose();
+
+                _sessionFinished?.Invoke(this, EventArgs.Empty);
             }
 
             #region ITestRunSession
+
+            bool ITestRunSession.IsRunning => !_closed;
 
             event EventHandler<TestResultEventArgs> ITestRunSession.TestFinished
             {
                 add { _testFinished += value; }
                 remove { _testFinished -= value; }
+            }
+
+            event EventHandler ITestRunSession.SessionFinished
+            {
+                add { _sessionFinished += value; }
+                remove { _sessionFinished -= value; }
             }
 
             #endregion

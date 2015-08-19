@@ -6,6 +6,7 @@ using System.IO;
 using System.IO.Pipes;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 using xunit.runner.data;
@@ -53,6 +54,8 @@ namespace xunit.runner.wpf.Impl
             var processStartInfo = new ProcessStartInfo();
             processStartInfo.FileName = typeof(xunit.runner.worker.Program).Assembly.Location;
             processStartInfo.Arguments = $"{action} {argument}";
+            processStartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+
             var process = Process.Start(processStartInfo);
             try
             {
@@ -99,11 +102,11 @@ namespace xunit.runner.wpf.Impl
             return list;
         }
 
-        private RunSession Run(Dispatcher dispatcher, string assemblyPath)
+        private RunSession Run(Dispatcher dispatcher, string assemblyPath, CancellationToken cancellationToken)
         {
             var connection = StartWorkerProcess(Constants.ActionRun, assemblyPath);
             var queue = new ConcurrentQueue<TestResultData>();
-            var backgroundRunner = new BackgroundRunner(queue, new BinaryReader(connection.Stream, Constants.Encoding, leaveOpen: true));
+            var backgroundRunner = new BackgroundRunner(queue, new BinaryReader(connection.Stream, Constants.Encoding, leaveOpen: true), cancellationToken);
             Task.Run(backgroundRunner.GoOnBackground);
 
             return new RunSession(connection, dispatcher, queue);
@@ -116,9 +119,9 @@ namespace xunit.runner.wpf.Impl
             return Discover(assemblyPath);
         }
 
-        ITestRunSession ITestUtil.Run(Dispatcher dispatcher, string assemblyPath)
+        ITestRunSession ITestUtil.Run(Dispatcher dispatcher, string assemblyPath, CancellationToken cancellationToken)
         {
-            return Run(dispatcher, assemblyPath);
+            return Run(dispatcher, assemblyPath, cancellationToken);
         }
 
         #endregion

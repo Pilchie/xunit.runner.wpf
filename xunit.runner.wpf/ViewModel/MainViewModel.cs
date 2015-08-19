@@ -25,8 +25,10 @@ namespace xunit.runner.wpf.ViewModel
         private readonly ObservableCollection<TestCaseViewModel> allTestCases = new ObservableCollection<TestCaseViewModel>();
         private CancellationTokenSource filterCancellationTokenSource = new CancellationTokenSource();
 
+        private List<ITestRunSession> testRunSessionList = new List<ITestRunSession>();
+        private CancellationTokenSource cancellationTokenSource;
         private bool isBusy;
-        private bool isCancelRequested;
+
         public MainViewModel()
         {
             if (IsInDesignMode)
@@ -205,16 +207,6 @@ namespace xunit.runner.wpf.ViewModel
             }
         }
 
-        private bool IsCancelRequested
-        {
-            get { return isCancelRequested; }
-            set
-            {
-                isCancelRequested = value;
-                CancelCommand.RaiseCanExecuteChanged();
-            }
-        }
-
         private static void OnExecuteExit()
         {
             Application.Current.Shutdown();
@@ -227,7 +219,6 @@ namespace xunit.runner.wpf.ViewModel
         {
             try
             {
-                IsBusy = true;
                 TestsCompleted = 0;
                 TestsPassed = 0;
                 TestsFailed = 0;
@@ -239,24 +230,47 @@ namespace xunit.runner.wpf.ViewModel
             {
                 MessageBox.Show(ex.ToString());
             }
-            finally
-            {
-                IsBusy = false;
-                IsCancelRequested = false;
-            }
         }
 
         private void RunTests()
         {
+            Debug.Assert(this.cancellationTokenSource == null);
+            Debug.Assert(this.testRunSessionList.Count == 0);
+
             foreach (var tc in TestCases)
             {
                 tc.State = TestState.NotRun;
             }
 
-            // Hacky way of using one assembly for now.  Will expand later. 
-            var assemblyPath = TestCases.Select(x => x.AssemblyFileName).First();
-            var session = this.testUtil.Run(Dispatcher.CurrentDispatcher, assemblyPath);
-            session.TestFinished += OnTestFinished;
+            // TODO: Need a way to filter based on traits, selected test cases, etc ...  For now we just run
+            // everything. 
+
+            this.cancellationTokenSource = new CancellationTokenSource();
+            foreach (var assemblyPath in TestCases.Select(x => x.AssemblyFileName).Distinct())
+            {
+                var session = this.testUtil.Run(Dispatcher.CurrentDispatcher, assemblyPath, this.cancellationTokenSource.Token);
+                session.TestFinished += OnTestFinished;
+                session.SessionFinished += delegate { OnTestRunSessionFinished(session); };
+                this.testRunSessionList.Add(session);
+            }
+
+            this.IsBusy = true;
+            this.RunCommand.RaiseCanExecuteChanged();
+            this.CancelCommand.RaiseCanExecuteChanged();
+        }
+
+        private void OnTestRunSessionFinished(ITestRunSession session)
+        {
+            Debug.Assert(this.testRunSessionList.Contains(session));
+            this.testRunSessionList.Remove(session);
+
+            if (this.testRunSessionList.Count == 0)
+            {
+                this.cancellationTokenSource = null;
+                this.IsBusy = false;
+                this.RunCommand.RaiseCanExecuteChanged();
+                this.CancelCommand.RaiseCanExecuteChanged();
+            }
         }
 
         private void OnTestFinished(object sender, TestResultEventArgs e)
@@ -284,11 +298,15 @@ namespace xunit.runner.wpf.ViewModel
             }
         }
 
-        private bool CanExecuteCancel() => IsBusy && !IsCancelRequested;
+        private bool CanExecuteCancel()
+        {
+            return this.cancellationTokenSource != null && !this.cancellationTokenSource.IsCancellationRequested;
+        }
 
         private void OnExecuteCancel()
         {
-            this.IsCancelRequested = true;
+            Debug.Assert(CanExecuteCancel());
+            this.cancellationTokenSource.Cancel();
         }
 
         public bool IsPassedFilterChecked
