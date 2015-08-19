@@ -22,10 +22,10 @@ namespace xunit.runner.worker
                 _writer = writer;
             }
 
-            private void Process(string displayName, TestState state)
+            private void Process(string displayName, TestState state, string output = "")
             {
                 Console.WriteLine($"{state} - {displayName}");
-                var result = new TestResultData(displayName, state);
+                var result = new TestResultData(displayName, state, output);
 
                 try
                 {
@@ -41,7 +41,21 @@ namespace xunit.runner.worker
 
             protected override bool Visit(ITestFailed testFailed)
             {
-                Process(testFailed.TestCase.DisplayName, TestState.Failed);
+                var displayName = testFailed.TestCase.DisplayName;
+                var builder = new StringBuilder();
+                builder.AppendLine($"{displayName} FAILED:");
+                for (int i = 0; i < testFailed.ExceptionTypes.Length; i++)
+                {
+                    builder.AppendLine($"\tException type: '{testFailed.ExceptionTypes[i]}', number: '{i}', parent: '{testFailed.ExceptionParentIndices[i]}'");
+                    builder.AppendLine($"\tException message:");
+                    builder.AppendLine(testFailed.Messages[i]);
+                    builder.AppendLine($"\tException stacktrace");
+                    builder.AppendLine(testFailed.StackTraces[i]);
+                }
+                builder.AppendLine();
+
+                Process(testFailed.TestCase.DisplayName, TestState.Failed, builder.ToString());
+
                 return _continue;
             }
 

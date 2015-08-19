@@ -10,13 +10,15 @@ namespace xunit.runner.wpf.ViewModel
 {
     public class TestAssemblyViewModel : ViewModelBase
     {
-        public TestAssemblyViewModel(string fileName)
+        private readonly AssemblyAndConfigFile assembly;
+
+        public TestAssemblyViewModel(AssemblyAndConfigFile assembly)
         {
-            this.FileName = fileName;
+            this.assembly = assembly;
         }
 
-        public string FileName { get; }
-
-        public string DisplayName => Path.GetFileNameWithoutExtension(FileName);
+        public string FileName => assembly.AssemblyFileName;
+        public string ConfigFileName => Path.GetFileNameWithoutExtension(assembly.ConfigFileName);
+        public string DisplayName => Path.GetFileNameWithoutExtension(assembly.AssemblyFileName);
     }
 }

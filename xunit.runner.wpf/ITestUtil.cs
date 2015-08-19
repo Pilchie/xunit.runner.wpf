@@ -24,15 +24,17 @@ namespace xunit.runner.wpf
         ITestRunSession Run(Dispatcher dispatcher, string assemblyPath, CancellationToken cancellationToken = default(CancellationToken));
     }
 
-    internal sealed class TestResultEventArgs : EventArgs
+    internal sealed class TestResultDataEventArgs : EventArgs
     {
-        internal readonly string TestCaseDisplayName;
-        internal readonly TestState TestState;
+        internal readonly TestResultData TestResultData;
 
-        internal TestResultEventArgs(string displayName, TestState state)
+        internal string TestCaseDisplayName => TestResultData.TestCaseDisplayName;
+        internal TestState TestState => TestResultData.TestState;
+        internal string Output => TestResultData.Output;
+
+        internal TestResultDataEventArgs(TestResultData testResultData)
         {
-            TestCaseDisplayName = displayName;
-            TestState = state;
+            TestResultData = testResultData;
         }
     }
 
@@ -43,7 +45,7 @@ namespace xunit.runner.wpf
         /// <summary>
         /// Raised when an idividual test is finished running.
         /// </summary>
-        event EventHandler<TestResultEventArgs> TestFinished;
+        event EventHandler<TestResultDataEventArgs> TestFinished;
 
         /// <summary>
         /// Raised when the session has finished executing all of the specified tests.

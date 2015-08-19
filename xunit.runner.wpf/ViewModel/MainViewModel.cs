@@ -28,28 +28,54 @@ namespace xunit.runner.wpf.ViewModel
         private List<ITestRunSession> testRunSessionList = new List<ITestRunSession>();
         private CancellationTokenSource cancellationTokenSource;
         private bool isBusy;
+        private SearchQuery searchQuery = new SearchQuery();
 
         public MainViewModel()
         {
             if (IsInDesignMode)
             {
-                this.Assemblies.Add(new TestAssemblyViewModel(@"C:\Code\TestAssembly.dll"));
+                this.Assemblies.Add(new TestAssemblyViewModel(new AssemblyAndConfigFile(@"C:\Code\TestAssembly.dll", null)));
             }
 
             CommandBindings = CreateCommandBindings();
             this.testUtil = new xunit.runner.wpf.Impl.RemoteTestUtil();
             this.MethodsCaption = "Methods (0)";
 
-            TestCases = new FilteredCollectionView<TestCaseViewModel, Tuple<string, TestState>>(
-                allTestCases, TestCaseMatches, Tuple.Create(string.Empty, TestState.All), TestComparer.Instance);
+            TestCases = new FilteredCollectionView<TestCaseViewModel, SearchQuery>(
+                allTestCases, TestCaseMatches, searchQuery, TestComparer.Instance);
 
             this.TestCases.CollectionChanged += TestCases_CollectionChanged;
+            this.WindowLoadedCommand = new RelayCommand(OnExecuteWindowLoaded);
             this.RunCommand = new RelayCommand(OnExecuteRun, CanExecuteRun);
             this.CancelCommand = new RelayCommand(OnExecuteCancel, CanExecuteCancel);
         }
 
-        private static bool TestCaseMatches(TestCaseViewModel testCase, Tuple<string, TestState> filterTextAndTestState)
-            => testCase.DisplayName.Contains(filterTextAndTestState.Item1) && (testCase.State & filterTextAndTestState.Item2) == filterTextAndTestState.Item2;
+        private static bool TestCaseMatches(TestCaseViewModel testCase, SearchQuery searchQuery)
+        {
+            if (!testCase.DisplayName.Contains(searchQuery.SearchString))
+            {
+                return false;
+            }
+
+            switch (testCase.State)
+            {
+                case TestState.Passed:
+                    return searchQuery.IncludePassedTests;
+
+                case TestState.Skipped:
+                    return searchQuery.IncludeSkippedTests;
+
+                case TestState.Failed:
+                    return searchQuery.IncludeFailedTests;
+
+                case TestState.NotRun:
+                    return true;
+
+                default:
+                    Debug.Assert(false, "What state is this test case in?");
+                    return true;
+            }
+        }
 
         private void TestCases_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
@@ -58,6 +84,7 @@ namespace xunit.runner.wpf.ViewModel
         }
 
         public ICommand ExitCommand { get; } = new RelayCommand(OnExecuteExit);
+        public ICommand WindowLoadedCommand { get; }
         public RelayCommand RunCommand { get; }
         public RelayCommand CancelCommand { get; }
 
@@ -112,28 +139,21 @@ namespace xunit.runner.wpf.ViewModel
             set { Set(ref currentRunState, value); }
         }
 
-        private string searchQuery = string.Empty;
-        public string SearchQuery
+        private string output = string.Empty;
+        public string Output
         {
-            get { return searchQuery; }
-            set
-            {
-                if (Set(ref searchQuery, value))
-                {
-                    FilterAfterDelay();
-                }
-            }
+            get { return output; }
+            set { Set(ref output, value); }
         }
 
-        private TestState resultFilter = TestState.All;
-        public TestState ResultFilter
+        public string FilterString
         {
-            get { return resultFilter; }
+            get { return searchQuery.SearchString; }
             set
             {
-                if (Set(ref resultFilter, value))
+                if (Set(ref searchQuery.SearchString, value))
                 {
-                    this.FilterAfterDelay();
+                    FilterAfterDelay();
                 }
             }
         }
@@ -149,7 +169,7 @@ namespace xunit.runner.wpf.ViewModel
                 .ContinueWith(
                     x =>
                     {
-                        TestCases.FilterArgument = Tuple.Create(SearchQuery, ResultFilter);
+                        TestCases.FilterArgument = searchQuery;
                     },
                     token,
                     TaskContinuationOptions.None,
@@ -168,7 +188,7 @@ namespace xunit.runner.wpf.ViewModel
         }
 
         public ObservableCollection<TestAssemblyViewModel> Assemblies { get; } = new ObservableCollection<TestAssemblyViewModel>();
-        public FilteredCollectionView<TestCaseViewModel, Tuple<string, TestState>> TestCases { get; }
+        public FilteredCollectionView<TestCaseViewModel, SearchQuery> TestCases { get; }
 
         private void OnExecuteOpen(object sender, ExecutedRoutedEventArgs e)
         {
@@ -183,16 +203,29 @@ namespace xunit.runner.wpf.ViewModel
             }
 
             var fileName = fileDialog.FileName;
+            AddAssemblies(new[] { new AssemblyAndConfigFile(fileName, configFileName: null) });
+        }
 
+        private void AddAssemblies(IEnumerable<AssemblyAndConfigFile> assemblies)
+        {
+            var loadingDialog = new LoadingDialog { Owner = MainWindow.Instance };
             try
             {
-                var list = this.testUtil.Discover(fileName);
-                allTestCases.AddRange(list);
-                Assemblies.Add(new TestAssemblyViewModel(fileName));
+                foreach (var assembly in assemblies)
+                {
+                    var assemblyPath = assembly.AssemblyFileName;
+                    var list = this.testUtil.Discover(assemblyPath);
+                    allTestCases.AddRange(list);
+                    Assemblies.Add(new TestAssemblyViewModel(assembly));
+                }
             }
             catch (Exception ex)
             {
                 MessageBox.Show(Application.Current.MainWindow, ex.ToString());
+            }
+            finally
+            {
+                loadingDialog.Close();
             }
         }
 
@@ -212,6 +245,41 @@ namespace xunit.runner.wpf.ViewModel
             Application.Current.Shutdown();
         }
 
+        private void OnExecuteWindowLoaded()
+        {
+            try
+            {
+                IsBusy = true;
+                AddAssemblies(ParseCommandLine(Environment.GetCommandLineArgs().Skip(1)));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private IEnumerable<AssemblyAndConfigFile> ParseCommandLine(IEnumerable<string> enumerable)
+        {
+            while (enumerable.Any())
+            {
+                var assemblyFileName = enumerable.First();
+                enumerable = enumerable.Skip(1);
+
+                var configFileName = (string)null;
+                if (IsConfigFile(enumerable.FirstOrDefault()))
+                {
+                    configFileName = enumerable.First();
+                    enumerable = enumerable.Skip(1);
+                }
+
+                yield return new AssemblyAndConfigFile(assemblyFileName, configFileName);
+            }
+        }
+
+        private bool IsConfigFile(string fileName)
+            => (fileName?.EndsWith(".config", StringComparison.OrdinalIgnoreCase) ?? false) ||
+               (fileName?.EndsWith(".json", StringComparison.OrdinalIgnoreCase) ?? false);
+
         private bool CanExecuteRun()
             => !IsBusy && TestCases.Any();
 
@@ -225,6 +293,7 @@ namespace xunit.runner.wpf.ViewModel
                 TestsSkipped = 0;
                 CurrentRunState = TestState.NotRun;
                 RunTests();
+                Output = string.Empty;
             }
             catch (Exception ex)
             {
@@ -273,7 +342,7 @@ namespace xunit.runner.wpf.ViewModel
             }
         }
 
-        private void OnTestFinished(object sender, TestResultEventArgs e)
+        private void OnTestFinished(object sender, TestResultDataEventArgs e)
         {
             var testCase = TestCases.Single(x => x.DisplayName == e.TestCaseDisplayName);
             testCase.State = e.TestState;
@@ -286,6 +355,7 @@ namespace xunit.runner.wpf.ViewModel
                     break;
                 case TestState.Failed:
                     TestsFailed++;
+                    Output = Output + e.Output;
                     break;
                 case TestState.Skipped:
                     TestsSkipped++;
@@ -309,32 +379,39 @@ namespace xunit.runner.wpf.ViewModel
             this.cancellationTokenSource.Cancel();
         }
 
-        public bool IsPassedFilterChecked
+        public bool IncludePassedTests
         {
-            get { return ResultFilter == TestState.Passed; }
-            set { UpdateFilter(value, TestState.Passed); }
-        }
-
-        public bool IsFailedFilterChecked
-        {
-            get { return ResultFilter == TestState.Failed; }
-            set { UpdateFilter(value, TestState.Failed); }
-        }
-
-        public bool IsSkippedFilterChecked
-        {
-            get { return ResultFilter == TestState.Skipped; }
-            set { UpdateFilter(value, TestState.Skipped); }
-        }
-
-        private void UpdateFilter(bool value, TestState newState)
-        {
-            if (value && ResultFilter != newState)
+            get { return searchQuery.IncludePassedTests; }
+            set
             {
-                ResultFilter = newState;
-                RaisePropertyChanged(nameof(IsPassedFilterChecked));
-                RaisePropertyChanged(nameof(IsFailedFilterChecked));
-                RaisePropertyChanged(nameof(IsSkippedFilterChecked));
+                if (Set(ref searchQuery.IncludePassedTests, value))
+                {
+                    FilterAfterDelay();
+                }
+            }
+        }
+
+        public bool IncludeFailedTests
+        {
+            get { return searchQuery.IncludeFailedTests; }
+            set
+            {
+                if (Set(ref searchQuery.IncludeFailedTests, value))
+                {
+                    FilterAfterDelay();
+                }
+            }
+        }
+
+        public bool IncludeSkippedTests
+        {
+            get { return searchQuery.IncludeSkippedTests; }
+            set
+            {
+                if (Set(ref searchQuery.IncludeSkippedTests, value))
+                {
+                    FilterAfterDelay();
+                }
             }
         }
     }

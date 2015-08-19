@@ -6,6 +6,8 @@
         xmlns:local="clr-namespace:xunit.runner.wpf"
         xmlns:converters="clr-namespace:xunit.runner.wpf.Converters"
         xmlns:vm="clr-namespace:xunit.runner.wpf.ViewModel"
+        xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
+        xmlns:cmd="clr-namespace:GalaSoft.MvvmLight.Command;assembly=GalaSoft.MvvmLight.Platform"
         mc:Ignorable="d"
         DataContext="{Binding Main, Source={StaticResource Locator}}"
         Title="xUnit.net Test Runner"
@@ -13,6 +15,12 @@
         ResizeMode="CanResizeWithGrip"
         Height="600"
         Width="525">
+
+    <i:Interaction.Triggers>
+        <i:EventTrigger EventName="Loaded">
+            <cmd:EventToCommand Command="{Binding WindowLoadedCommand}" />
+        </i:EventTrigger>
+    </i:Interaction.Triggers>
 
     <Window.Resources>
         <converters:TestStateConverter x:Key="TestStateConverter" />
@@ -75,7 +83,7 @@
                     <Label Content="Search:"
                            Grid.Row="0" />
                     <TextBox Grid.Row="1"
-                             Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                             Text="{Binding FilterString, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     <Label Content="Assemblies:"
                            Grid.Row="2" />
                     <ListBox Height="175"
@@ -134,32 +142,35 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <RadioButton IsChecked="{Binding IsPassedFilterChecked}"
-                                         Margin="3">
+                            <ToggleButton IsChecked="{Binding IncludePassedTests}"
+                                          Margin="3">
                                 <StackPanel Orientation="Horizontal">
                                     <Image Source="Artwork\Passed.ico"
                                            Height="16" />
-                                    <TextBlock Text="{Binding TestsPassed}" />
+                                    <TextBlock Margin="4,0,0,0"
+                                               Text="{Binding TestsPassed}" />
                                 </StackPanel>
-                            </RadioButton>
-                            <RadioButton IsChecked="{Binding IsFailedFilterChecked}"
-                                         Margin="3"
-                                         Grid.Column="1">
+                            </ToggleButton>
+                            <ToggleButton IsChecked="{Binding IncludeFailedTests}"
+                                          Margin="3"
+                                          Grid.Column="1">
                                 <StackPanel Orientation="Horizontal">
                                     <Image Source="Artwork\Failed.ico"
                                            Height="16" />
-                                    <TextBlock Text="{Binding TestsFailed}" />
+                                    <TextBlock Margin="4,0,0,0"
+                                               Text="{Binding TestsFailed}" />
                                 </StackPanel>
-                            </RadioButton>
-                            <RadioButton IsChecked="{Binding IsSkippedFilterChecked}"
-                                         Margin="3"
-                                         Grid.Column="2">
+                            </ToggleButton>
+                            <ToggleButton IsChecked="{Binding IncludeSkippedTests}"
+                                          Margin="3"
+                                          Grid.Column="2">
                                 <StackPanel Orientation="Horizontal">
                                     <Image Source="Artwork\Skipped.ico"
                                            Height="16" />
-                                    <TextBlock Text="{Binding TestsSkipped}" />
+                                    <TextBlock Margin="4,0,0,0"
+                                               Text="{Binding TestsSkipped}" />
                                 </StackPanel>
-                            </RadioButton>
+                            </ToggleButton>
                         </Grid>
                         <ListBox ItemsSource="{Binding TestCases}"
                                  SelectionMode="Extended"
@@ -190,7 +201,8 @@
                 <GroupBox Header="Output"
                           Margin="3"
                           Grid.Row="2">
-                    <TextBox IsReadOnly="True" />
+                    <TextBox IsReadOnly="True"
+                             Text="{Binding Output}"/>
                 </GroupBox>
             </Grid>
 

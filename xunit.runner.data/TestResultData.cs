@@ -24,24 +24,28 @@ namespace xunit.runner.data
     {
         public string TestCaseDisplayName { get; set; }
         public TestState TestState { get; set; }
+        public string Output { get; set; }
 
-        public TestResultData(string displayName, TestState state)
+        public TestResultData(string displayName, TestState state, string output = "")
         {
             TestCaseDisplayName = displayName;
             TestState = state;
+            Output = output;
         }
 
         public static TestResultData ReadFrom(BinaryReader reader)
         {
             var displayName = reader.ReadString();
             var state = (TestState)reader.ReadInt32();
-            return new TestResultData(displayName, state);
+            var output = reader.ReadString();
+            return new TestResultData(displayName, state, output);
         }
 
         public void WriteTo(BinaryWriter writer)
         {
             writer.Write(TestCaseDisplayName);
             writer.Write((int)TestState);
+            writer.Write(Output);
         }
     }
 }
