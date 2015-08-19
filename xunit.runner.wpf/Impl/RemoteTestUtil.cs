@@ -35,6 +35,16 @@ namespace xunit.runner.wpf.Impl
                 {
                     Debug.Assert(_stream != null);
 
+                    try
+                    {
+                        _stream.WriteByte(0);
+                    }
+                    catch
+                    {
+                        // Signal to server we are done with the connection.  Okay to fail because
+                        // it means the server isn't listening anymore.
+                    }
+
                     _stream.Close();
 
                     try
@@ -55,7 +65,7 @@ namespace xunit.runner.wpf.Impl
             var processStartInfo = new ProcessStartInfo();
             processStartInfo.FileName = typeof(xunit.runner.worker.Program).Assembly.Location;
             processStartInfo.Arguments = $"{pipeName} {action} {argument}";
-            processStartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            // processStartInfo.WindowStyle = ProcessWindowStyle.Hidden;
 
             var process = Process.Start(processStartInfo);
             try
@@ -88,7 +98,7 @@ namespace xunit.runner.wpf.Impl
             {
                 try
                 {
-                    while (true)
+                    while (connection.Stream.IsConnected)
                     {
                         var testCaseData = TestCaseData.ReadFrom(reader);
                         list.Add(testCaseData);

@@ -32,6 +32,8 @@ namespace xunit.runner.worker
                     testCase.DisplayName,
                     testCaseDiscovered.TestAssembly.Assembly.AssemblyPath);
 
+                Console.WriteLine(testCase.DisplayName);
+
                 try
                 {
                     testCaseData.WriteTo(_writer);

@@ -26,22 +26,27 @@ namespace xunit.runner.worker
             string action = args[1];
             string argument = args[2];
 
-            Stream stream = null;
             try
             {
-                stream = CreateStream(pipeName);
-
-                switch (action)
+                using (var connection = CreateConnection(pipeName))
                 {
-                    case Constants.ActionDiscover:
-                        Discover(stream, argument);
-                        break;
-                    case Constants.ActionRun:
-                        Run(stream, argument);
-                        break;
-                    default:
-                        Usage();
-                        return ExitError;
+                    connection.WaitForClientConnect();
+
+                    var stream = connection.Stream;
+
+                    switch (action)
+                    {
+                        case Constants.ActionDiscover:
+                            Discover(stream, argument);
+                            break;
+                        case Constants.ActionRun:
+                            Run(stream, argument);
+                            break;
+                        default:
+                            Usage();
+                            return ExitError;
+                    }
+
                 }
             }
             catch (Exception ex)
@@ -51,24 +56,18 @@ namespace xunit.runner.worker
                 Console.Error.WriteLine(ex.Message);
                 return ExitError;
             }
-            finally
-            {
-                stream.Close();
-            }
 
             return ExitSuccess;
         }
 
-        private static Stream CreateStream(string pipeName)
+        private static Connection CreateConnection(string pipeName)
         {
             if (pipeName == "test")
             {
-                return new MemoryStream();
+                return new TestConnection();
             }
 
-            var namedPipeServerStream = new NamedPipeServerStream(pipeName);
-            namedPipeServerStream.WaitForConnection();
-            return namedPipeServerStream;
+            return new NamedPipeConnection(pipeName);
         }
 
         private static void Discover(Stream stream, string assemblyPath)

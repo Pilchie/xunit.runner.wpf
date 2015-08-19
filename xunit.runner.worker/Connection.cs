@@ -10,13 +10,12 @@ namespace xunit.runner.worker
 {
     internal abstract class Connection : IDisposable
     {
-        private readonly Stream _stream;
         private bool _closed;
 
-        internal Stream Stream => _stream;
+        internal abstract Stream Stream { get; }
 
-        protected abstract void WaitForClientConnect();
-        protected abstract void WaitForClientDone();
+        internal abstract void WaitForClientConnect();
+        internal abstract void WaitForClientDone();
 
         protected virtual void DisposeCore()
         {
@@ -46,7 +45,52 @@ namespace xunit.runner.worker
 
     internal sealed class NamedPipeConnection : Connection
     {
-        internal NamedPipeConnection
+        private readonly NamedPipeServerStream _stream;
 
+        internal override Stream Stream => _stream;
+
+        internal NamedPipeConnection(string pipeName)
+        {
+            _stream = new NamedPipeServerStream(pipeName);
+        }
+
+        protected override void DisposeCore()
+        {
+            _stream.Close();
+        }
+
+        internal override void WaitForClientConnect()
+        {
+            _stream.WaitForConnection();
+        }
+
+        internal override void WaitForClientDone()
+        {
+            try
+            {
+                _stream.ReadByte();
+            }
+            catch
+            {
+                // If there is an error reading from the client then clearly they are done
+            }
+        }
+    }
+
+    internal sealed class TestConnection : Connection
+    {
+        private readonly MemoryStream _stream = new MemoryStream();
+
+        internal override Stream Stream => _stream;
+
+        internal override void WaitForClientConnect()
+        {
+
+        }
+
+        internal override void WaitForClientDone()
+        {
+
+        }
     }
 }
