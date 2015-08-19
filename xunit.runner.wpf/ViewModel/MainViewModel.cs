@@ -4,8 +4,6 @@ using System;
 using System.Windows;
 using GalaSoft.MvvmLight.CommandWpf;
 using Microsoft.Win32;
-using Xunit;
-using Xunit.Abstractions;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -193,14 +191,6 @@ namespace xunit.runner.wpf.ViewModel
             catch (Exception ex)
             {
                 MessageBox.Show(Application.Current.MainWindow, ex.ToString());
-            }
-        }
-
-        private class DiagnosticMessageVisitor : TestMessageVisitor
-        {
-            public override bool OnMessage(IMessageSinkMessage message)
-            {
-                return base.OnMessage(message);
             }
         }
 
