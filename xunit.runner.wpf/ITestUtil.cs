@@ -16,12 +16,12 @@ namespace xunit.runner.wpf
         /// <summary>
         /// Discover the list of test cases which are available in the specified assembly.
         /// </summary>
-        ITestDiscoverSession Discover(Dispatcher dispathcer, string assemblyPath, CancellationToken cancellationToken = default(CancellationToken));
+        ITestDiscoverSession Discover(string assemblyPath, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Begin a run of a unit test for the given assembly.
         /// </summary>
-        ITestRunSession Run(Dispatcher dispatcher, string assemblyPath, CancellationToken cancellationToken = default(CancellationToken));
+        ITestRunSession Run(string assemblyPath, CancellationToken cancellationToken = default(CancellationToken));
     }
 
     internal interface ITestSession

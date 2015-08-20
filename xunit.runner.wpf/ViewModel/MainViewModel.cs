@@ -38,7 +38,7 @@ namespace xunit.runner.wpf.ViewModel
             }
 
             CommandBindings = CreateCommandBindings();
-            this.testUtil = new xunit.runner.wpf.Impl.RemoteTestUtil();
+            this.testUtil = new xunit.runner.wpf.Impl.RemoteTestUtil(Dispatcher.CurrentDispatcher);
             this.MethodsCaption = "Methods (0)";
 
             TestCases = new FilteredCollectionView<TestCaseViewModel, SearchQuery>(
@@ -224,7 +224,7 @@ namespace xunit.runner.wpf.ViewModel
                 foreach (var assembly in assemblies)
                 {
                     var assemblyPath = assembly.AssemblyFileName;
-                    var session = this.testUtil.Discover(Dispatcher.CurrentDispatcher, assemblyPath, cancellationTokenSource.Token);
+                    var session = this.testUtil.Discover(assemblyPath, cancellationTokenSource.Token);
                     this.testSessionList.Add(session);
 
                     session.TestDiscovered += OnTestDiscovered;
@@ -336,7 +336,7 @@ namespace xunit.runner.wpf.ViewModel
             this.cancellationTokenSource = new CancellationTokenSource();
             foreach (var assemblyPath in TestCases.Select(x => x.AssemblyFileName).Distinct())
             {
-                var session = this.testUtil.Run(Dispatcher.CurrentDispatcher, assemblyPath, this.cancellationTokenSource.Token);
+                var session = this.testUtil.Run(assemblyPath, this.cancellationTokenSource.Token);
                 session.TestFinished += OnTestFinished;
                 session.SessionFinished += delegate { OnTestSessionFinished(session); };
                 this.testSessionList.Add(session);

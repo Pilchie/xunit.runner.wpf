@@ -76,7 +76,7 @@ namespace xunit.runner.wpf.Impl
 
         private sealed class BackgroundProducer<T> where T : class
         {
-            private const int MaxResultPerTick = 100;
+            private const int MaxResultPerTick = 1000;
 
             private readonly Connection _connection;
             private readonly ConcurrentQueue<T> _queue;

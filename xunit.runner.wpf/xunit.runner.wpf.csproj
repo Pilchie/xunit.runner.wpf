@@ -81,6 +81,7 @@
     <Compile Include="Converters\TestStateConverter.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="FilteredCollectionView.cs" />
+    <Compile Include="Impl\RemoteTestUtil.Connection.cs" />
     <Compile Include="Impl\RemoteTestUtil.DiscoverSession.cs" />
     <Compile Include="Impl\RemoteTestUtil.RunSession.cs" />
     <Compile Include="Impl\RemoteTestUtil.BackgroundRunner.cs" />

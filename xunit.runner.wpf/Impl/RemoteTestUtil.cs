@@ -16,56 +16,11 @@ namespace xunit.runner.wpf.Impl
 {
     internal sealed partial class RemoteTestUtil : ITestUtil
     {
-        private sealed class Connection : IDisposable
+        private readonly Dispatcher _dispatcher;
+
+        internal RemoteTestUtil(Dispatcher dispatcher)
         {
-            private NamedPipeClientStream _stream;
-            private Process _process;
-            private ClientReader _reader;
-
-            internal NamedPipeClientStream Stream => _stream;
-
-            internal ClientReader Reader => _reader;
-
-            internal Connection(NamedPipeClientStream stream, Process process)
-            {
-                _stream = stream;
-                _process = process;
-                _reader = new ClientReader(stream);
-            }
-
-            internal void Close()
-            {
-                if (_process != null)
-                {
-                    Debug.Assert(_stream != null);
-
-                    try
-                    {
-                        _stream.WriteAsync(new byte[] { 0 }, 0, 1);
-                    }
-                    catch
-                    {
-                        // Signal to server we are done with the connection.  Okay to fail because
-                        // it means the server isn't listening anymore.
-                    }
-
-                    _stream.Close();
-
-                    try
-                    {
-                        _process.Kill();
-                    }
-                    catch 
-                    {
-                        // Inherent race condition shutting down the process.
-                    }
-                }
-            }
-
-            void IDisposable.Dispose()
-            {
-                Close();
-            }
+            _dispatcher = dispatcher;
         }
 
         private static Connection StartWorkerProcess(string action, string argument)
@@ -90,28 +45,28 @@ namespace xunit.runner.wpf.Impl
             }
         }
 
-        private DiscoverSession Discover(Dispatcher dispatcher, string assemblyPath, CancellationToken cancellationToken)
+        private DiscoverSession Discover(string assemblyPath, CancellationToken cancellationToken)
         {
             var connection = StartWorkerProcess(Constants.ActionDiscover, assemblyPath);
-            return new DiscoverSession(connection, dispatcher, cancellationToken);
+            return new DiscoverSession(connection, _dispatcher, cancellationToken);
         }
 
-        private RunSession Run(Dispatcher dispatcher, string assemblyPath, CancellationToken cancellationToken)
+        private RunSession Run(string assemblyPath, CancellationToken cancellationToken)
         {
             var connection = StartWorkerProcess(Constants.ActionRun, assemblyPath);
-            return new RunSession(connection, dispatcher, cancellationToken);
+            return new RunSession(connection, _dispatcher, cancellationToken);
         }
 
         #region ITestUtil
 
-        ITestDiscoverSession ITestUtil.Discover(Dispatcher dispatcher, string assemblyPath, CancellationToken cancellationToken)
+        ITestDiscoverSession ITestUtil.Discover(string assemblyPath, CancellationToken cancellationToken)
         {
-            return Discover(dispatcher, assemblyPath, cancellationToken);
+            return Discover(assemblyPath, cancellationToken);
         }
 
-        ITestRunSession ITestUtil.Run(Dispatcher dispatcher, string assemblyPath, CancellationToken cancellationToken)
+        ITestRunSession ITestUtil.Run(string assemblyPath, CancellationToken cancellationToken)
         {
-            return Run(dispatcher, assemblyPath, cancellationToken);
+            return Run(assemblyPath, cancellationToken);
         }
 
         #endregion
