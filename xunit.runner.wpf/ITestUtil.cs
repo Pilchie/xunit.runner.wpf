@@ -16,12 +16,56 @@ namespace xunit.runner.wpf
         /// <summary>
         /// Discover the list of test cases which are available in the specified assembly.
         /// </summary>
-        List<TestCaseViewModel> Discover(string assemblyPath);
+        ITestDiscoverSession Discover(Dispatcher dispathcer, string assemblyPath, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Begin a run of a unit test for the given assembly.
         /// </summary>
         ITestRunSession Run(Dispatcher dispatcher, string assemblyPath, CancellationToken cancellationToken = default(CancellationToken));
+    }
+
+    internal interface ITestSession
+    {
+        /// <summary>
+        /// Task which will be resolved when the session is completed.
+        /// </summary>
+        Task Task { get; }
+    }
+
+    internal interface ITestRunSession : ITestSession
+    {
+        /// <summary>
+        /// Raised when an idividual test is finished running.
+        /// </summary>
+        event EventHandler<TestResultDataEventArgs> TestFinished;
+
+        /// <summary>
+        /// Raised when the session has finished executing all of the specified tests.
+        /// </summary>
+        event EventHandler SessionFinished;
+    }
+
+    internal interface ITestDiscoverSession : ITestSession
+    {
+        /// <summary>
+        /// Raised when an idividual test is finished running.
+        /// </summary>
+        event EventHandler<TestCaseDataEventArgs> TestDiscovered;
+
+        /// <summary>
+        /// Raised when the session has finished executing all of the specified tests.
+        /// </summary>
+        event EventHandler SessionFinished;
+    }
+
+    internal sealed class TestCaseDataEventArgs : EventArgs
+    {
+        internal readonly TestCaseData TestCaseData;
+
+        internal TestCaseDataEventArgs(TestCaseData data)
+        {
+            TestCaseData = data;
+        }
     }
 
     internal sealed class TestResultDataEventArgs : EventArgs
@@ -38,18 +82,4 @@ namespace xunit.runner.wpf
         }
     }
 
-    internal interface ITestRunSession
-    {
-        bool IsRunning { get; }
-
-        /// <summary>
-        /// Raised when an idividual test is finished running.
-        /// </summary>
-        event EventHandler<TestResultDataEventArgs> TestFinished;
-
-        /// <summary>
-        /// Raised when the session has finished executing all of the specified tests.
-        /// </summary>
-        event EventHandler SessionFinished;
-    }
 }

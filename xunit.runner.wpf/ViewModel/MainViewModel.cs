@@ -25,7 +25,7 @@ namespace xunit.runner.wpf.ViewModel
         private readonly ObservableCollection<TestCaseViewModel> allTestCases = new ObservableCollection<TestCaseViewModel>();
         private CancellationTokenSource filterCancellationTokenSource = new CancellationTokenSource();
 
-        private List<ITestRunSession> testRunSessionList = new List<ITestRunSession>();
+        private List<ITestSession> testSessionList = new List<ITestSession>();
         private CancellationTokenSource cancellationTokenSource;
         private bool isBusy;
         private SearchQuery searchQuery = new SearchQuery();
@@ -190,7 +190,7 @@ namespace xunit.runner.wpf.ViewModel
         public ObservableCollection<TestAssemblyViewModel> Assemblies { get; } = new ObservableCollection<TestAssemblyViewModel>();
         public FilteredCollectionView<TestCaseViewModel, SearchQuery> TestCases { get; }
 
-        private void OnExecuteOpen(object sender, ExecutedRoutedEventArgs e)
+        private async void OnExecuteOpen(object sender, ExecutedRoutedEventArgs e)
         {
             var fileDialog = new OpenFileDialog
             {
@@ -203,21 +203,40 @@ namespace xunit.runner.wpf.ViewModel
             }
 
             var fileName = fileDialog.FileName;
-            AddAssemblies(new[] { new AssemblyAndConfigFile(fileName, configFileName: null) });
+            await AddAssemblies(new[] { new AssemblyAndConfigFile(fileName, configFileName: null) });
         }
 
-        private void AddAssemblies(IEnumerable<AssemblyAndConfigFile> assemblies)
+        private async Task AddAssemblies(IEnumerable<AssemblyAndConfigFile> assemblies)
         {
+            Debug.Assert(this.cancellationTokenSource == null);
+            Debug.Assert(this.testSessionList.Count == 0);
+
+            if (!assemblies.Any())
+            {
+                return;
+            }
+
             var loadingDialog = new LoadingDialog { Owner = MainWindow.Instance };
             try
             {
+                this.cancellationTokenSource = new CancellationTokenSource();
+
                 foreach (var assembly in assemblies)
                 {
                     var assemblyPath = assembly.AssemblyFileName;
-                    var list = this.testUtil.Discover(assemblyPath);
-                    allTestCases.AddRange(list);
+                    var session = this.testUtil.Discover(Dispatcher.CurrentDispatcher, assemblyPath, cancellationTokenSource.Token);
+                    this.testSessionList.Add(session);
+
+                    session.TestDiscovered += OnTestDiscovered;
+                    session.SessionFinished += delegate { OnTestSessionFinished(session); };
+
                     Assemblies.Add(new TestAssemblyViewModel(assembly));
                 }
+
+                this.IsBusy = true;
+                this.RunCommand.RaiseCanExecuteChanged();
+                this.CancelCommand.RaiseCanExecuteChanged();
+                await Task.WhenAll(this.testSessionList.Select(x => x.Task));
             }
             catch (Exception ex)
             {
@@ -245,12 +264,12 @@ namespace xunit.runner.wpf.ViewModel
             Application.Current.Shutdown();
         }
 
-        private void OnExecuteWindowLoaded()
+        private async void OnExecuteWindowLoaded()
         {
             try
             {
                 IsBusy = true;
-                AddAssemblies(ParseCommandLine(Environment.GetCommandLineArgs().Skip(1)));
+                await AddAssemblies(ParseCommandLine(Environment.GetCommandLineArgs().Skip(1)));
             }
             finally
             {
@@ -304,7 +323,7 @@ namespace xunit.runner.wpf.ViewModel
         private void RunTests()
         {
             Debug.Assert(this.cancellationTokenSource == null);
-            Debug.Assert(this.testRunSessionList.Count == 0);
+            Debug.Assert(this.testSessionList.Count == 0);
 
             foreach (var tc in TestCases)
             {
@@ -319,8 +338,8 @@ namespace xunit.runner.wpf.ViewModel
             {
                 var session = this.testUtil.Run(Dispatcher.CurrentDispatcher, assemblyPath, this.cancellationTokenSource.Token);
                 session.TestFinished += OnTestFinished;
-                session.SessionFinished += delegate { OnTestRunSessionFinished(session); };
-                this.testRunSessionList.Add(session);
+                session.SessionFinished += delegate { OnTestSessionFinished(session); };
+                this.testSessionList.Add(session);
             }
 
             this.IsBusy = true;
@@ -328,18 +347,26 @@ namespace xunit.runner.wpf.ViewModel
             this.CancelCommand.RaiseCanExecuteChanged();
         }
 
-        private void OnTestRunSessionFinished(ITestRunSession session)
+        private void OnTestSessionFinished(ITestSession session)
         {
-            Debug.Assert(this.testRunSessionList.Contains(session));
-            this.testRunSessionList.Remove(session);
+            Debug.Assert(this.testSessionList.Contains(session));
+            Debug.Assert(this.cancellationTokenSource != null);
 
-            if (this.testRunSessionList.Count == 0)
+            this.testSessionList.Remove(session);
+
+            if (this.testSessionList.Count == 0)
             {
                 this.cancellationTokenSource = null;
                 this.IsBusy = false;
                 this.RunCommand.RaiseCanExecuteChanged();
                 this.CancelCommand.RaiseCanExecuteChanged();
             }
+        }
+
+        private void OnTestDiscovered(object sender, TestCaseDataEventArgs e)
+        {
+            var t = e.TestCaseData;
+            allTestCases.Add(new TestCaseViewModel(t.SerializedForm, t.DisplayName, t.AssemblyPath));
         }
 
         private void OnTestFinished(object sender, TestResultDataEventArgs e)

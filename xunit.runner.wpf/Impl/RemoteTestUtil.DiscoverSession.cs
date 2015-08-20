@@ -16,20 +16,21 @@ namespace xunit.runner.wpf.Impl
 {
     internal partial class RemoteTestUtil 
     {
-        private sealed class RunSession : ITestRunSession
+        private sealed class DiscoverSession : ITestDiscoverSession
         {
             private readonly Task _task;
-            private event EventHandler<TestResultDataEventArgs> _testFinished;
+            private event EventHandler<TestCaseDataEventArgs> _testDiscovered;
             private event EventHandler _sessionFinished;
 
-            internal RunSession(Connection connection, Dispatcher dispatcher, CancellationToken cancellationToken)
+            internal DiscoverSession(Connection connection, Dispatcher dispatcher, CancellationToken cancellationToken)
             {
-                _task = BackgroundProducer<TestResultData>.Go(connection, dispatcher, r => r.ReadTestResultData(), OnFinished, cancellationToken);
+                _task = BackgroundProducer<TestCaseData>.Go(connection, dispatcher, r => r.ReadTestCaseData(), OnDiscovered, cancellationToken);
             }
 
-            private void OnFinished(List<TestResultData> list)
+            private void OnDiscovered(List<TestCaseData> list)
             {
                 Debug.Assert(!_task.IsCompleted);
+
                 if (list == null)
                 {
                     _sessionFinished?.Invoke(this, EventArgs.Empty);
@@ -38,7 +39,7 @@ namespace xunit.runner.wpf.Impl
 
                 foreach (var cur in list)
                 {
-                    _testFinished?.Invoke(this, new wpf.TestResultDataEventArgs(cur));
+                    _testDiscovered?.Invoke(this, new TestCaseDataEventArgs(cur));
                 }
             }
 
@@ -46,13 +47,13 @@ namespace xunit.runner.wpf.Impl
 
             Task ITestSession.Task => _task;
 
-            event EventHandler<TestResultDataEventArgs> ITestRunSession.TestFinished
+            event EventHandler<TestCaseDataEventArgs> ITestDiscoverSession.TestDiscovered
             {
-                add { _testFinished += value; }
-                remove { _testFinished -= value; }
+                add { _testDiscovered += value; }
+                remove { _testDiscovered -= value; }
             }
 
-            event EventHandler ITestRunSession.SessionFinished
+            event EventHandler ITestDiscoverSession.SessionFinished
             {
                 add { _sessionFinished += value; }
                 remove { _sessionFinished -= value; }

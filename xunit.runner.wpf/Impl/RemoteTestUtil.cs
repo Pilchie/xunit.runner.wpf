@@ -33,7 +33,7 @@ namespace xunit.runner.wpf.Impl
                 _reader = new ClientReader(stream);
             }
 
-            void IDisposable.Dispose()
+            internal void Close()
             {
                 if (_process != null)
                 {
@@ -41,7 +41,7 @@ namespace xunit.runner.wpf.Impl
 
                     try
                     {
-                        _stream.WriteByte(0);
+                        _stream.WriteAsync(new byte[] { 0 }, 0, 1);
                     }
                     catch
                     {
@@ -60,6 +60,11 @@ namespace xunit.runner.wpf.Impl
                         // Inherent race condition shutting down the process.
                     }
                 }
+            }
+
+            void IDisposable.Dispose()
+            {
+                Close();
             }
         }
 
@@ -85,61 +90,23 @@ namespace xunit.runner.wpf.Impl
             }
         }
 
-        private List<TestCaseViewModel> Discover(string assemblyPath)
+        private DiscoverSession Discover(Dispatcher dispatcher, string assemblyPath, CancellationToken cancellationToken)
         {
-            var list = DiscoverCore(assemblyPath);
-            return list
-                .Select(x => new TestCaseViewModel(x.SerializedForm, x.DisplayName, x.AssemblyPath))
-                .ToList();
-        }
-
-        private List<TestCaseData> DiscoverCore(string assemblyPath)
-        {
-            var list = new List<TestCaseData>();
-
-            using (var connection = StartWorkerProcess(Constants.ActionDiscover, assemblyPath))
-            {
-                var reader = connection.Reader;
-                try
-                {
-                    while (true)
-                    {
-                        var kind = reader.ReadKind();
-                        if (kind != TestDataKind.Value)
-                        {
-                            break;
-                        }
-
-                        list.Add(reader.ReadTestCaseData());
-                    }
-                }
-                catch 
-                {
-                    // TODO: Happens when the connection unexpectedly closes on us.  Need to surface this
-                    // to the user.
-                }
-            }
-
-            return list;
+            var connection = StartWorkerProcess(Constants.ActionDiscover, assemblyPath);
+            return new DiscoverSession(connection, dispatcher, cancellationToken);
         }
 
         private RunSession Run(Dispatcher dispatcher, string assemblyPath, CancellationToken cancellationToken)
         {
             var connection = StartWorkerProcess(Constants.ActionRun, assemblyPath);
-            var queue = new ConcurrentQueue<TestResultData>();
-            var backgroundRunner = new BackgroundRunner(queue, connection.Reader, cancellationToken);
-            Task.Run(backgroundRunner.GoOnBackground);
-
-            cancellationToken.Register(() => connection.Stream.Close());
-
-            return new RunSession(connection, dispatcher, queue);
+            return new RunSession(connection, dispatcher, cancellationToken);
         }
 
         #region ITestUtil
 
-        List<TestCaseViewModel> ITestUtil.Discover(string assemblyPath)
+        ITestDiscoverSession ITestUtil.Discover(Dispatcher dispatcher, string assemblyPath, CancellationToken cancellationToken)
         {
-            return Discover(assemblyPath);
+            return Discover(dispatcher, assemblyPath, cancellationToken);
         }
 
         ITestRunSession ITestUtil.Run(Dispatcher dispatcher, string assemblyPath, CancellationToken cancellationToken)
