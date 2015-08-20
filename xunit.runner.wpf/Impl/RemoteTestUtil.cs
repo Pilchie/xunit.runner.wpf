@@ -20,13 +20,17 @@ namespace xunit.runner.wpf.Impl
         {
             private NamedPipeClientStream _stream;
             private Process _process;
+            private ClientReader _reader;
 
             internal NamedPipeClientStream Stream => _stream;
+
+            internal ClientReader Reader => _reader;
 
             internal Connection(NamedPipeClientStream stream, Process process)
             {
                 _stream = stream;
                 _process = process;
+                _reader = new ClientReader(stream);
             }
 
             void IDisposable.Dispose()
@@ -94,19 +98,25 @@ namespace xunit.runner.wpf.Impl
             var list = new List<TestCaseData>();
 
             using (var connection = StartWorkerProcess(Constants.ActionDiscover, assemblyPath))
-            using (var reader = new BinaryReader(connection.Stream, Constants.Encoding, leaveOpen: true))
             {
+                var reader = connection.Reader;
                 try
                 {
-                    while (connection.Stream.IsConnected)
+                    while (true)
                     {
-                        var testCaseData = TestCaseData.ReadFrom(reader);
-                        list.Add(testCaseData);
+                        var kind = reader.ReadKind();
+                        if (kind != TestDataKind.Value)
+                        {
+                            break;
+                        }
+
+                        list.Add(reader.ReadTestCaseData());
                     }
                 }
-                catch
+                catch 
                 {
-                    // Hacky way of catching end of stream
+                    // TODO: Happens when the connection unexpectedly closes on us.  Need to surface this
+                    // to the user.
                 }
             }
 
@@ -117,7 +127,7 @@ namespace xunit.runner.wpf.Impl
         {
             var connection = StartWorkerProcess(Constants.ActionRun, assemblyPath);
             var queue = new ConcurrentQueue<TestResultData>();
-            var backgroundRunner = new BackgroundRunner(queue, new BinaryReader(connection.Stream, Constants.Encoding, leaveOpen: true), cancellationToken);
+            var backgroundRunner = new BackgroundRunner(queue, connection.Reader, cancellationToken);
             Task.Run(backgroundRunner.GoOnBackground);
 
             cancellationToken.Register(() => connection.Stream.Close());

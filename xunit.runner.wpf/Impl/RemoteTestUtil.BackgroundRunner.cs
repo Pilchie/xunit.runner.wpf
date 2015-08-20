@@ -18,10 +18,10 @@ namespace xunit.runner.wpf.Impl
         private sealed class BackgroundRunner
         {
             private readonly ConcurrentQueue<TestResultData> _resultQueue;
-            private readonly BinaryReader _reader;
+            private readonly ClientReader _reader;
             private readonly CancellationToken _cancellationToken;
 
-            internal BackgroundRunner(ConcurrentQueue<TestResultData> resultQueue, BinaryReader reader, CancellationToken cancellationToken)
+            internal BackgroundRunner(ConcurrentQueue<TestResultData> resultQueue, ClientReader reader, CancellationToken cancellationToken)
             {
                 _resultQueue = resultQueue;
                 _reader = reader;
@@ -37,18 +37,23 @@ namespace xunit.runner.wpf.Impl
             {
                 while (!_cancellationToken.IsCancellationRequested)
                 {
-                    TestResultData result;
                     try
                     {
-                        result = TestResultData.ReadFrom(_reader);
+                        var kind = _reader.ReadKind();
+                        if (kind != TestDataKind.Value)
+                        {
+                            break;
+                        }
+
+                        var result = _reader.ReadTestResultData();
+                        _resultQueue.Enqueue(result);
                     }
                     catch
                     {
-                        // Hacky way of detecting the stream being closed
+                        // TODO: Happens when the connection unexpectedly closes on us.  Need to surface this
+                        // to the user.
                         break;
                     }
-
-                    _resultQueue.Enqueue(result);
                 }
 
                 // Signal we are done 

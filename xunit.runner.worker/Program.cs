@@ -47,6 +47,7 @@ namespace xunit.runner.worker
                             return ExitError;
                     }
 
+                    connection.WaitForClientDone();
                 }
             }
             catch (Exception ex)

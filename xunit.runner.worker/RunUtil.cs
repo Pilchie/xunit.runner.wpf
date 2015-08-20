@@ -14,10 +14,9 @@ namespace xunit.runner.worker
     {
         private class TestRunVisitor : TestMessageVisitor<ITestAssemblyFinished>
         {
-            private readonly BinaryWriter _writer;
-            private bool _continue = true;
+            private readonly ClientWriter _writer;
 
-            public TestRunVisitor(BinaryWriter writer)
+            public TestRunVisitor(ClientWriter writer)
             {
                 _writer = writer;
             }
@@ -27,16 +26,8 @@ namespace xunit.runner.worker
                 Console.WriteLine($"{state} - {displayName}");
                 var result = new TestResultData(displayName, state, output);
 
-                try
-                {
-                    result.WriteTo(_writer);
-                }
-                catch (Exception ex)
-                {
-                    // This happens during a rude shutdown from the client.
-                    Console.Error.WriteLine(ex.Message);
-                    _continue = false;
-                }
+                _writer.Write(TestDataKind.Value);
+                _writer.Write(result);
             }
 
             protected override bool Visit(ITestFailed testFailed)
@@ -56,19 +47,19 @@ namespace xunit.runner.worker
 
                 Process(testFailed.TestCase.DisplayName, TestState.Failed, builder.ToString());
 
-                return _continue;
+                return _writer.IsConnected;
             }
 
             protected override bool Visit(ITestPassed testPassed)
             {
                 Process(testPassed.TestCase.DisplayName, TestState.Passed);
-                return _continue;
+                return _writer.IsConnected;
             }
 
             protected override bool Visit(ITestSkipped testSkipped)
             {
                 Process(testSkipped.TestCase.DisplayName, TestState.Skipped);
-                return _continue;
+                return _writer.IsConnected;
             }
         }
 
@@ -80,11 +71,12 @@ namespace xunit.runner.worker
                 useAppDomain: true,
                 shadowCopy: false,
                 diagnosticMessageSink: new MessageVisitor()))
-            using (var writer = new BinaryWriter(stream, Constants.Encoding, leaveOpen: true))
+            using (var writer = new ClientWriter(stream))
             using (var testRunVisitor = new TestRunVisitor(writer))
             {
                 xunit.RunAll(testRunVisitor, TestFrameworkOptions.ForDiscovery(), TestFrameworkOptions.ForExecution());
                 testRunVisitor.Finished.WaitOne();
+                writer.Write(TestDataKind.EndOfData);
             }
         }
     }

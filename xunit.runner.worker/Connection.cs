@@ -70,9 +70,10 @@ namespace xunit.runner.worker
             {
                 _stream.ReadByte();
             }
-            catch
+            catch (Exception ex)
             {
                 // If there is an error reading from the client then clearly they are done
+                Console.WriteLine($"Error reading client done byte {ex.Message}");
             }
         }
     }

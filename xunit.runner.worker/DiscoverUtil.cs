@@ -15,10 +15,9 @@ namespace xunit.runner.worker
         private sealed class Impl : TestMessageVisitor<IDiscoveryCompleteMessage>
         {
             private readonly ITestFrameworkDiscoverer _discoverer;
-            private readonly BinaryWriter _writer;
-            private bool _continue = true;
+            private readonly ClientWriter _writer;
 
-            internal Impl(ITestFrameworkDiscoverer discoverer, BinaryWriter writer)
+            internal Impl(ITestFrameworkDiscoverer discoverer, ClientWriter writer)
             {
                 _discoverer = discoverer;
                 _writer = writer;
@@ -33,19 +32,10 @@ namespace xunit.runner.worker
                     testCaseDiscovered.TestAssembly.Assembly.AssemblyPath);
 
                 Console.WriteLine(testCase.DisplayName);
+                _writer.Write(TestDataKind.Value);
+                _writer.Write(testCaseData);
 
-                try
-                {
-                    testCaseData.WriteTo(_writer);
-                }
-                catch (Exception ex)
-                {
-                    // This happens during a rude shutdown from the client.
-                    Console.Error.WriteLine(ex.Message);
-                    _continue = false;
-                }
-
-                return _continue;
+                return _writer.IsConnected;
             }
         }
 
@@ -57,11 +47,12 @@ namespace xunit.runner.worker
                 assemblyFileName: fileName,
                 diagnosticMessageSink: new MessageVisitor(),
                 shadowCopy: false))
-            using (var writer = new BinaryWriter(stream, Constants.Encoding, leaveOpen: true))
+            using (var writer = new ClientWriter(stream))
             using (var impl = new Impl(xunit, writer))
             {
                 xunit.Find(includeSourceInformation: false, messageSink: impl, discoveryOptions: TestFrameworkOptions.ForDiscovery());
                 impl.Finished.WaitOne();
+                writer.Write(TestDataKind.EndOfData);
             }
         }
     }
