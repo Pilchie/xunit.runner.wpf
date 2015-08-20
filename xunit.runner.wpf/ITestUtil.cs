@@ -21,7 +21,7 @@ namespace xunit.runner.wpf
         /// <summary>
         /// Begin a run of a unit test for the given assembly.
         /// </summary>
-        ITestRunSession Run(string assemblyPath, CancellationToken cancellationToken = default(CancellationToken));
+        ITestRunSession RunAll(string assemblyPath, CancellationToken cancellationToken = default(CancellationToken));
     }
 
     internal interface ITestSession

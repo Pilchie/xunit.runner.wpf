@@ -9,7 +9,7 @@ namespace xunit.runner.data
     public static class Constants
     {
         public const string ActionDiscover = "discover";
-        public const string ActionRun = "run";
+        public const string ActionRunAll = "runall";
         public static readonly Encoding Encoding = Encoding.UTF8;
     }
 }

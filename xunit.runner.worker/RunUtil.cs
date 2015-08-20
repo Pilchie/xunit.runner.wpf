@@ -63,12 +63,12 @@ namespace xunit.runner.worker
             }
         }
 
-        internal static void Go(string assemblyPath, Stream stream)
+        internal static void RunAll(string assemblyPath, Stream stream)
         {
             using (AssemblyHelper.SubscribeResolve())
             using (var xunit = new XunitFrontController(
                 assemblyFileName: assemblyPath,
-                useAppDomain: true,
+                useAppDomain: false,
                 shadowCopy: false,
                 diagnosticMessageSink: new MessageVisitor()))
             using (var writer = new ClientWriter(stream))

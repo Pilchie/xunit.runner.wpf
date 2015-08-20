@@ -39,7 +39,7 @@ namespace xunit.runner.worker
                         case Constants.ActionDiscover:
                             Discover(stream, argument);
                             break;
-                        case Constants.ActionRun:
+                        case Constants.ActionRunAll:
                             Run(stream, argument);
                             break;
                         default:
@@ -81,7 +81,7 @@ namespace xunit.runner.worker
         private static void Run(Stream stream, string assemblyPath)
         {
             Console.WriteLine($"run started: {assemblyPath}");
-            RunUtil.Go(assemblyPath, stream);
+            RunUtil.RunAll(assemblyPath, stream);
             Console.WriteLine("run ended");
         }
 

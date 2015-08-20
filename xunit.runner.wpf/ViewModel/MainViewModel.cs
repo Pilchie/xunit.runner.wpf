@@ -336,7 +336,7 @@ namespace xunit.runner.wpf.ViewModel
             this.cancellationTokenSource = new CancellationTokenSource();
             foreach (var assemblyPath in TestCases.Select(x => x.AssemblyFileName).Distinct())
             {
-                var session = this.testUtil.Run(assemblyPath, this.cancellationTokenSource.Token);
+                var session = this.testUtil.RunAll(assemblyPath, this.cancellationTokenSource.Token);
                 session.TestFinished += OnTestFinished;
                 session.SessionFinished += delegate { OnTestSessionFinished(session); };
                 this.testSessionList.Add(session);

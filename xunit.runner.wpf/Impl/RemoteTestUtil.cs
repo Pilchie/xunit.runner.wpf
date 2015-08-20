@@ -51,9 +51,9 @@ namespace xunit.runner.wpf.Impl
             return new DiscoverSession(connection, _dispatcher, cancellationToken);
         }
 
-        private RunSession Run(string assemblyPath, CancellationToken cancellationToken)
+        private RunSession RunAll(string assemblyPath, CancellationToken cancellationToken)
         {
-            var connection = StartWorkerProcess(Constants.ActionRun, assemblyPath);
+            var connection = StartWorkerProcess(Constants.ActionRunAll, assemblyPath);
             return new RunSession(connection, _dispatcher, cancellationToken);
         }
 
@@ -64,9 +64,9 @@ namespace xunit.runner.wpf.Impl
             return Discover(assemblyPath, cancellationToken);
         }
 
-        ITestRunSession ITestUtil.Run(string assemblyPath, CancellationToken cancellationToken)
+        ITestRunSession ITestUtil.RunAll(string assemblyPath, CancellationToken cancellationToken)
         {
-            return Run(assemblyPath, cancellationToken);
+            return RunAll(assemblyPath, cancellationToken);
         }
 
         #endregion
