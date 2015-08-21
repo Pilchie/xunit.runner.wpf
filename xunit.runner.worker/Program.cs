@@ -97,7 +97,10 @@ namespace xunit.runner.worker
 
         private static void Usage()
         {
-            Console.Error.WriteLine("Need at least two arguments");
+            Console.WriteLine("xunit.runner.worker [pipe name] [action] [assembly path]");
+            Console.WriteLine("\tpipe name:     Name of the pipe this worker should communicate on");
+            Console.WriteLine("\taction:        Action performed by the worker (run or discover tests");
+            Console.WriteLine("\assembly path:  Path of assembly to perform the action against");
         }
     }
 }

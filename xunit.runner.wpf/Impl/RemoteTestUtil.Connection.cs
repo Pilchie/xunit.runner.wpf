@@ -33,7 +33,7 @@ namespace xunit.runner.wpf.Impl
                 _reader = new ClientReader(stream);
             }
 
-            internal void Close()
+            internal void Dispose()
             {
                 if (_process != null)
                 {
@@ -64,7 +64,7 @@ namespace xunit.runner.wpf.Impl
 
             void IDisposable.Dispose()
             {
-                Close();
+                Dispose();
             }
         }
     }

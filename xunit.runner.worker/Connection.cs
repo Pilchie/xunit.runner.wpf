@@ -22,7 +22,7 @@ namespace xunit.runner.worker
 
         }
 
-        private void Dispose()
+        internal void Dispose()
         {
             if (_closed)
             {

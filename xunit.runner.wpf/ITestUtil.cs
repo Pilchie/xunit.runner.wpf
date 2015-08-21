@@ -33,7 +33,7 @@ namespace xunit.runner.wpf
     internal interface ITestSession
     {
         /// <summary>
-        /// Task which will be resolved when the session is completed.
+        /// Task which will be completed when the session is finished.
         /// </summary>
         Task Task { get; }
     }
@@ -41,7 +41,7 @@ namespace xunit.runner.wpf
     internal interface ITestRunSession : ITestSession
     {
         /// <summary>
-        /// Raised when an idividual test is finished running.
+        /// Raised when an individual test is finished running.
         /// </summary>
         event EventHandler<TestResultDataEventArgs> TestFinished;
 
@@ -54,7 +54,7 @@ namespace xunit.runner.wpf
     internal interface ITestDiscoverSession : ITestSession
     {
         /// <summary>
-        /// Raised when an idividual test is finished running.
+        /// Raised when an individual test is finished running.
         /// </summary>
         event EventHandler<TestCaseDataEventArgs> TestDiscovered;
 

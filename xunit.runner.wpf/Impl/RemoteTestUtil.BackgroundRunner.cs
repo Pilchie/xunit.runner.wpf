@@ -170,7 +170,7 @@ namespace xunit.runner.wpf.Impl
                     {
                         _callback(null);
                         _timer.Stop();
-                        _connection.Close();
+                        _connection.Dispose();
                     }
                     finally
                     {

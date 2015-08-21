@@ -235,16 +235,16 @@ namespace xunit.runner.wpf.ViewModel
                 }
 
                 this.IsBusy = true;
-                this.RunCommand.RaiseCanExecuteChanged();
-                this.CancelCommand.RaiseCanExecuteChanged();
                 await Task.WhenAll(this.testSessionList.Select(x => x.Task));
             }
             catch (Exception ex)
             {
                 MessageBox.Show(Application.Current.MainWindow, ex.ToString());
+                this.IsBusy = false;
             }
             finally
             {
+                Debug.Assert(!IsBusy);
                 loadingDialog.Close();
             }
         }
@@ -331,8 +331,7 @@ namespace xunit.runner.wpf.ViewModel
                 tc.State = TestState.NotRun;
             }
 
-            // TODO: Need a way to filter based on traits, selected test cases, etc ...  For now we just run
-            // everything. 
+            // TODO: Need a way to filter based on traits
 
             var runAll = TestCases.Count == this.allTestCases.Count;
 
@@ -359,8 +358,6 @@ namespace xunit.runner.wpf.ViewModel
             }
 
             this.IsBusy = true;
-            this.RunCommand.RaiseCanExecuteChanged();
-            this.CancelCommand.RaiseCanExecuteChanged();
         }
 
         private void OnTestSessionFinished(ITestSession session)
@@ -374,8 +371,6 @@ namespace xunit.runner.wpf.ViewModel
             {
                 this.cancellationTokenSource = null;
                 this.IsBusy = false;
-                this.RunCommand.RaiseCanExecuteChanged();
-                this.CancelCommand.RaiseCanExecuteChanged();
             }
         }
 
