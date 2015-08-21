@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
@@ -16,6 +17,43 @@ namespace xunit.runner.wpf.Impl
 {
     internal partial class RemoteTestUtil 
     {
+        private sealed class BackgroundWriter<T>
+        {
+            private readonly ClientWriter _writer;
+            private readonly ImmutableArray<T> _data;
+            private readonly Action<ClientWriter, T> _writeValue;
+            private readonly CancellationToken _cancellationToken;
+
+            internal BackgroundWriter(ClientWriter writer, ImmutableArray<T> data, Action<ClientWriter, T> writeValue, CancellationToken cancellationToken)
+            {
+                _writer = writer;
+                _writeValue = writeValue;
+                _data = data;
+                _cancellationToken = cancellationToken;
+            }
+
+            internal Task WriteAsync()
+            {
+                return Task.Run(() => GoOnBackground(), _cancellationToken);
+            }
+
+            private void GoOnBackground()
+            {
+                foreach (var item in _data)
+                {
+                    if (_cancellationToken.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
+                    _writer.Write(TestDataKind.Value);
+                    _writeValue(_writer, item);
+                }
+
+                _writer.Write(TestDataKind.EndOfData);
+            }
+        }
+
         private sealed class BackgroundReader<T> where T : class
         {
             private readonly ConcurrentQueue<T> _queue;
@@ -25,7 +63,7 @@ namespace xunit.runner.wpf.Impl
 
             internal ClientReader Reader => _reader;
 
-            private BackgroundReader(ConcurrentQueue<T> queue, ClientReader reader, Func<ClientReader, T> readValue, CancellationToken cancellationToken)
+            internal BackgroundReader(ConcurrentQueue<T> queue, ClientReader reader, Func<ClientReader, T> readValue, CancellationToken cancellationToken)
             {
                 _queue = queue;
                 _reader = reader;
@@ -33,10 +71,9 @@ namespace xunit.runner.wpf.Impl
                 _cancellationToken = cancellationToken;
             }
 
-            internal static void Go(ConcurrentQueue<T> queue, ClientReader reader, Func<ClientReader, T> readValue, CancellationToken cancellationToken)
+            internal Task ReadAsync()
             {
-                var impl = new BackgroundReader<T>(queue, reader, readValue, cancellationToken);
-                Task.Run(impl.GoOnBackground);
+                return Task.Run(() => GoOnBackground(), _cancellationToken);
             }
 
             /// <summary>
@@ -44,7 +81,7 @@ namespace xunit.runner.wpf.Impl
             /// named pipe client stream.
             /// </summary>
             /// <returns></returns>
-            internal Task GoOnBackground()
+            private void GoOnBackground()
             {
                 while (!_cancellationToken.IsCancellationRequested)
                 {
@@ -69,8 +106,6 @@ namespace xunit.runner.wpf.Impl
 
                 // Signal we are done 
                 _queue.Enqueue(null);
-
-                return Task.FromResult(true);
             }
         }
 
@@ -87,17 +122,16 @@ namespace xunit.runner.wpf.Impl
 
             internal Task Task => _taskCompletionSource.Task;
 
-            private BackgroundProducer(
+            internal BackgroundProducer(
                 Connection connection, 
                 Dispatcher dispatcher, 
-                Func<ClientReader, T> readValue,
+                ConcurrentQueue<T> queue,
                 Action<List<T>> callback,
                 int maxResultPerTick = MaxResultPerTick,
-                TimeSpan? interval = null,
-                CancellationToken cancellationToken = default(CancellationToken))
+                TimeSpan? interval = null)
             {
                 _connection = connection;
-                _queue = new ConcurrentQueue<T>();
+                _queue = queue;
                 _maxPerTick = maxResultPerTick;
                 _callback = callback;
                 _timer = new DispatcherTimer(
@@ -106,19 +140,6 @@ namespace xunit.runner.wpf.Impl
                     OnTimerTick, 
                     dispatcher);
                 _taskCompletionSource = new TaskCompletionSource<bool>();
-
-                BackgroundReader<T>.Go(_queue, connection.Reader, readValue, cancellationToken);
-            }
-
-            internal static Task Go(
-                Connection connection,
-                Dispatcher dispatcher,
-                Func<ClientReader, T> readValue,
-                Action<List<T>> callback,
-                CancellationToken cancellationToken = default(CancellationToken))
-            {
-                var producer = new BackgroundProducer<T>(connection, dispatcher, readValue, callback, cancellationToken: cancellationToken);
-                return producer.Task;
             }
 
             private void OnTimerTick(object sender, EventArgs e)

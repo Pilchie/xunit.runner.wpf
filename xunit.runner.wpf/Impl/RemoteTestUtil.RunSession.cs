@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
@@ -22,12 +23,47 @@ namespace xunit.runner.wpf.Impl
             private event EventHandler<TestResultDataEventArgs> _testFinished;
             private event EventHandler _sessionFinished;
 
-            internal RunSession(Connection connection, Dispatcher dispatcher, CancellationToken cancellationToken)
+            internal RunSession(Connection connection, Dispatcher dispatcher, ImmutableArray<string> testCaseDisplayNames, CancellationToken cancellationToken)
             {
-                _task = BackgroundProducer<TestResultData>.Go(connection, dispatcher, r => r.ReadTestResultData(), OnFinished, cancellationToken);
+                var queue = CreateQueue(connection, testCaseDisplayNames, cancellationToken);
+                var backgroundProducer = new BackgroundProducer<TestResultData>(connection, dispatcher, queue, OnDataProduced);
+                _task = backgroundProducer.Task;
             }
 
-            private void OnFinished(List<TestResultData> list)
+            /// <summary>
+            /// Create the <see cref="ConcurrentQueue{T}"/> which will be populated with the <see cref="TestResultData"/>
+            /// as it arrives from the worker. 
+            /// </summary>
+            private static ConcurrentQueue<TestResultData> CreateQueue(Connection connection, ImmutableArray<string> testCaseDisplayNames, CancellationToken cancellationToken)
+            {
+                var queue = new ConcurrentQueue<TestResultData>();
+                var unused = CreateQueueCore(queue, connection, testCaseDisplayNames, cancellationToken);
+                return queue;
+            }
+
+            private static async Task CreateQueueCore(ConcurrentQueue<TestResultData> queue, Connection connection, ImmutableArray<string> testCaseDisplayNames, CancellationToken cancellationToken)
+            {
+                try
+                {
+                    if (!testCaseDisplayNames.IsDefaultOrEmpty)
+                    {
+                        var backgroundWriter = new BackgroundWriter<string>(new ClientWriter(connection.Stream), testCaseDisplayNames, (w, s) => w.Write(s), cancellationToken);
+                        await backgroundWriter.WriteAsync();
+                    }
+
+                    var backgroundReader = new BackgroundReader<TestResultData>(queue, new ClientReader(connection.Stream), r => r.ReadTestResultData(), cancellationToken);
+                    await backgroundReader.ReadAsync();
+                }
+                catch (Exception ex)
+                {
+                    Debug.Fail(ex.Message);
+
+                    // Signal data completed
+                    queue.Enqueue(null);
+                }
+            }
+
+            private void OnDataProduced(List<TestResultData> list)
             {
                 Debug.Assert(!_task.IsCompleted);
                 if (list == null)

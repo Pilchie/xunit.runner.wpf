@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
@@ -26,7 +27,7 @@ namespace xunit.runner.wpf
         /// <summary>
         /// Begin a run of specific unit tests for the given assembly.
         /// </summary>
-        ITestRunSession RunSpecific(string assemblyPath, IEnumerable<string> testCaseDisplayNames, CancellationToken cancellationToken = default(CancellationToken));
+        ITestRunSession RunSpecific(string assemblyPath, ImmutableArray<string> testCaseDisplayNames, CancellationToken cancellationToken = default(CancellationToken));
     }
 
     internal interface ITestSession

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
@@ -54,27 +55,13 @@ namespace xunit.runner.wpf.Impl
         private RunSession RunAll(string assemblyPath, CancellationToken cancellationToken)
         {
             var connection = StartWorkerProcess(Constants.ActionRunAll, assemblyPath);
-            return new RunSession(connection, _dispatcher, cancellationToken);
+            return new RunSession(connection, _dispatcher, ImmutableArray<string>.Empty, cancellationToken);
         }
 
-        private RunSession RunSpecific(string assemblyPath, IEnumerable<string> testCaseDisplayNames, CancellationToken cancellationToken)
+        private RunSession RunSpecific(string assemblyPath, ImmutableArray<string> testCaseDisplayNames, CancellationToken cancellationToken)
         {
             var connection = StartWorkerProcess(Constants.ActionRunSpecific, assemblyPath);
-
-            // First send along all of the test cases to run
-            using (var writer = new ClientWriter(connection.Stream))
-            {
-                foreach (var cur in testCaseDisplayNames)
-                {
-                    writer.Write(TestDataKind.Value);
-                    writer.Write(cur);
-                }
-
-                writer.Write(TestDataKind.EndOfData);
-            }
-
-            // Now wait for the results as we normally would
-            return new RunSession(connection, _dispatcher, cancellationToken);
+            return new RunSession(connection, _dispatcher, testCaseDisplayNames, cancellationToken);
         }
 
         #region ITestUtil
@@ -89,7 +76,7 @@ namespace xunit.runner.wpf.Impl
             return RunAll(assemblyPath, cancellationToken);
         }
 
-        ITestRunSession ITestUtil.RunSpecific(string assemblyPath, IEnumerable<string> testCaseDisplayNames, CancellationToken cancellationToken)
+        ITestRunSession ITestUtil.RunSpecific(string assemblyPath, ImmutableArray<string> testCaseDisplayNames, CancellationToken cancellationToken)
         {
             return RunSpecific(assemblyPath, testCaseDisplayNames, cancellationToken);
         }

@@ -24,7 +24,12 @@ namespace xunit.runner.wpf.Impl
 
             internal DiscoverSession(Connection connection, Dispatcher dispatcher, CancellationToken cancellationToken)
             {
-                _task = BackgroundProducer<TestCaseData>.Go(connection, dispatcher, r => r.ReadTestCaseData(), OnDiscovered, cancellationToken);
+                var queue = new ConcurrentQueue<TestCaseData>();
+                var backgroundReader = new BackgroundReader<TestCaseData>(queue, new ClientReader(connection.Stream), r => r.ReadTestCaseData(), cancellationToken);
+                backgroundReader.ReadAsync();
+
+                var backgroundProducer = new BackgroundProducer<TestCaseData>(connection, dispatcher, queue, OnDiscovered);
+                _task = backgroundProducer.Task;
             }
 
             private void OnDiscovered(List<TestCaseData> list)

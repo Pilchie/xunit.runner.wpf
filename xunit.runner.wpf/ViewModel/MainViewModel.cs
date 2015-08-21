@@ -5,6 +5,7 @@ using System.Windows;
 using GalaSoft.MvvmLight.CommandWpf;
 using Microsoft.Win32;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Collections.Specialized;
@@ -348,7 +349,7 @@ namespace xunit.runner.wpf.ViewModel
                     var testCaseDisplayNames = TestCases
                         .Where(x => x.AssemblyFileName == assemblyPath)
                         .Select(x => x.DisplayName)
-                        .ToList();
+                        .ToImmutableArray();
                     session = this.testUtil.RunSpecific(assemblyPath, testCaseDisplayNames, this.cancellationTokenSource.Token);
                 }
 
