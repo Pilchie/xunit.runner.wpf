@@ -19,9 +19,14 @@ namespace xunit.runner.wpf
         ITestDiscoverSession Discover(string assemblyPath, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
-        /// Begin a run of a unit test for the given assembly.
+        /// Begin a run of all unit tests for the given assembly.
         /// </summary>
         ITestRunSession RunAll(string assemblyPath, CancellationToken cancellationToken = default(CancellationToken));
+
+        /// <summary>
+        /// Begin a run of specific unit tests for the given assembly.
+        /// </summary>
+        ITestRunSession RunSpecific(string assemblyPath, IEnumerable<string> testCaseDisplayNames, CancellationToken cancellationToken = default(CancellationToken));
     }
 
     internal interface ITestSession

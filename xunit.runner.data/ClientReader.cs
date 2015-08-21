@@ -46,6 +46,11 @@ namespace xunit.runner.data
             return ReadCore(() => TestResultData.ReadFrom(_reader));
         }
 
+        public string ReadString()
+        {
+            return ReadCore(() => _reader.ReadString());
+        }
+
         private T ReadCore<T>(Func<T> func)
         {
             if (_closed)

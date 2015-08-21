@@ -45,6 +45,11 @@ namespace xunit.runner.data
             WriteCore(() => testCaseResultData.WriteTo(_writer));
         }
 
+        public void Write(string str)
+        {
+            WriteCore(() => _writer.Write(str));
+        }
+
         private void WriteCore(Action action)
         {
             if (_closed)

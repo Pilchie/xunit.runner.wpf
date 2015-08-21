@@ -40,7 +40,10 @@ namespace xunit.runner.worker
                             Discover(stream, argument);
                             break;
                         case Constants.ActionRunAll:
-                            Run(stream, argument);
+                            RunAll(stream, argument);
+                            break;
+                        case Constants.ActionRunSpecific:
+                            RunSpecific(stream, argument);
                             break;
                         default:
                             Usage();
@@ -78,11 +81,18 @@ namespace xunit.runner.worker
             Console.WriteLine("discover ended");
         }
 
-        private static void Run(Stream stream, string assemblyPath)
+        private static void RunAll(Stream stream, string assemblyPath)
         {
-            Console.WriteLine($"run started: {assemblyPath}");
+            Console.WriteLine($"run all started: {assemblyPath}");
             RunUtil.RunAll(assemblyPath, stream);
-            Console.WriteLine("run ended");
+            Console.WriteLine("run all ended");
+        }
+
+        private static void RunSpecific(Stream stream, string assemblyPath)
+        {
+            Console.WriteLine($"run specific started: {assemblyPath}");
+            RunUtil.RunSpecific(assemblyPath, stream);
+            Console.WriteLine("run specific ended");
         }
 
         private static void Usage()

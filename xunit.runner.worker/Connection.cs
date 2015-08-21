@@ -51,7 +51,7 @@ namespace xunit.runner.worker
 
         internal NamedPipeConnection(string pipeName)
         {
-            _stream = new NamedPipeServerStream(pipeName);
+            _stream = new NamedPipeServerStream(pipeName, PipeDirection.InOut);
         }
 
         protected override void DisposeCore()

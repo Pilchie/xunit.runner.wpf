@@ -333,10 +333,25 @@ namespace xunit.runner.wpf.ViewModel
             // TODO: Need a way to filter based on traits, selected test cases, etc ...  For now we just run
             // everything. 
 
+            var runAll = TestCases.Count == this.allTestCases.Count;
+
             this.cancellationTokenSource = new CancellationTokenSource();
             foreach (var assemblyPath in TestCases.Select(x => x.AssemblyFileName).Distinct())
             {
-                var session = this.testUtil.RunAll(assemblyPath, this.cancellationTokenSource.Token);
+                ITestRunSession session;
+                if (runAll)
+                {
+                    session = this.testUtil.RunAll(assemblyPath, this.cancellationTokenSource.Token);
+                }
+                else
+                {
+                    var testCaseDisplayNames = TestCases
+                        .Where(x => x.AssemblyFileName == assemblyPath)
+                        .Select(x => x.DisplayName)
+                        .ToList();
+                    session = this.testUtil.RunSpecific(assemblyPath, testCaseDisplayNames, this.cancellationTokenSource.Token);
+                }
+
                 session.TestFinished += OnTestFinished;
                 session.SessionFinished += delegate { OnTestSessionFinished(session); };
                 this.testSessionList.Add(session);
