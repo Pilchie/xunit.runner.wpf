@@ -26,7 +26,6 @@ namespace xunit.runner.wpf.ViewModel
         private readonly ObservableCollection<TestCaseViewModel> allTestCases = new ObservableCollection<TestCaseViewModel>();
         private CancellationTokenSource filterCancellationTokenSource = new CancellationTokenSource();
 
-        private List<ITestSession> testSessionList = new List<ITestSession>();
         private CancellationTokenSource cancellationTokenSource;
         private bool isBusy;
         private SearchQuery searchQuery = new SearchQuery();
@@ -209,9 +208,6 @@ namespace xunit.runner.wpf.ViewModel
 
         private async Task AddAssemblies(IEnumerable<AssemblyAndConfigFile> assemblies)
         {
-            Debug.Assert(this.cancellationTokenSource == null);
-            Debug.Assert(this.testSessionList.Count == 0);
-
             if (!assemblies.Any())
             {
                 return;
@@ -220,31 +216,24 @@ namespace xunit.runner.wpf.ViewModel
             var loadingDialog = new LoadingDialog { Owner = MainWindow.Instance };
             try
             {
-                this.cancellationTokenSource = new CancellationTokenSource();
-
-                foreach (var assembly in assemblies)
+                await ExecuteTestSessionOperation(() =>
                 {
-                    var assemblyPath = assembly.AssemblyFileName;
-                    var session = this.testUtil.Discover(assemblyPath, cancellationTokenSource.Token);
-                    this.testSessionList.Add(session);
+                    var testSessionList = new List<ITestSession>();
+                    foreach (var assembly in assemblies)
+                    {
+                        var assemblyPath = assembly.AssemblyFileName;
+                        var session = this.testUtil.Discover(assemblyPath, cancellationTokenSource.Token);
+                        session.TestDiscovered += OnTestDiscovered;
 
-                    session.TestDiscovered += OnTestDiscovered;
-                    session.SessionFinished += delegate { OnTestSessionFinished(session); };
+                        testSessionList.Add(session);
+                        Assemblies.Add(new TestAssemblyViewModel(assembly));
+                    }
 
-                    Assemblies.Add(new TestAssemblyViewModel(assembly));
-                }
-
-                this.IsBusy = true;
-                await Task.WhenAll(this.testSessionList.Select(x => x.Task));
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(Application.Current.MainWindow, ex.ToString());
-                this.IsBusy = false;
+                    return testSessionList;
+                });
             }
             finally
             {
-                Debug.Assert(!IsBusy);
                 loadingDialog.Close();
             }
         }
@@ -267,15 +256,7 @@ namespace xunit.runner.wpf.ViewModel
 
         private async void OnExecuteWindowLoaded()
         {
-            try
-            {
-                IsBusy = true;
-                await AddAssemblies(ParseCommandLine(Environment.GetCommandLineArgs().Skip(1)));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+            await AddAssemblies(ParseCommandLine(Environment.GetCommandLineArgs().Skip(1)));
         }
 
         private IEnumerable<AssemblyAndConfigFile> ParseCommandLine(IEnumerable<string> enumerable)
@@ -303,28 +284,22 @@ namespace xunit.runner.wpf.ViewModel
         private bool CanExecuteRun()
             => !IsBusy && TestCases.Any();
 
-        private void OnExecuteRun()
+        private async void OnExecuteRun()
         {
-            try
-            {
-                TestsCompleted = 0;
-                TestsPassed = 0;
-                TestsFailed = 0;
-                TestsSkipped = 0;
-                CurrentRunState = TestState.NotRun;
-                RunTests();
-                Output = string.Empty;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
-            }
+            await ExecuteTestSessionOperation(RunTests);
         }
 
-        private void RunTests()
+        private List<ITestSession> RunTests()
         {
-            Debug.Assert(this.cancellationTokenSource == null);
-            Debug.Assert(this.testSessionList.Count == 0);
+            Debug.Assert(this.isBusy);
+            Debug.Assert(this.cancellationTokenSource != null);
+
+            TestsCompleted = 0;
+            TestsPassed = 0;
+            TestsFailed = 0;
+            TestsSkipped = 0;
+            CurrentRunState = TestState.NotRun;
+            Output = string.Empty;
 
             foreach (var tc in TestCases)
             {
@@ -334,8 +309,8 @@ namespace xunit.runner.wpf.ViewModel
             // TODO: Need a way to filter based on traits
 
             var runAll = TestCases.Count == this.allTestCases.Count;
+            var testSessionList = new List<ITestSession>();
 
-            this.cancellationTokenSource = new CancellationTokenSource();
             foreach (var assemblyPath in TestCases.Select(x => x.AssemblyFileName).Distinct())
             {
                 ITestRunSession session;
@@ -353,21 +328,31 @@ namespace xunit.runner.wpf.ViewModel
                 }
 
                 session.TestFinished += OnTestFinished;
-                session.SessionFinished += delegate { OnTestSessionFinished(session); };
-                this.testSessionList.Add(session);
+                testSessionList.Add(session);
             }
 
-            this.IsBusy = true;
+            return testSessionList;
         }
 
-        private void OnTestSessionFinished(ITestSession session)
+        private async Task ExecuteTestSessionOperation(Func<List<ITestSession>> operation)
         {
-            Debug.Assert(this.testSessionList.Contains(session));
-            Debug.Assert(this.cancellationTokenSource != null);
+            Debug.Assert(!this.IsBusy);
+            Debug.Assert(this.cancellationTokenSource == null);
 
-            this.testSessionList.Remove(session);
+            try
+            {
+                this.IsBusy = true;
+                this.cancellationTokenSource = new CancellationTokenSource();
 
-            if (this.testSessionList.Count == 0)
+                var testSessionList = operation();
+                await Task.WhenAll(testSessionList.Select(x => x.Task));
+            }
+            catch (Exception ex)
+            {
+                this.cancellationTokenSource?.Cancel();
+                MessageBox.Show(Application.Current.MainWindow, ex.ToString());
+            }
+            finally
             {
                 this.cancellationTokenSource = null;
                 this.IsBusy = false;
