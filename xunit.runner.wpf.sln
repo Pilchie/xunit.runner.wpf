@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "xunit.runner.wpf", "xunit.r
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleTestAssembly", "SampleTestAssembly\SampleTestAssembly.csproj", "{BDAFB5DD-FFB3-4A94-A312-DFB080010846}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "xunit.runner.worker", "xunit.runner.worker\xunit.runner.worker.csproj", "{9DF97A2B-0EB5-4B12-9F81-69DFAC979814}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "xunit.runner.data", "xunit.runner.data\xunit.runner.data.csproj", "{A1F579F4-443E-4F64-BC55-998AB86FF293}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{BDAFB5DD-FFB3-4A94-A312-DFB080010846}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BDAFB5DD-FFB3-4A94-A312-DFB080010846}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BDAFB5DD-FFB3-4A94-A312-DFB080010846}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9DF97A2B-0EB5-4B12-9F81-69DFAC979814}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9DF97A2B-0EB5-4B12-9F81-69DFAC979814}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9DF97A2B-0EB5-4B12-9F81-69DFAC979814}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9DF97A2B-0EB5-4B12-9F81-69DFAC979814}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1F579F4-443E-4F64-BC55-998AB86FF293}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1F579F4-443E-4F64-BC55-998AB86FF293}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1F579F4-443E-4F64-BC55-998AB86FF293}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1F579F4-443E-4F64-BC55-998AB86FF293}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

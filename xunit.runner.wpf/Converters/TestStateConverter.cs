@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using xunit.runner.data;
 using xunit.runner.wpf.ViewModel;
 
 namespace xunit.runner.wpf.Converters

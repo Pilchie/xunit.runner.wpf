@@ -54,6 +54,10 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Collections.Immutable, Version=1.1.37.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Collections.Immutable.1.1.37\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Windows.Interactivity, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\MvvmLightLibs.5.1.1.0\lib\net45\System.Windows.Interactivity.dll</HintPath>
@@ -71,14 +75,6 @@
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
-    <Reference Include="xunit.abstractions, Version=2.0.0.0, Culture=neutral, PublicKeyToken=8d05b1bb7a6fdb6c, processorArchitecture=MSIL">
-      <HintPath>..\packages\xunit.abstractions.2.0.0\lib\net35\xunit.abstractions.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="xunit.runner.utility.desktop, Version=2.1.0.3109, Culture=neutral, PublicKeyToken=8d05b1bb7a6fdb6c, processorArchitecture=MSIL">
-      <HintPath>..\packages\xunit.runner.utility.2.1.0-beta4-build3109\lib\net35\xunit.runner.utility.desktop.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
@@ -89,6 +85,12 @@
     <Compile Include="Converters\TestStateConverter.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="FilteredCollectionView.cs" />
+    <Compile Include="Impl\RemoteTestUtil.Connection.cs" />
+    <Compile Include="Impl\RemoteTestUtil.DiscoverSession.cs" />
+    <Compile Include="Impl\RemoteTestUtil.RunSession.cs" />
+    <Compile Include="Impl\RemoteTestUtil.BackgroundRunner.cs" />
+    <Compile Include="Impl\RemoteTestUtil.cs" />
+    <Compile Include="ITestUtil.cs" />
     <Compile Include="LoadingDialog.xaml.cs">
       <DependentUpon>LoadingDialog.xaml</DependentUpon>
     </Compile>
@@ -97,7 +99,6 @@
     <Compile Include="ViewModel\SearchQuery.cs" />
     <Compile Include="ViewModel\TestCaseViewModel.cs" />
     <Compile Include="ViewModel\TestAssemblyViewModel.cs" />
-    <Compile Include="ViewModel\TestStateEventArgs.cs" />
     <Compile Include="ViewModel\ViewModelLocator.cs" />
     <Page Include="LoadingDialog.xaml">
       <SubType>Designer</SubType>
@@ -155,6 +156,14 @@
       <Project>{bdafb5dd-ffb3-4a94-a312-dfb080010846}</Project>
       <Name>SampleTestAssembly</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\xunit.runner.data\xunit.runner.data.csproj">
+      <Project>{a1f579f4-443e-4f64-bc55-998ab86ff293}</Project>
+      <Name>xunit.runner.data</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\xunit.runner.worker\xunit.runner.worker.csproj">
+      <Project>{9df97a2b-0eb5-4b12-9f81-69dfac979814}</Project>
+      <Name>xunit.runner.worker</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

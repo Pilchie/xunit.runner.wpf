@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Xunit.Abstractions;
+using xunit.runner.data;
 
 namespace xunit.runner.wpf.ViewModel
 {

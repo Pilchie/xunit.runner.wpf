@@ -4,27 +4,30 @@ using System;
 using System.Windows;
 using GalaSoft.MvvmLight.CommandWpf;
 using Microsoft.Win32;
-using Xunit;
-using Xunit.Abstractions;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Collections.Specialized;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.IO.Pipes;
 using System.IO;
 using System.Text;
+using xunit.runner.data;
+using System.Windows.Threading;
 
 namespace xunit.runner.wpf.ViewModel
 {
     public class MainViewModel : ViewModelBase
     {
+        private readonly ITestUtil testUtil;
         private readonly ObservableCollection<TestCaseViewModel> allTestCases = new ObservableCollection<TestCaseViewModel>();
         private CancellationTokenSource filterCancellationTokenSource = new CancellationTokenSource();
 
+        private CancellationTokenSource cancellationTokenSource;
         private bool isBusy;
-        private bool isCancelRequested;
         private SearchQuery searchQuery = new SearchQuery();
 
         public MainViewModel()
@@ -35,6 +38,7 @@ namespace xunit.runner.wpf.ViewModel
             }
 
             CommandBindings = CreateCommandBindings();
+            this.testUtil = new xunit.runner.wpf.Impl.RemoteTestUtil(Dispatcher.CurrentDispatcher);
             this.MethodsCaption = "Methods (0)";
 
             TestCases = new FilteredCollectionView<TestCaseViewModel, SearchQuery>(
@@ -204,135 +208,33 @@ namespace xunit.runner.wpf.ViewModel
 
         private async Task AddAssemblies(IEnumerable<AssemblyAndConfigFile> assemblies)
         {
+            if (!assemblies.Any())
+            {
+                return;
+            }
+
             var loadingDialog = new LoadingDialog { Owner = MainWindow.Instance };
             try
             {
-                using (AssemblyHelper.SubscribeResolve())
+                await ExecuteTestSessionOperation(() =>
                 {
-                    loadingDialog.Show();
+                    var testSessionList = new List<ITestSession>();
                     foreach (var assembly in assemblies)
                     {
-                        loadingDialog.AssemblyFileName = assembly.AssemblyFileName;
+                        var assemblyPath = assembly.AssemblyFileName;
+                        var session = this.testUtil.Discover(assemblyPath, cancellationTokenSource.Token);
+                        session.TestDiscovered += OnTestDiscovered;
 
-                        using (var xunit = new XunitFrontController(
-                            useAppDomain: true,
-                            assemblyFileName: assembly.AssemblyFileName,
-                            configFileName: assembly.ConfigFileName,
-                            diagnosticMessageSink: new DiagnosticMessageVisitor(),
-                            shadowCopy: false))
-                        using (var testDiscoveryVisitor = new TestDiscoveryVisitor(xunit))
-                        {
-                            await Task.Run(() =>
-                            {
-                                xunit.Find(includeSourceInformation: false, messageSink: testDiscoveryVisitor, discoveryOptions: TestFrameworkOptions.ForDiscovery());
-                                testDiscoveryVisitor.Finished.WaitOne();
-                            });
-
-                            allTestCases.AddRange(testDiscoveryVisitor.TestCases);
-                            Assemblies.Add(new TestAssemblyViewModel(assembly));
-                        }
+                        testSessionList.Add(session);
+                        Assemblies.Add(new TestAssemblyViewModel(assembly));
                     }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(Application.Current.MainWindow, ex.ToString());
+
+                    return testSessionList;
+                });
             }
             finally
             {
                 loadingDialog.Close();
-            }
-        }
-
-        private class DiagnosticMessageVisitor : TestMessageVisitor
-        {
-            public override bool OnMessage(IMessageSinkMessage message)
-            {
-                return base.OnMessage(message);
-            }
-        }
-
-        private class TestDiscoveryVisitor : TestMessageVisitor<IDiscoveryCompleteMessage>
-        {
-            ITestFrameworkDiscoverer discoverer;
-
-            public List<TestCaseViewModel> TestCases { get; } = new List<TestCaseViewModel>();
-
-            public TestDiscoveryVisitor(ITestFrameworkDiscoverer discoverer)
-            {
-                this.discoverer = discoverer;
-            }
-
-            public IDictionary<string, IList<string>> Traits { get; } = new Dictionary<string, IList<string>>();
-
-            protected override bool Visit(ITestCaseDiscoveryMessage testCaseDiscovered)
-            {
-                var testCase = testCaseDiscovered.TestCase;
-                TestCases.Add(new TestCaseViewModel(discoverer.Serialize(testCase), testCase.DisplayName, testCaseDiscovered.TestAssembly.Assembly.AssemblyPath));
-
-                foreach (var k in testCase.Traits.Keys)
-                {
-                    IList<string> value;
-                    if (!Traits.TryGetValue(k, out value))
-                    {
-                        value = new List<string>();
-                        Traits[k] = value;
-                    }
-
-                    value.AddRange(testCase.Traits[k]);
-                }
-
-                return true;
-            }
-        }
-
-        private class TestRunVisitor : TestMessageVisitor<ITestAssemblyFinished>
-        {
-            private readonly Func<bool> isCancelRequested;
-            private readonly IEnumerable<TestCaseViewModel> testCases;
-
-            public event EventHandler<TestStateEventArgs> TestFinished;
-
-            public TestRunVisitor(IEnumerable<TestCaseViewModel> testCases, Func<bool> isCancelRequested)
-            {
-                this.testCases = testCases;
-                this.isCancelRequested = isCancelRequested;
-            }
-
-            protected override bool Visit(ITestFailed testFailed)
-            {
-                var testCase = testCases.Single(tc => tc.DisplayName == testFailed.TestCase.DisplayName);
-                testCase.State = TestState.Failed;
-                var resultString = new StringBuilder(testFailed.TestCase.DisplayName);
-                resultString.AppendLine(" FAILED:");
-                for (int i = 0; i < testFailed.ExceptionTypes.Length; i++)
-                {
-                    resultString.AppendLine($"\tException type: '{testFailed.ExceptionTypes[i]}', number: '{i}', parent: '{testFailed.ExceptionParentIndices[i]}'");
-                    resultString.AppendLine($"\tException message:");
-                    resultString.AppendLine(testFailed.Messages[i]);
-                    resultString.AppendLine($"\tException stacktrace");
-                    resultString.AppendLine(testFailed.StackTraces[i]);
-                }
-                resultString.AppendLine();
-
-                TestFinished?.Invoke(this, TestStateEventArgs.Failed(resultString.ToString()));
-                return !isCancelRequested();
-            }
-
-            protected override bool Visit(ITestPassed testPassed)
-            {
-                var testCase = testCases.Single(tc => tc.DisplayName == testPassed.TestCase.DisplayName);
-                testCase.State = TestState.Passed;
-                TestFinished?.Invoke(this, TestStateEventArgs.Passed);
-                return !isCancelRequested();
-            }
-
-            protected override bool Visit(ITestSkipped testSkipped)
-            {
-                var testCase = testCases.Single(tc => tc.DisplayName == testSkipped.TestCase.DisplayName);
-                testCase.State = TestState.Skipped;
-                TestFinished?.Invoke(this, TestStateEventArgs.Skipped);
-                return !isCancelRequested();
             }
         }
 
@@ -347,16 +249,6 @@ namespace xunit.runner.wpf.ViewModel
             }
         }
 
-        private bool IsCancelRequested
-        {
-            get { return isCancelRequested; }
-            set
-            {
-                isCancelRequested = value;
-                CancelCommand.RaiseCanExecuteChanged();
-            }
-        }
-
         private static void OnExecuteExit()
         {
             Application.Current.Shutdown();
@@ -364,15 +256,7 @@ namespace xunit.runner.wpf.ViewModel
 
         private async void OnExecuteWindowLoaded()
         {
-            try
-            {
-                IsBusy = true;
-                await AddAssemblies(ParseCommandLine(Environment.GetCommandLineArgs().Skip(1)));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+            await AddAssemblies(ParseCommandLine(Environment.GetCommandLineArgs().Skip(1)));
         }
 
         private IEnumerable<AssemblyAndConfigFile> ParseCommandLine(IEnumerable<string> enumerable)
@@ -402,83 +286,120 @@ namespace xunit.runner.wpf.ViewModel
 
         private async void OnExecuteRun()
         {
-            try
-            {
-                IsBusy = true;
-                TestsCompleted = 0;
-                TestsPassed = 0;
-                TestsFailed = 0;
-                TestsSkipped = 0;
-                CurrentRunState = TestState.NotRun;
-                Output = string.Empty;
-                await Task.Run(() => RunTestsInBackground());
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
-            }
-            finally
-            {
-                IsBusy = false;
-                IsCancelRequested = false;
-            }
+            await ExecuteTestSessionOperation(RunTests);
         }
 
-        private void RunTestsInBackground()
+        private List<ITestSession> RunTests()
         {
+            Debug.Assert(this.isBusy);
+            Debug.Assert(this.cancellationTokenSource != null);
+
+            TestsCompleted = 0;
+            TestsPassed = 0;
+            TestsFailed = 0;
+            TestsSkipped = 0;
+            CurrentRunState = TestState.NotRun;
+            Output = string.Empty;
+
             foreach (var tc in TestCases)
             {
                 tc.State = TestState.NotRun;
             }
 
-            var selectedAssemblies = TestCases.ToLookup(tc => tc.AssemblyFileName);
-            using (AssemblyHelper.SubscribeResolve())
+            // TODO: Need a way to filter based on traits
+
+            var runAll = TestCases.Count == this.allTestCases.Count;
+            var testSessionList = new List<ITestSession>();
+
+            foreach (var assemblyPath in TestCases.Select(x => x.AssemblyFileName).Distinct())
             {
-                foreach (var assembly in selectedAssemblies)
+                ITestRunSession session;
+                if (runAll)
                 {
-                    using (var xunit = new XunitFrontController(
-                        assemblyFileName: assembly.Key,
-                        useAppDomain: true,
-                        shadowCopy: false,
-                        diagnosticMessageSink: new DiagnosticMessageVisitor()))
-                    using (var testRunVisitor = new TestRunVisitor(allTestCases, () => IsCancelRequested))
-                    {
-                        testRunVisitor.TestFinished += TestRunVisitor_TestFinished;
-                        xunit.RunTests(assembly.Select(tcvm => xunit.Deserialize(tcvm.TestCase)).ToArray(), testRunVisitor, TestFrameworkOptions.ForExecution());
-                        testRunVisitor.Finished.WaitOne();
-                    }
+                    session = this.testUtil.RunAll(assemblyPath, this.cancellationTokenSource.Token);
                 }
+                else
+                {
+                    var testCaseDisplayNames = TestCases
+                        .Where(x => x.AssemblyFileName == assemblyPath)
+                        .Select(x => x.DisplayName)
+                        .ToImmutableArray();
+                    session = this.testUtil.RunSpecific(assemblyPath, testCaseDisplayNames, this.cancellationTokenSource.Token);
+                }
+
+                session.TestFinished += OnTestFinished;
+                testSessionList.Add(session);
+            }
+
+            return testSessionList;
+        }
+
+        private async Task ExecuteTestSessionOperation(Func<List<ITestSession>> operation)
+        {
+            Debug.Assert(!this.IsBusy);
+            Debug.Assert(this.cancellationTokenSource == null);
+
+            try
+            {
+                this.IsBusy = true;
+                this.cancellationTokenSource = new CancellationTokenSource();
+
+                var testSessionList = operation();
+                await Task.WhenAll(testSessionList.Select(x => x.Task));
+            }
+            catch (Exception ex)
+            {
+                this.cancellationTokenSource?.Cancel();
+                MessageBox.Show(Application.Current.MainWindow, ex.ToString());
+            }
+            finally
+            {
+                this.cancellationTokenSource = null;
+                this.IsBusy = false;
             }
         }
 
-        private void TestRunVisitor_TestFinished(object sender, TestStateEventArgs e)
+        private void OnTestDiscovered(object sender, TestCaseDataEventArgs e)
         {
+            var t = e.TestCaseData;
+            allTestCases.Add(new TestCaseViewModel(t.SerializedForm, t.DisplayName, t.AssemblyPath));
+        }
+
+        private void OnTestFinished(object sender, TestResultDataEventArgs e)
+        {
+            var testCase = TestCases.Single(x => x.DisplayName == e.TestCaseDisplayName);
+            testCase.State = e.TestState;
+
             TestsCompleted++;
-            switch (e.State)
+            switch (e.TestState)
             {
                 case TestState.Passed:
                     TestsPassed++;
                     break;
                 case TestState.Failed:
                     TestsFailed++;
-                    Output = Output + e.Results;
+                    Output = Output + e.Output;
                     break;
                 case TestState.Skipped:
                     TestsSkipped++;
                     break;
             }
 
-            if (e.State > CurrentRunState)
+            if (e.TestState > CurrentRunState)
             {
-                CurrentRunState = e.State;
+                CurrentRunState = e.TestState;
             }
         }
 
-        private bool CanExecuteCancel() => IsBusy && !IsCancelRequested;
+        private bool CanExecuteCancel()
+        {
+            return this.cancellationTokenSource != null && !this.cancellationTokenSource.IsCancellationRequested;
+        }
 
         private void OnExecuteCancel()
         {
-            this.IsCancelRequested = true;
+            Debug.Assert(CanExecuteCancel());
+            this.cancellationTokenSource.Cancel();
         }
 
         public bool IncludePassedTests
@@ -516,18 +437,6 @@ namespace xunit.runner.wpf.ViewModel
                 }
             }
         }
-    }
-
-    /// <summary>
-    /// Note: More severe states are higher numbers.
-    /// <see cref="MainViewModel.TestRunVisitor_TestFinished(object, TestStateEventArgs)"/>
-    /// </summary>
-    public enum TestState
-    {
-        NotRun = 1,
-        Passed,
-        Skipped,
-        Failed,
     }
 
     public class TestComparer : IComparer<TestCaseViewModel>
