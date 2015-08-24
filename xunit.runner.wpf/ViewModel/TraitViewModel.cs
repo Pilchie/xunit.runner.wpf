@@ -9,13 +9,19 @@ namespace xunit.runner.wpf.ViewModel
 {
     public sealed class TraitViewModel : ViewModelBase
     {
-        public readonly string _name;
-        public readonly string _value;
+        private readonly string _name;
+        private readonly string _value;
+        private bool _isSelected;
 
         public string Name => _name;
         public string Value => _value;
         public string DisplayName => $"{Name}={Value}";
-        public bool IsSelected { get; set; }
+
+        public bool IsSelected
+        {
+            get { return _isSelected; }
+            set { Set(ref _isSelected, value, nameof(IsSelected)); }
+        }
 
         public TraitViewModel(string name, string value)
         {

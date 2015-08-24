@@ -110,6 +110,11 @@
                                 <Setter Property="IsSelected" Value="{Binding Mode=TwoWay, Path=IsSelected}"/>
                             </Style>
                         </ListBox.ItemContainerStyle>
+                        <ListBox.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Clear" Command="{Binding TraitsClearCommand}" />
+                            </ContextMenu>
+                        </ListBox.ContextMenu>
                         <i:Interaction.Triggers>
                             <i:EventTrigger EventName="SelectionChanged">
                                 <cmd:EventToCommand Command="{Binding TraitSelectionChangedCommand}" />

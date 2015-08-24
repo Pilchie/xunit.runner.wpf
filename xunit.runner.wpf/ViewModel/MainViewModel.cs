@@ -50,6 +50,7 @@ namespace xunit.runner.wpf.ViewModel
             this.RunCommand = new RelayCommand(OnExecuteRun, CanExecuteRun);
             this.CancelCommand = new RelayCommand(OnExecuteCancel, CanExecuteCancel);
             this.TraitSelectionChangedCommand = new RelayCommand(OnTraitSelectionChanged);
+            this.TraitsClearCommand = new RelayCommand(OnTraitsClear);
         }
 
         private static bool TestCaseMatches(TestCaseViewModel testCase, SearchQuery searchQuery)
@@ -108,6 +109,7 @@ namespace xunit.runner.wpf.ViewModel
         public RelayCommand RunCommand { get; }
         public RelayCommand CancelCommand { get; }
         public ICommand TraitSelectionChangedCommand { get; }
+        public ICommand TraitsClearCommand { get; }
 
         public CommandBindingCollection CommandBindings { get; }
 
@@ -328,8 +330,6 @@ namespace xunit.runner.wpf.ViewModel
                 tc.State = TestState.NotRun;
             }
 
-            // TODO: Need a way to filter based on traits
-
             var runAll = TestCases.Count == this.allTestCases.Count;
             var testSessionList = new List<ITestSession>();
 
@@ -435,6 +435,14 @@ namespace xunit.runner.wpf.ViewModel
                 this.traitCollectionView.Collection.Where(x => x.IsSelected),
                 TraitViewModelComparer.Instance);
             FilterAfterDelay();
+        }
+
+        private void OnTraitsClear()
+        {
+            foreach (var cur in this.traitCollectionView.Collection)
+            {
+                cur.IsSelected = false;
+            }
         }
 
         public bool IncludePassedTests
