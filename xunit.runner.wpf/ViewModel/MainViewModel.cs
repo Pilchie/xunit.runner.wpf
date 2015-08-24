@@ -49,11 +49,11 @@ namespace xunit.runner.wpf.ViewModel
             this.WindowLoadedCommand = new RelayCommand(OnExecuteWindowLoaded);
             this.RunCommand = new RelayCommand(OnExecuteRun, CanExecuteRun);
             this.CancelCommand = new RelayCommand(OnExecuteCancel, CanExecuteCancel);
-            this.TraitSelectionChangedCommand = new RelayCommand(OnTraitSelectionChanged);
-            this.TraitsClearCommand = new RelayCommand(OnTraitsClear);
-            this.AssemblyReloadCommand = new RelayCommand(OnExecuteAssemblyReload, OnCanExecuteAssemblyReload);
+            this.TraitSelectionChangedCommand = new RelayCommand(OnExecuteTraitSelectionChanged);
+            this.TraitsClearCommand = new RelayCommand(OnExecuteTraitsClear);
+            this.AssemblyReloadCommand = new RelayCommand(OnExecuteAssemblyReload, CanExecuteAssemblyReload);
             this.AssemblyReloadAllCommand = new RelayCommand(OnExecuteAssemblyReloadAll);
-            this.AssemblyRemoveCommand = new RelayCommand(OnExecuteAssemblyRemove, OnCanExecuteAssemblyRemove);
+            this.AssemblyRemoveCommand = new RelayCommand(OnExecuteAssemblyRemove, CanExecuteAssemblyRemove);
             this.AssemblyRemoveAllCommand = new RelayCommand(OnExecuteAssemblyRemoveAll);
         }
 
@@ -512,7 +512,7 @@ namespace xunit.runner.wpf.ViewModel
             this.cancellationTokenSource.Cancel();
         }
 
-        private void OnTraitSelectionChanged()
+        private void OnExecuteTraitSelectionChanged()
         {
             this.searchQuery.TraitSet = new HashSet<TraitViewModel>(
                 this.traitCollectionView.Collection.Where(x => x.IsSelected),
@@ -520,7 +520,7 @@ namespace xunit.runner.wpf.ViewModel
             FilterAfterDelay();
         }
 
-        private void OnTraitsClear()
+        private void OnExecuteTraitsClear()
         {
             foreach (var cur in this.traitCollectionView.Collection)
             {
@@ -528,7 +528,7 @@ namespace xunit.runner.wpf.ViewModel
             }
         }
 
-        private bool OnCanExecuteAssemblyReload()
+        private bool CanExecuteAssemblyReload()
         {
             return SelectedAssembly != null;
         }
@@ -549,7 +549,7 @@ namespace xunit.runner.wpf.ViewModel
             await ReloadAssemblies(Assemblies);
         }
 
-        private bool OnCanExecuteAssemblyRemove()
+        private bool CanExecuteAssemblyRemove()
         {
             return SelectedAssembly != null;
         }
