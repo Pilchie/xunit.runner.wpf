@@ -15,6 +15,7 @@ namespace xunit.runner.wpf.ViewModel
         public string Name => _name;
         public string Value => _value;
         public string DisplayName => $"{Name}={Value}";
+        public bool IsSelected { get; set; }
 
         public TraitViewModel(string name, string value)
         {

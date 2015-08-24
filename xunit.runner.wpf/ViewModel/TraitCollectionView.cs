@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
@@ -10,7 +11,7 @@ namespace xunit.runner.wpf.ViewModel
 {
     public sealed partial class TraitCollectionView
     {
-        private readonly TraitViewModelComparer _comparer = new TraitViewModelComparer();
+        private readonly TraitViewModelComparer _comparer = TraitViewModelComparer.Instance;
         private readonly ObservableCollection<TraitViewModel> _collection = new ObservableCollection<TraitViewModel>();
 
         public ObservableCollection<TraitViewModel> Collection => _collection;
@@ -20,19 +21,16 @@ namespace xunit.runner.wpf.ViewModel
 
         }
 
-        public void Add(Dictionary<string, List<string>> traitMap)
+        public void Add(ImmutableArray<TraitViewModel> traitList)
         {
-            if (traitMap.Count == 0)
+            if (traitList.Length == 0)
             {
                 return;
             }
 
-            foreach (var pair in traitMap)
+            foreach (var traitViewModel in traitList)
             {
-                foreach (var value in pair.Value)
-                {
-                    TryInsert(new TraitViewModel(pair.Key, value));
-                }
+                TryInsert(traitViewModel);
             }
         }
 

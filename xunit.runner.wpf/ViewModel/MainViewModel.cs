@@ -49,6 +49,7 @@ namespace xunit.runner.wpf.ViewModel
             this.WindowLoadedCommand = new RelayCommand(OnExecuteWindowLoaded);
             this.RunCommand = new RelayCommand(OnExecuteRun, CanExecuteRun);
             this.CancelCommand = new RelayCommand(OnExecuteCancel, CanExecuteCancel);
+            this.TraitSelectionChangedCommand = new RelayCommand(OnTraitSelectionChanged);
         }
 
         private static bool TestCaseMatches(TestCaseViewModel testCase, SearchQuery searchQuery)
@@ -56,6 +57,24 @@ namespace xunit.runner.wpf.ViewModel
             if (!testCase.DisplayName.Contains(searchQuery.SearchString))
             {
                 return false;
+            }
+
+            if (searchQuery.TraitSet.Count > 0)
+            {
+                var anyMatch = false;
+                foreach (var cur in testCase.Traits)
+                {
+                    if (searchQuery.TraitSet.Contains(cur))
+                    {
+                        anyMatch = true;
+                        break;
+                    }
+                }
+
+                if (!anyMatch)
+                {
+                    return false;
+                }
             }
 
             switch (testCase.State)
@@ -88,6 +107,7 @@ namespace xunit.runner.wpf.ViewModel
         public ICommand WindowLoadedCommand { get; }
         public RelayCommand RunCommand { get; }
         public RelayCommand CancelCommand { get; }
+        public ICommand TraitSelectionChangedCommand { get; }
 
         public CommandBindingCollection CommandBindings { get; }
 
@@ -364,8 +384,12 @@ namespace xunit.runner.wpf.ViewModel
         private void OnTestDiscovered(object sender, TestCaseDataEventArgs e)
         {
             var t = e.TestCaseData;
-            this.allTestCases.Add(new TestCaseViewModel(t.SerializedForm, t.DisplayName, t.AssemblyPath));
-            this.traitCollectionView.Add(t.TraitMap);
+
+            var traitMap = t.TraitMap.Count == 0
+                ? ImmutableArray<TraitViewModel>.Empty
+                : t.TraitMap.SelectMany(pair => pair.Value.Select(value => new TraitViewModel(pair.Key, value))).ToImmutableArray();
+            this.allTestCases.Add(new TestCaseViewModel(t.SerializedForm, t.DisplayName, t.AssemblyPath, traitMap));
+            this.traitCollectionView.Add(traitMap);
         }
 
         private void OnTestFinished(object sender, TestResultDataEventArgs e)
@@ -403,6 +427,14 @@ namespace xunit.runner.wpf.ViewModel
         {
             Debug.Assert(CanExecuteCancel());
             this.cancellationTokenSource.Cancel();
+        }
+
+        private void OnTraitSelectionChanged()
+        {
+            this.searchQuery.TraitSet = new HashSet<TraitViewModel>(
+                this.traitCollectionView.Collection.Where(x => x.IsSelected),
+                TraitViewModelComparer.Instance);
+            FilterAfterDelay();
         }
 
         public bool IncludePassedTests
