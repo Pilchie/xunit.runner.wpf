@@ -94,11 +94,14 @@
     <Compile Include="LoadingDialog.xaml.cs">
       <DependentUpon>LoadingDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ViewModel\TraitCollectionView.cs" />
     <Compile Include="ViewModel\AssemblyAndConfigFile.cs" />
     <Compile Include="ViewModel\MainViewModel.cs" />
     <Compile Include="ViewModel\SearchQuery.cs" />
     <Compile Include="ViewModel\TestCaseViewModel.cs" />
     <Compile Include="ViewModel\TestAssemblyViewModel.cs" />
+    <Compile Include="ViewModel\TraitViewModel.cs" />
+    <Compile Include="ViewModel\TraitViewModelComparer.cs" />
     <Compile Include="ViewModel\ViewModelLocator.cs" />
     <Page Include="LoadingDialog.xaml">
       <SubType>Designer</SubType>

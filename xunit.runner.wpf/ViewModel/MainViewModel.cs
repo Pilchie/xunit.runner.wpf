@@ -24,6 +24,7 @@ namespace xunit.runner.wpf.ViewModel
     {
         private readonly ITestUtil testUtil;
         private readonly ObservableCollection<TestCaseViewModel> allTestCases = new ObservableCollection<TestCaseViewModel>();
+        private readonly TraitCollectionView traitCollectionView = new TraitCollectionView();
         private CancellationTokenSource filterCancellationTokenSource = new CancellationTokenSource();
 
         private CancellationTokenSource cancellationTokenSource;
@@ -48,6 +49,8 @@ namespace xunit.runner.wpf.ViewModel
             this.WindowLoadedCommand = new RelayCommand(OnExecuteWindowLoaded);
             this.RunCommand = new RelayCommand(OnExecuteRun, CanExecuteRun);
             this.CancelCommand = new RelayCommand(OnExecuteCancel, CanExecuteCancel);
+            this.TraitSelectionChangedCommand = new RelayCommand(OnTraitSelectionChanged);
+            this.TraitsClearCommand = new RelayCommand(OnTraitsClear);
         }
 
         private static bool TestCaseMatches(TestCaseViewModel testCase, SearchQuery searchQuery)
@@ -55,6 +58,24 @@ namespace xunit.runner.wpf.ViewModel
             if (!testCase.DisplayName.Contains(searchQuery.SearchString))
             {
                 return false;
+            }
+
+            if (searchQuery.TraitSet.Count > 0)
+            {
+                var anyMatch = false;
+                foreach (var cur in testCase.Traits)
+                {
+                    if (searchQuery.TraitSet.Contains(cur))
+                    {
+                        anyMatch = true;
+                        break;
+                    }
+                }
+
+                if (!anyMatch)
+                {
+                    return false;
+                }
             }
 
             switch (testCase.State)
@@ -87,6 +108,8 @@ namespace xunit.runner.wpf.ViewModel
         public ICommand WindowLoadedCommand { get; }
         public RelayCommand RunCommand { get; }
         public RelayCommand CancelCommand { get; }
+        public ICommand TraitSelectionChangedCommand { get; }
+        public ICommand TraitsClearCommand { get; }
 
         public CommandBindingCollection CommandBindings { get; }
 
@@ -189,6 +212,7 @@ namespace xunit.runner.wpf.ViewModel
 
         public ObservableCollection<TestAssemblyViewModel> Assemblies { get; } = new ObservableCollection<TestAssemblyViewModel>();
         public FilteredCollectionView<TestCaseViewModel, SearchQuery> TestCases { get; }
+        public ObservableCollection<TraitViewModel> Traits => this.traitCollectionView.Collection;
 
         private async void OnExecuteOpen(object sender, ExecutedRoutedEventArgs e)
         {
@@ -306,8 +330,6 @@ namespace xunit.runner.wpf.ViewModel
                 tc.State = TestState.NotRun;
             }
 
-            // TODO: Need a way to filter based on traits
-
             var runAll = TestCases.Count == this.allTestCases.Count;
             var testSessionList = new List<ITestSession>();
 
@@ -362,7 +384,12 @@ namespace xunit.runner.wpf.ViewModel
         private void OnTestDiscovered(object sender, TestCaseDataEventArgs e)
         {
             var t = e.TestCaseData;
-            allTestCases.Add(new TestCaseViewModel(t.SerializedForm, t.DisplayName, t.AssemblyPath));
+
+            var traitMap = t.TraitMap.Count == 0
+                ? ImmutableArray<TraitViewModel>.Empty
+                : t.TraitMap.SelectMany(pair => pair.Value.Select(value => new TraitViewModel(pair.Key, value))).ToImmutableArray();
+            this.allTestCases.Add(new TestCaseViewModel(t.SerializedForm, t.DisplayName, t.AssemblyPath, traitMap));
+            this.traitCollectionView.Add(traitMap);
         }
 
         private void OnTestFinished(object sender, TestResultDataEventArgs e)
@@ -400,6 +427,22 @@ namespace xunit.runner.wpf.ViewModel
         {
             Debug.Assert(CanExecuteCancel());
             this.cancellationTokenSource.Cancel();
+        }
+
+        private void OnTraitSelectionChanged()
+        {
+            this.searchQuery.TraitSet = new HashSet<TraitViewModel>(
+                this.traitCollectionView.Collection.Where(x => x.IsSelected),
+                TraitViewModelComparer.Instance);
+            FilterAfterDelay();
+        }
+
+        private void OnTraitsClear()
+        {
+            foreach (var cur in this.traitCollectionView.Collection)
+            {
+                cur.IsSelected = false;
+            }
         }
 
         public bool IncludePassedTests
