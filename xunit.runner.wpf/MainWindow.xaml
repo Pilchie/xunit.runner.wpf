@@ -106,6 +106,7 @@
                                 <MenuItem Header="Reload All" Command="{Binding AssemblyReloadAllCommand}" />
                                 <Separator />
                                 <MenuItem Header="Remove" Command="{Binding AssemblyRemoveCommand}" />
+                                <MenuItem Header="Remove All" Command="{Binding AssemblyRemoveAllCommand}" />
                             </ContextMenu>
                         </ListBox.ContextMenu>
                     </ListBox>

@@ -54,6 +54,7 @@ namespace xunit.runner.wpf.ViewModel
             this.AssemblyReloadCommand = new RelayCommand(OnExecuteAssemblyReload);
             this.AssemblyReloadAllCommand = new RelayCommand(OnExecuteAssemblyReloadAll);
             this.AssemblyRemoveCommand = new RelayCommand(OnExecuteAssemblyRemove);
+            this.AssemblyRemoveAllCommand = new RelayCommand(OnExecuteAssemblyRemoveAll);
         }
 
         private static bool TestCaseMatches(TestCaseViewModel testCase, SearchQuery searchQuery)
@@ -116,6 +117,7 @@ namespace xunit.runner.wpf.ViewModel
         public ICommand AssemblyReloadCommand { get; }
         public ICommand AssemblyReloadAllCommand { get; }
         public ICommand AssemblyRemoveCommand { get; }
+        public ICommand AssemblyRemoveAllCommand { get; }
 
         public CommandBindingCollection CommandBindings { get; }
 
@@ -300,6 +302,17 @@ namespace xunit.runner.wpf.ViewModel
             {
                 loadingDialog.Close();
             }
+        }
+
+        private void RemoveAssemblies(IEnumerable<TestAssemblyViewModel> assemblies)
+        {
+            foreach (var assembly in assemblies)
+            {
+                RemoveAssemblyTestCases(assembly.FileName);
+                Assemblies.Remove(assembly);
+            }
+
+            RebuildTraits();
         }
 
         private void RemoveAssemblyTestCases(string assemblyPath)
@@ -518,12 +531,12 @@ namespace xunit.runner.wpf.ViewModel
                 return;
             }
 
-            await this.ReloadAssemblies(new[] { assembly });
+            await ReloadAssemblies(new[] { assembly });
         }
 
         private async void OnExecuteAssemblyReloadAll()
         {
-            await this.ReloadAssemblies(Assemblies);
+            await ReloadAssemblies(Assemblies);
         }
 
         private void OnExecuteAssemblyRemove()
@@ -534,9 +547,12 @@ namespace xunit.runner.wpf.ViewModel
                 return;
             }
 
-            RemoveAssemblyTestCases(assembly.FileName);
-            Assemblies.Remove(assembly);
-            RebuildTraits();
+            RemoveAssemblies(new[] { assembly });
+        }
+
+        private void OnExecuteAssemblyRemoveAll()
+        {
+            RemoveAssemblies(Assemblies);
         }
 
         public bool IncludePassedTests
