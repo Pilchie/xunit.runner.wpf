@@ -51,6 +51,9 @@ namespace xunit.runner.wpf.ViewModel
             this.CancelCommand = new RelayCommand(OnExecuteCancel, CanExecuteCancel);
             this.TraitSelectionChangedCommand = new RelayCommand(OnTraitSelectionChanged);
             this.TraitsClearCommand = new RelayCommand(OnTraitsClear);
+            this.AssemblyReloadCommand = new RelayCommand(OnExecuteAssemblyReload);
+            this.AssemblyReloadAllCommand = new RelayCommand(OnExecuteAssemblyReloadAll);
+            this.AssemblyRemoveCommand = new RelayCommand(OnExecuteAssemblyRemove);
         }
 
         private static bool TestCaseMatches(TestCaseViewModel testCase, SearchQuery searchQuery)
@@ -110,6 +113,9 @@ namespace xunit.runner.wpf.ViewModel
         public RelayCommand CancelCommand { get; }
         public ICommand TraitSelectionChangedCommand { get; }
         public ICommand TraitsClearCommand { get; }
+        public ICommand AssemblyReloadCommand { get; }
+        public ICommand AssemblyReloadAllCommand { get; }
+        public ICommand AssemblyRemoveCommand { get; }
 
         public CommandBindingCollection CommandBindings { get; }
 
@@ -259,6 +265,65 @@ namespace xunit.runner.wpf.ViewModel
             finally
             {
                 loadingDialog.Close();
+            }
+        }
+
+        private async Task ReloadAssemblies(IEnumerable<TestAssemblyViewModel> assemblies)
+        {
+            var loadingDialog = new LoadingDialog { Owner = MainWindow.Instance };
+            try
+            {
+                await ExecuteTestSessionOperation(() =>
+                {
+                    var testSessionList = new List<ITestSession>();
+                    foreach (var assembly in assemblies)
+                    {
+                        var assemblyPath = assembly.FileName;
+                        RemoveAssemblyTestCases(assemblyPath);
+
+                        var session = this.testUtil.Discover(assemblyPath, cancellationTokenSource.Token);
+                        session.TestDiscovered += OnTestDiscovered;
+
+                        testSessionList.Add(session);
+                    }
+
+                    return testSessionList;
+                });
+
+                // Reloading an assembly could have changed the traits.  There is no easy way 
+                // to selectively edit this list (traits can cross assembly boundaries).  Just 
+                // do a full reload instead.
+                // way to 
+                RebuildTraits();
+            }
+            finally
+            {
+                loadingDialog.Close();
+            }
+        }
+
+        private void RemoveAssemblyTestCases(string assemblyPath)
+        {
+            var i = 0;
+            while (i < this.allTestCases.Count)
+            {
+                if (this.allTestCases[i].AssemblyFileName == assemblyPath)
+                {
+                    this.allTestCases.RemoveAt(i);
+                }
+                else
+                {
+                    i++;
+                }
+            }
+        }
+
+        private void RebuildTraits()
+        {
+            this.traitCollectionView.Collection.Clear();
+            foreach (var testCase in this.allTestCases)
+            {
+                this.traitCollectionView.Add(testCase.Traits);
             }
         }
 
@@ -443,6 +508,35 @@ namespace xunit.runner.wpf.ViewModel
             {
                 cur.IsSelected = false;
             }
+        }
+
+        private async void OnExecuteAssemblyReload()
+        {
+            var assembly = Assemblies.FirstOrDefault(x => x.IsSelected);
+            if (assembly == null)
+            {
+                return;
+            }
+
+            await this.ReloadAssemblies(new[] { assembly });
+        }
+
+        private async void OnExecuteAssemblyReloadAll()
+        {
+            await this.ReloadAssemblies(Assemblies);
+        }
+
+        private void OnExecuteAssemblyRemove()
+        {
+            var assembly = Assemblies.FirstOrDefault(x => x.IsSelected);
+            if (assembly == null)
+            {
+                return;
+            }
+
+            RemoveAssemblyTestCases(assembly.FileName);
+            Assemblies.Remove(assembly);
+            RebuildTraits();
         }
 
         public bool IncludePassedTests
