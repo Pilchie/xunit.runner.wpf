@@ -51,9 +51,9 @@ namespace xunit.runner.wpf.ViewModel
             this.CancelCommand = new RelayCommand(OnExecuteCancel, CanExecuteCancel);
             this.TraitSelectionChangedCommand = new RelayCommand(OnTraitSelectionChanged);
             this.TraitsClearCommand = new RelayCommand(OnTraitsClear);
-            this.AssemblyReloadCommand = new RelayCommand(OnExecuteAssemblyReload);
+            this.AssemblyReloadCommand = new RelayCommand(OnExecuteAssemblyReload, OnCanExecuteAssemblyReload);
             this.AssemblyReloadAllCommand = new RelayCommand(OnExecuteAssemblyReloadAll);
-            this.AssemblyRemoveCommand = new RelayCommand(OnExecuteAssemblyRemove);
+            this.AssemblyRemoveCommand = new RelayCommand(OnExecuteAssemblyRemove, OnCanExecuteAssemblyRemove);
             this.AssemblyRemoveAllCommand = new RelayCommand(OnExecuteAssemblyRemoveAll);
         }
 
@@ -120,6 +120,11 @@ namespace xunit.runner.wpf.ViewModel
         public ICommand AssemblyRemoveAllCommand { get; }
 
         public CommandBindingCollection CommandBindings { get; }
+
+        public TestAssemblyViewModel SelectedAssembly
+        {
+            get { return Assemblies.FirstOrDefault(x => x.IsSelected); }
+        }
 
         private string methodsCaption;
         public string MethodsCaption
@@ -304,7 +309,7 @@ namespace xunit.runner.wpf.ViewModel
             }
         }
 
-        private void RemoveAssemblies(IEnumerable<TestAssemblyViewModel> assemblies)
+        private void RemoveAssemblies(params TestAssemblyViewModel[] assemblies)
         {
             foreach (var assembly in assemblies)
             {
@@ -523,9 +528,14 @@ namespace xunit.runner.wpf.ViewModel
             }
         }
 
+        private bool OnCanExecuteAssemblyReload()
+        {
+            return SelectedAssembly != null;
+        }
+
         private async void OnExecuteAssemblyReload()
         {
-            var assembly = Assemblies.FirstOrDefault(x => x.IsSelected);
+            var assembly = SelectedAssembly;
             if (assembly == null)
             {
                 return;
@@ -539,20 +549,25 @@ namespace xunit.runner.wpf.ViewModel
             await ReloadAssemblies(Assemblies);
         }
 
+        private bool OnCanExecuteAssemblyRemove()
+        {
+            return SelectedAssembly != null;
+        }
+
         private void OnExecuteAssemblyRemove()
         {
-            var assembly = Assemblies.FirstOrDefault(x => x.IsSelected);
+            var assembly = SelectedAssembly;
             if (assembly == null)
             {
                 return;
             }
 
-            RemoveAssemblies(new[] { assembly });
+            RemoveAssemblies(assembly);
         }
 
         private void OnExecuteAssemblyRemoveAll()
         {
-            RemoveAssemblies(Assemblies);
+            RemoveAssemblies(Assemblies.ToArray());
         }
 
         public bool IncludePassedTests
