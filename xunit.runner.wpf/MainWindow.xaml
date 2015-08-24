@@ -98,7 +98,14 @@
                     </ListBox>
                     <Label Content="Traits:"
                            Grid.Row="4" />
-                    <ListBox Grid.Row="5" />
+                    <ListBox Grid.Row="5"
+                             ItemsSource="{Binding Traits}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="vm:TraitViewModel">
+                                <TextBlock Text="{Binding DisplayName}" />
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                 </Grid>
             </GroupBox>
 

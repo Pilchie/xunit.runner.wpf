@@ -16,11 +16,13 @@ namespace xunit.runner.worker
         {
             private readonly ITestFrameworkDiscoverer _discoverer;
             private readonly ClientWriter _writer;
+            private readonly Dictionary<string, List<string>> _traitMap;
 
             internal Impl(ITestFrameworkDiscoverer discoverer, ClientWriter writer)
             {
                 _discoverer = discoverer;
                 _writer = writer;
+                _traitMap = new Dictionary<string, List<string>>(StringComparer.Ordinal);
             }
 
             protected override bool Visit(ITestCaseDiscoveryMessage testCaseDiscovered)
@@ -29,7 +31,8 @@ namespace xunit.runner.worker
                 var testCaseData = new TestCaseData(
                     _discoverer.Serialize(testCase),
                     testCase.DisplayName,
-                    testCaseDiscovered.TestAssembly.Assembly.AssemblyPath);
+                    testCaseDiscovered.TestAssembly.Assembly.AssemblyPath,
+                    testCase.Traits);
 
                 Console.WriteLine(testCase.DisplayName);
                 _writer.Write(TestDataKind.Value);

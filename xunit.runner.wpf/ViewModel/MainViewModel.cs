@@ -24,6 +24,7 @@ namespace xunit.runner.wpf.ViewModel
     {
         private readonly ITestUtil testUtil;
         private readonly ObservableCollection<TestCaseViewModel> allTestCases = new ObservableCollection<TestCaseViewModel>();
+        private readonly TraitCollectionView traitCollectionView = new TraitCollectionView();
         private CancellationTokenSource filterCancellationTokenSource = new CancellationTokenSource();
 
         private CancellationTokenSource cancellationTokenSource;
@@ -189,6 +190,7 @@ namespace xunit.runner.wpf.ViewModel
 
         public ObservableCollection<TestAssemblyViewModel> Assemblies { get; } = new ObservableCollection<TestAssemblyViewModel>();
         public FilteredCollectionView<TestCaseViewModel, SearchQuery> TestCases { get; }
+        public ObservableCollection<TraitViewModel> Traits => this.traitCollectionView.Collection;
 
         private async void OnExecuteOpen(object sender, ExecutedRoutedEventArgs e)
         {
@@ -362,7 +364,8 @@ namespace xunit.runner.wpf.ViewModel
         private void OnTestDiscovered(object sender, TestCaseDataEventArgs e)
         {
             var t = e.TestCaseData;
-            allTestCases.Add(new TestCaseViewModel(t.SerializedForm, t.DisplayName, t.AssemblyPath));
+            this.allTestCases.Add(new TestCaseViewModel(t.SerializedForm, t.DisplayName, t.AssemblyPath));
+            this.traitCollectionView.Add(t.TraitMap);
         }
 
         private void OnTestFinished(object sender, TestResultDataEventArgs e)
