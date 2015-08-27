@@ -23,18 +23,18 @@ namespace xunit.runner.wpf.ViewModel
 
         public void Add(ImmutableArray<TraitViewModel> traitList)
         {
-            if (traitList.Length == 0)
+            if (traitList.IsDefaultOrEmpty)
             {
                 return;
             }
 
             foreach (var traitViewModel in traitList)
             {
-                TryInsert(traitViewModel);
+                InsertIfNotPresent(traitViewModel);
             }
         }
 
-        private void TryInsert(TraitViewModel trait)
+        private void InsertIfNotPresent(TraitViewModel trait)
         {
             // TODO: make it a binary search
             for (int i = 0; i < _collection.Count; i++)

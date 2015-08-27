@@ -121,9 +121,9 @@ namespace xunit.runner.wpf.ViewModel
 
         public CommandBindingCollection CommandBindings { get; }
 
-        public TestAssemblyViewModel SelectedAssembly
+        public List<TestAssemblyViewModel> SelectedAssemblies
         {
-            get { return Assemblies.FirstOrDefault(x => x.IsSelected); }
+            get { return Assemblies.Where(x => x.IsSelected).ToList(); }
         }
 
         private string methodsCaption;
@@ -297,10 +297,6 @@ namespace xunit.runner.wpf.ViewModel
                     return testSessionList;
                 });
 
-                // Reloading an assembly could have changed the traits.  There is no easy way 
-                // to selectively edit this list (traits can cross assembly boundaries).  Just 
-                // do a full reload instead.
-                // way to 
                 RebuildTraits();
             }
             finally
@@ -309,9 +305,9 @@ namespace xunit.runner.wpf.ViewModel
             }
         }
 
-        private void RemoveAssemblies(params TestAssemblyViewModel[] assemblies)
+        private void RemoveAssemblies(IEnumerable<TestAssemblyViewModel> assemblies)
         {
-            foreach (var assembly in assemblies)
+            foreach (var assembly in assemblies.ToList())
             {
                 RemoveAssemblyTestCases(assembly.FileName);
                 Assemblies.Remove(assembly);
@@ -336,6 +332,12 @@ namespace xunit.runner.wpf.ViewModel
             }
         }
 
+        /// <summary>
+        /// Reloading an assembly could have changed the traits.  There is no easy way 
+        /// to selectively edit this list (traits can cross assembly boundaries).  Just 
+        /// do a full reload instead.
+        /// way to 
+        /// </summary>
         private void RebuildTraits()
         {
             this.traitCollectionView.Collection.Clear();
@@ -468,11 +470,11 @@ namespace xunit.runner.wpf.ViewModel
         {
             var t = e.TestCaseData;
 
-            var traitMap = t.TraitMap.Count == 0
+            var traitList = t.TraitMap.Count == 0
                 ? ImmutableArray<TraitViewModel>.Empty
                 : t.TraitMap.SelectMany(pair => pair.Value.Select(value => new TraitViewModel(pair.Key, value))).ToImmutableArray();
-            this.allTestCases.Add(new TestCaseViewModel(t.SerializedForm, t.DisplayName, t.AssemblyPath, traitMap));
-            this.traitCollectionView.Add(traitMap);
+            this.allTestCases.Add(new TestCaseViewModel(t.SerializedForm, t.DisplayName, t.AssemblyPath, traitList));
+            this.traitCollectionView.Add(traitList);
         }
 
         private void OnTestFinished(object sender, TestResultDataEventArgs e)
@@ -530,18 +532,12 @@ namespace xunit.runner.wpf.ViewModel
 
         private bool CanExecuteAssemblyReload()
         {
-            return SelectedAssembly != null;
+            return SelectedAssemblies.Count > 0;
         }
 
         private async void OnExecuteAssemblyReload()
         {
-            var assembly = SelectedAssembly;
-            if (assembly == null)
-            {
-                return;
-            }
-
-            await ReloadAssemblies(new[] { assembly });
+            await ReloadAssemblies(SelectedAssemblies);
         }
 
         private async void OnExecuteAssemblyReloadAll()
@@ -551,18 +547,12 @@ namespace xunit.runner.wpf.ViewModel
 
         private bool CanExecuteAssemblyRemove()
         {
-            return SelectedAssembly != null;
+            return SelectedAssemblies.Count > 0;
         }
 
         private void OnExecuteAssemblyRemove()
         {
-            var assembly = SelectedAssembly;
-            if (assembly == null)
-            {
-                return;
-            }
-
-            RemoveAssemblies(assembly);
+            RemoveAssemblies(SelectedAssemblies);
         }
 
         private void OnExecuteAssemblyRemoveAll()
