@@ -255,18 +255,15 @@ namespace xunit.runner.wpf.ViewModel
             {
                 await ExecuteTestSessionOperation(() =>
                 {
-                    var testSessionList = new List<ITestSession>();
+                    var taskList = new List<Task>();
                     foreach (var assembly in assemblies)
                     {
                         var assemblyPath = assembly.AssemblyFileName;
-                        var session = this.testUtil.Discover(assemblyPath, cancellationTokenSource.Token);
-                        session.TestDiscovered += OnTestDiscovered;
-
-                        testSessionList.Add(session);
+                        taskList.Add(this.testUtil.Discover(assemblyPath, OnTestDiscovered, cancellationTokenSource.Token));
                         Assemblies.Add(new TestAssemblyViewModel(assembly));
                     }
 
-                    return testSessionList;
+                    return taskList;
                 });
             }
             finally
@@ -282,19 +279,16 @@ namespace xunit.runner.wpf.ViewModel
             {
                 await ExecuteTestSessionOperation(() =>
                 {
-                    var testSessionList = new List<ITestSession>();
+                    var taskList = new List<Task>();
                     foreach (var assembly in assemblies)
                     {
                         var assemblyPath = assembly.FileName;
                         RemoveAssemblyTestCases(assemblyPath);
 
-                        var session = this.testUtil.Discover(assemblyPath, cancellationTokenSource.Token);
-                        session.TestDiscovered += OnTestDiscovered;
-
-                        testSessionList.Add(session);
+                        taskList.Add(this.testUtil.Discover(assemblyPath, OnTestDiscovered, cancellationTokenSource.Token));
                     }
 
-                    return testSessionList;
+                    return taskList;
                 });
 
                 RebuildTraits();
@@ -398,7 +392,7 @@ namespace xunit.runner.wpf.ViewModel
             await ExecuteTestSessionOperation(RunTests);
         }
 
-        private List<ITestSession> RunTests()
+        private List<Task> RunTests()
         {
             Debug.Assert(this.isBusy);
             Debug.Assert(this.cancellationTokenSource != null);
@@ -416,14 +410,14 @@ namespace xunit.runner.wpf.ViewModel
             }
 
             var runAll = TestCases.Count == this.allTestCases.Count;
-            var testSessionList = new List<ITestSession>();
+            var testSessionList = new List<Task>();
 
             foreach (var assemblyPath in TestCases.Select(x => x.AssemblyFileName).Distinct())
             {
-                ITestRunSession session;
+                Task task;
                 if (runAll)
                 {
-                    session = this.testUtil.RunAll(assemblyPath, this.cancellationTokenSource.Token);
+                    task = this.testUtil.RunAll(assemblyPath, OnTestFinished, this.cancellationTokenSource.Token);
                 }
                 else
                 {
@@ -431,17 +425,16 @@ namespace xunit.runner.wpf.ViewModel
                         .Where(x => x.AssemblyFileName == assemblyPath)
                         .Select(x => x.DisplayName)
                         .ToImmutableArray();
-                    session = this.testUtil.RunSpecific(assemblyPath, testCaseDisplayNames, this.cancellationTokenSource.Token);
+                    task = this.testUtil.RunSpecific(assemblyPath, testCaseDisplayNames, OnTestFinished, this.cancellationTokenSource.Token);
                 }
 
-                session.TestFinished += OnTestFinished;
-                testSessionList.Add(session);
+                testSessionList.Add(task);
             }
 
             return testSessionList;
         }
 
-        private async Task ExecuteTestSessionOperation(Func<List<ITestSession>> operation)
+        private async Task ExecuteTestSessionOperation(Func<List<Task>> operation)
         {
             Debug.Assert(!this.IsBusy);
             Debug.Assert(this.cancellationTokenSource == null);
@@ -451,8 +444,8 @@ namespace xunit.runner.wpf.ViewModel
                 this.IsBusy = true;
                 this.cancellationTokenSource = new CancellationTokenSource();
 
-                var testSessionList = operation();
-                await Task.WhenAll(testSessionList.Select(x => x.Task));
+                var taskList = operation();
+                await Task.WhenAll(taskList);
             }
             catch (Exception ex)
             {
@@ -466,40 +459,38 @@ namespace xunit.runner.wpf.ViewModel
             }
         }
 
-        private void OnTestDiscovered(object sender, TestCaseDataEventArgs e)
+        private void OnTestDiscovered(TestCaseData testCaseData)
         {
-            var t = e.TestCaseData;
-
-            var traitList = t.TraitMap.Count == 0
+            var traitList = testCaseData.TraitMap.Count == 0
                 ? ImmutableArray<TraitViewModel>.Empty
-                : t.TraitMap.SelectMany(pair => pair.Value.Select(value => new TraitViewModel(pair.Key, value))).ToImmutableArray();
-            this.allTestCases.Add(new TestCaseViewModel(t.SerializedForm, t.DisplayName, t.AssemblyPath, traitList));
+                : testCaseData.TraitMap.SelectMany(pair => pair.Value.Select(value => new TraitViewModel(pair.Key, value))).ToImmutableArray();
+            this.allTestCases.Add(new TestCaseViewModel(testCaseData.SerializedForm, testCaseData.DisplayName, testCaseData.AssemblyPath, traitList));
             this.traitCollectionView.Add(traitList);
         }
 
-        private void OnTestFinished(object sender, TestResultDataEventArgs e)
+        private void OnTestFinished(TestResultData testResultData)
         {
-            var testCase = TestCases.Single(x => x.DisplayName == e.TestCaseDisplayName);
-            testCase.State = e.TestState;
+            var testCase = TestCases.Single(x => x.DisplayName == testResultData.TestCaseDisplayName);
+            testCase.State = testResultData.TestState;
 
             TestsCompleted++;
-            switch (e.TestState)
+            switch (testResultData.TestState)
             {
                 case TestState.Passed:
                     TestsPassed++;
                     break;
                 case TestState.Failed:
                     TestsFailed++;
-                    Output = Output + e.Output;
+                    Output = Output + testResultData.Output;
                     break;
                 case TestState.Skipped:
                     TestsSkipped++;
                     break;
             }
 
-            if (e.TestState > CurrentRunState)
+            if (testResultData.TestState > CurrentRunState)
             {
-                CurrentRunState = e.TestState;
+                CurrentRunState = testResultData.TestState;
             }
         }
 
