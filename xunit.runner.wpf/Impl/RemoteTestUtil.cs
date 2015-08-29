@@ -37,14 +37,14 @@ namespace xunit.runner.wpf.Impl
             _dispatcher = dispatcher;
         }
 
-        private Connection CreateConnection(string action, string argument)
+        private async Task<Connection> CreateConnection(string action, string argument)
         {
             var pipeName = GetPipeName();
 
             try
             {
                 var stream = new NamedPipeClientStream(pipeName);
-                stream.Connect();
+                await stream.ConnectAsync();
 
                 var writer = new ClientWriter(stream);
                 writer.Write(action);
@@ -91,56 +91,34 @@ namespace xunit.runner.wpf.Impl
             return new ProcessInfo(pipeName, process);
         }
 
-        private Task Discover(string assemblyPath, Action<TestCaseData> callback, CancellationToken cancellationToken)
+        private async Task Discover(string assemblyPath, Action<TestCaseData> callback, CancellationToken cancellationToken)
         {
-            var connection = CreateConnection(Constants.ActionDiscover, assemblyPath);
-            var queue = new ConcurrentQueue<TestCaseData>();
-            var backgroundReader = new BackgroundReader<TestCaseData>(queue, new ClientReader(connection.Stream), r => r.ReadTestCaseData(), cancellationToken);
-            backgroundReader.ReadAsync();
-
-            var backgroundProducer = new BackgroundProducer<TestCaseData>(connection, _dispatcher, queue, callback);
-            return backgroundProducer.Task;
+            var connection = await CreateConnection(Constants.ActionDiscover, assemblyPath);
+            await ProcessResultsCore(connection, r => r.ReadTestCaseData(), callback, cancellationToken);
         }
 
-        private Task RunCore(string actionName, string assemblyPath, ImmutableArray<string> testCaseDisplayNames, Action<TestResultData> callback, CancellationToken cancellationToken)
+        private async Task RunCore(string actionName, string assemblyPath, ImmutableArray<string> testCaseDisplayNames, Action<TestResultData> callback, CancellationToken cancellationToken)
         {
-            var connection = StartWorkerProcess(actionName, assemblyPath);
-            var queue = CreateRunQueue(connection, testCaseDisplayNames, cancellationToken);
-            var backgroundProducer = new BackgroundProducer<TestResultData>(connection, _dispatcher, queue, callback);
-            return backgroundProducer.Task;
-        }
+            var connection = await CreateConnection(actionName, assemblyPath);
 
-        /// <summary>
-        /// Create the <see cref="ConcurrentQueue{T}"/> which will be populated with the <see cref="TestResultData"/>
-        /// as it arrives from the worker. 
-        /// </summary>
-        private static ConcurrentQueue<TestResultData> CreateRunQueue(Connection connection, ImmutableArray<string> testCaseDisplayNames, CancellationToken cancellationToken)
-        {
-            var queue = new ConcurrentQueue<TestResultData>();
-            var unused = CreateRunQueueCore(queue, connection, testCaseDisplayNames, cancellationToken);
-            return queue;
-        }
-
-        private static async Task CreateRunQueueCore(ConcurrentQueue<TestResultData> queue, Connection connection, ImmutableArray<string> testCaseDisplayNames, CancellationToken cancellationToken)
-        {
-            try
+            if (!testCaseDisplayNames.IsDefaultOrEmpty)
             {
-                if (!testCaseDisplayNames.IsDefaultOrEmpty)
-                {
-                    var backgroundWriter = new BackgroundWriter<string>(new ClientWriter(connection.Stream), testCaseDisplayNames, (w, s) => w.Write(s), cancellationToken);
-                    await backgroundWriter.WriteAsync();
-                }
-
-                var backgroundReader = new BackgroundReader<TestResultData>(queue, new ClientReader(connection.Stream), r => r.ReadTestResultData(), cancellationToken);
-                await backgroundReader.ReadAsync();
+                var backgroundWriter = new BackgroundWriter<string>(new ClientWriter(connection.Stream), testCaseDisplayNames, (w, s) => w.Write(s), cancellationToken);
+                await backgroundWriter.WriteAsync();
             }
-            catch (Exception ex)
-            {
-                Debug.Fail(ex.Message);
 
-                // Signal data completed
-                queue.Enqueue(null);
-            }
+            await ProcessResultsCore(connection, r => r.ReadTestResultData(), callback, cancellationToken);
+        }
+
+        private async Task ProcessResultsCore<T>(Connection connection, Func<ClientReader, T> readValue, Action<T> callback, CancellationToken cancellationToken)
+            where T : class
+        {
+            var queue = new ConcurrentQueue<T>();
+            var backgroundReader = new BackgroundReader<T>(queue, new ClientReader(connection.Stream), readValue);
+            var backgroundProducer = new BackgroundProducer<T>(connection, _dispatcher, queue, callback);
+
+            await backgroundReader.ReadAsync(cancellationToken);
+            await backgroundProducer.Task;
         }
 
         #region ITestUtil
