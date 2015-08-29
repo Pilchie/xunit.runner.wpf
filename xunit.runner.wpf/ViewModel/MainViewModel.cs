@@ -232,6 +232,7 @@ namespace xunit.runner.wpf.ViewModel
             var fileDialog = new OpenFileDialog
             {
                 Filter = "Unit Test Assemblies|*.dll",
+                Multiselect = true
             };
 
             if (fileDialog.ShowDialog(Application.Current.MainWindow) != true)
@@ -239,8 +240,8 @@ namespace xunit.runner.wpf.ViewModel
                 return;
             }
 
-            var fileName = fileDialog.FileName;
-            await AddAssemblies(new[] { new AssemblyAndConfigFile(fileName, configFileName: null) });
+            var assemblies = fileDialog.FileNames.Select(x => new AssemblyAndConfigFile(x, configFileName: null));
+            await AddAssemblies(assemblies);
         }
 
         private async Task AddAssemblies(IEnumerable<AssemblyAndConfigFile> assemblies)
