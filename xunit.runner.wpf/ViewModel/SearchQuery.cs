@@ -11,7 +11,7 @@ namespace xunit.runner.wpf.ViewModel
         public bool IncludeFailedTests = true;
         public bool IncludePassedTests = true;
         public bool IncludeSkippedTests = true;
-
         public string SearchString = string.Empty;
+        public HashSet<TraitViewModel> TraitSet = new HashSet<TraitViewModel>(TraitViewModelComparer.Instance);
     }
 }

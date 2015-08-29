@@ -46,39 +46,73 @@ namespace xunit.runner.wpf.Impl
             }
         }
 
-        private DiscoverSession Discover(string assemblyPath, CancellationToken cancellationToken)
+        private Task Discover(string assemblyPath, Action<TestCaseData> callback, CancellationToken cancellationToken)
         {
             var connection = StartWorkerProcess(Constants.ActionDiscover, assemblyPath);
-            return new DiscoverSession(connection, _dispatcher, cancellationToken);
+            var queue = new ConcurrentQueue<TestCaseData>();
+            var backgroundReader = new BackgroundReader<TestCaseData>(queue, new ClientReader(connection.Stream), r => r.ReadTestCaseData(), cancellationToken);
+            backgroundReader.ReadAsync();
+
+            var backgroundProducer = new BackgroundProducer<TestCaseData>(connection, _dispatcher, queue, callback);
+            return backgroundProducer.Task;
         }
 
-        private RunSession RunAll(string assemblyPath, CancellationToken cancellationToken)
+        private Task RunCore(string actionName, string assemblyPath, ImmutableArray<string> testCaseDisplayNames, Action<TestResultData> callback, CancellationToken cancellationToken)
         {
             var connection = StartWorkerProcess(Constants.ActionRunAll, assemblyPath);
-            return new RunSession(connection, _dispatcher, ImmutableArray<string>.Empty, cancellationToken);
+            var queue = CreateRunQueue(connection, testCaseDisplayNames, cancellationToken);
+            var backgroundProducer = new BackgroundProducer<TestResultData>(connection, _dispatcher, queue, callback);
+            return backgroundProducer.Task;
         }
 
-        private RunSession RunSpecific(string assemblyPath, ImmutableArray<string> testCaseDisplayNames, CancellationToken cancellationToken)
+        /// <summary>
+        /// Create the <see cref="ConcurrentQueue{T}"/> which will be populated with the <see cref="TestResultData"/>
+        /// as it arrives from the worker. 
+        /// </summary>
+        private static ConcurrentQueue<TestResultData> CreateRunQueue(Connection connection, ImmutableArray<string> testCaseDisplayNames, CancellationToken cancellationToken)
         {
-            var connection = StartWorkerProcess(Constants.ActionRunSpecific, assemblyPath);
-            return new RunSession(connection, _dispatcher, testCaseDisplayNames, cancellationToken);
+            var queue = new ConcurrentQueue<TestResultData>();
+            var unused = CreateRunQueueCore(queue, connection, testCaseDisplayNames, cancellationToken);
+            return queue;
+        }
+
+        private static async Task CreateRunQueueCore(ConcurrentQueue<TestResultData> queue, Connection connection, ImmutableArray<string> testCaseDisplayNames, CancellationToken cancellationToken)
+        {
+            try
+            {
+                if (!testCaseDisplayNames.IsDefaultOrEmpty)
+                {
+                    var backgroundWriter = new BackgroundWriter<string>(new ClientWriter(connection.Stream), testCaseDisplayNames, (w, s) => w.Write(s), cancellationToken);
+                    await backgroundWriter.WriteAsync();
+                }
+
+                var backgroundReader = new BackgroundReader<TestResultData>(queue, new ClientReader(connection.Stream), r => r.ReadTestResultData(), cancellationToken);
+                await backgroundReader.ReadAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.Fail(ex.Message);
+
+                // Signal data completed
+                queue.Enqueue(null);
+            }
         }
 
         #region ITestUtil
 
-        ITestDiscoverSession ITestUtil.Discover(string assemblyPath, CancellationToken cancellationToken)
+        Task ITestUtil.Discover(string assemblyPath, Action<TestCaseData> callback, CancellationToken cancellationToken)
         {
-            return Discover(assemblyPath, cancellationToken);
+            return Discover(assemblyPath, callback, cancellationToken);
         }
 
-        ITestRunSession ITestUtil.RunAll(string assemblyPath, CancellationToken cancellationToken)
+        Task ITestUtil.RunAll(string assemblyPath, Action<TestResultData> callback, CancellationToken cancellationToken)
         {
-            return RunAll(assemblyPath, cancellationToken);
+            return RunCore(Constants.ActionRunAll, assemblyPath, ImmutableArray<string>.Empty, callback, cancellationToken);
         }
 
-        ITestRunSession ITestUtil.RunSpecific(string assemblyPath, ImmutableArray<string> testCaseDisplayNames, CancellationToken cancellationToken)
+        Task ITestUtil.RunSpecific(string assemblyPath, ImmutableArray<string> testCaseDisplayNames, Action<TestResultData> callback, CancellationToken cancellationToken)
         {
-            return RunSpecific(assemblyPath, testCaseDisplayNames, cancellationToken);
+            return RunCore(Constants.ActionRunSpecific, assemblyPath, testCaseDisplayNames, callback, cancellationToken);
         }
 
         #endregion

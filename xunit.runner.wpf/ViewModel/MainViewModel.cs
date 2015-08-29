@@ -24,6 +24,7 @@ namespace xunit.runner.wpf.ViewModel
     {
         private readonly ITestUtil testUtil;
         private readonly ObservableCollection<TestCaseViewModel> allTestCases = new ObservableCollection<TestCaseViewModel>();
+        private readonly TraitCollectionView traitCollectionView = new TraitCollectionView();
         private CancellationTokenSource filterCancellationTokenSource = new CancellationTokenSource();
 
         private CancellationTokenSource cancellationTokenSource;
@@ -48,6 +49,12 @@ namespace xunit.runner.wpf.ViewModel
             this.WindowLoadedCommand = new RelayCommand(OnExecuteWindowLoaded);
             this.RunCommand = new RelayCommand(OnExecuteRun, CanExecuteRun);
             this.CancelCommand = new RelayCommand(OnExecuteCancel, CanExecuteCancel);
+            this.TraitSelectionChangedCommand = new RelayCommand(OnExecuteTraitSelectionChanged);
+            this.TraitsClearCommand = new RelayCommand(OnExecuteTraitsClear);
+            this.AssemblyReloadCommand = new RelayCommand(OnExecuteAssemblyReload, CanExecuteAssemblyReload);
+            this.AssemblyReloadAllCommand = new RelayCommand(OnExecuteAssemblyReloadAll);
+            this.AssemblyRemoveCommand = new RelayCommand(OnExecuteAssemblyRemove, CanExecuteAssemblyRemove);
+            this.AssemblyRemoveAllCommand = new RelayCommand(OnExecuteAssemblyRemoveAll);
         }
 
         private static bool TestCaseMatches(TestCaseViewModel testCase, SearchQuery searchQuery)
@@ -55,6 +62,24 @@ namespace xunit.runner.wpf.ViewModel
             if (!testCase.DisplayName.Contains(searchQuery.SearchString))
             {
                 return false;
+            }
+
+            if (searchQuery.TraitSet.Count > 0)
+            {
+                var anyMatch = false;
+                foreach (var cur in testCase.Traits)
+                {
+                    if (searchQuery.TraitSet.Contains(cur))
+                    {
+                        anyMatch = true;
+                        break;
+                    }
+                }
+
+                if (!anyMatch)
+                {
+                    return false;
+                }
             }
 
             switch (testCase.State)
@@ -87,8 +112,19 @@ namespace xunit.runner.wpf.ViewModel
         public ICommand WindowLoadedCommand { get; }
         public RelayCommand RunCommand { get; }
         public RelayCommand CancelCommand { get; }
+        public ICommand TraitSelectionChangedCommand { get; }
+        public ICommand TraitsClearCommand { get; }
+        public ICommand AssemblyReloadCommand { get; }
+        public ICommand AssemblyReloadAllCommand { get; }
+        public ICommand AssemblyRemoveCommand { get; }
+        public ICommand AssemblyRemoveAllCommand { get; }
 
         public CommandBindingCollection CommandBindings { get; }
+
+        public List<TestAssemblyViewModel> SelectedAssemblies
+        {
+            get { return Assemblies.Where(x => x.IsSelected).ToList(); }
+        }
 
         private string methodsCaption;
         public string MethodsCaption
@@ -189,6 +225,7 @@ namespace xunit.runner.wpf.ViewModel
 
         public ObservableCollection<TestAssemblyViewModel> Assemblies { get; } = new ObservableCollection<TestAssemblyViewModel>();
         public FilteredCollectionView<TestCaseViewModel, SearchQuery> TestCases { get; }
+        public ObservableCollection<TraitViewModel> Traits => this.traitCollectionView.Collection;
 
         private async void OnExecuteOpen(object sender, ExecutedRoutedEventArgs e)
         {
@@ -218,23 +255,89 @@ namespace xunit.runner.wpf.ViewModel
             {
                 await ExecuteTestSessionOperation(() =>
                 {
-                    var testSessionList = new List<ITestSession>();
+                    var taskList = new List<Task>();
                     foreach (var assembly in assemblies)
                     {
                         var assemblyPath = assembly.AssemblyFileName;
-                        var session = this.testUtil.Discover(assemblyPath, cancellationTokenSource.Token);
-                        session.TestDiscovered += OnTestDiscovered;
-
-                        testSessionList.Add(session);
+                        taskList.Add(this.testUtil.Discover(assemblyPath, OnTestDiscovered, cancellationTokenSource.Token));
                         Assemblies.Add(new TestAssemblyViewModel(assembly));
                     }
 
-                    return testSessionList;
+                    return taskList;
                 });
             }
             finally
             {
                 loadingDialog.Close();
+            }
+        }
+
+        private async Task ReloadAssemblies(IEnumerable<TestAssemblyViewModel> assemblies)
+        {
+            var loadingDialog = new LoadingDialog { Owner = MainWindow.Instance };
+            try
+            {
+                await ExecuteTestSessionOperation(() =>
+                {
+                    var taskList = new List<Task>();
+                    foreach (var assembly in assemblies)
+                    {
+                        var assemblyPath = assembly.FileName;
+                        RemoveAssemblyTestCases(assemblyPath);
+
+                        taskList.Add(this.testUtil.Discover(assemblyPath, OnTestDiscovered, cancellationTokenSource.Token));
+                    }
+
+                    return taskList;
+                });
+
+                RebuildTraits();
+            }
+            finally
+            {
+                loadingDialog.Close();
+            }
+        }
+
+        private void RemoveAssemblies(IEnumerable<TestAssemblyViewModel> assemblies)
+        {
+            foreach (var assembly in assemblies.ToList())
+            {
+                RemoveAssemblyTestCases(assembly.FileName);
+                Assemblies.Remove(assembly);
+            }
+
+            RebuildTraits();
+        }
+
+        private void RemoveAssemblyTestCases(string assemblyPath)
+        {
+            var i = 0;
+            while (i < this.allTestCases.Count)
+            {
+                if (this.allTestCases[i].AssemblyFileName == assemblyPath)
+                {
+                    this.allTestCases.RemoveAt(i);
+                }
+                else
+                {
+                    i++;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Reloading an assembly could have changed the traits.  There is no easy way 
+        /// to selectively edit this list (traits can cross assembly boundaries).  Just 
+        /// do a full reload instead.
+        /// way to 
+        /// </summary>
+        private void RebuildTraits()
+        {
+            this.traitCollectionView.Collection.Clear();
+            foreach (var testCase in this.allTestCases)
+            {
+                this.traitCollectionView.Add(testCase.Traits);
             }
         }
 
@@ -289,7 +392,7 @@ namespace xunit.runner.wpf.ViewModel
             await ExecuteTestSessionOperation(RunTests);
         }
 
-        private List<ITestSession> RunTests()
+        private List<Task> RunTests()
         {
             Debug.Assert(this.isBusy);
             Debug.Assert(this.cancellationTokenSource != null);
@@ -306,17 +409,15 @@ namespace xunit.runner.wpf.ViewModel
                 tc.State = TestState.NotRun;
             }
 
-            // TODO: Need a way to filter based on traits
-
             var runAll = TestCases.Count == this.allTestCases.Count;
-            var testSessionList = new List<ITestSession>();
+            var testSessionList = new List<Task>();
 
             foreach (var assemblyPath in TestCases.Select(x => x.AssemblyFileName).Distinct())
             {
-                ITestRunSession session;
+                Task task;
                 if (runAll)
                 {
-                    session = this.testUtil.RunAll(assemblyPath, this.cancellationTokenSource.Token);
+                    task = this.testUtil.RunAll(assemblyPath, OnTestFinished, this.cancellationTokenSource.Token);
                 }
                 else
                 {
@@ -324,17 +425,16 @@ namespace xunit.runner.wpf.ViewModel
                         .Where(x => x.AssemblyFileName == assemblyPath)
                         .Select(x => x.DisplayName)
                         .ToImmutableArray();
-                    session = this.testUtil.RunSpecific(assemblyPath, testCaseDisplayNames, this.cancellationTokenSource.Token);
+                    task = this.testUtil.RunSpecific(assemblyPath, testCaseDisplayNames, OnTestFinished, this.cancellationTokenSource.Token);
                 }
 
-                session.TestFinished += OnTestFinished;
-                testSessionList.Add(session);
+                testSessionList.Add(task);
             }
 
             return testSessionList;
         }
 
-        private async Task ExecuteTestSessionOperation(Func<List<ITestSession>> operation)
+        private async Task ExecuteTestSessionOperation(Func<List<Task>> operation)
         {
             Debug.Assert(!this.IsBusy);
             Debug.Assert(this.cancellationTokenSource == null);
@@ -344,8 +444,8 @@ namespace xunit.runner.wpf.ViewModel
                 this.IsBusy = true;
                 this.cancellationTokenSource = new CancellationTokenSource();
 
-                var testSessionList = operation();
-                await Task.WhenAll(testSessionList.Select(x => x.Task));
+                var taskList = operation();
+                await Task.WhenAll(taskList);
             }
             catch (Exception ex)
             {
@@ -359,35 +459,38 @@ namespace xunit.runner.wpf.ViewModel
             }
         }
 
-        private void OnTestDiscovered(object sender, TestCaseDataEventArgs e)
+        private void OnTestDiscovered(TestCaseData testCaseData)
         {
-            var t = e.TestCaseData;
-            allTestCases.Add(new TestCaseViewModel(t.SerializedForm, t.DisplayName, t.AssemblyPath));
+            var traitList = testCaseData.TraitMap.Count == 0
+                ? ImmutableArray<TraitViewModel>.Empty
+                : testCaseData.TraitMap.SelectMany(pair => pair.Value.Select(value => new TraitViewModel(pair.Key, value))).ToImmutableArray();
+            this.allTestCases.Add(new TestCaseViewModel(testCaseData.SerializedForm, testCaseData.DisplayName, testCaseData.AssemblyPath, traitList));
+            this.traitCollectionView.Add(traitList);
         }
 
-        private void OnTestFinished(object sender, TestResultDataEventArgs e)
+        private void OnTestFinished(TestResultData testResultData)
         {
-            var testCase = TestCases.Single(x => x.DisplayName == e.TestCaseDisplayName);
-            testCase.State = e.TestState;
+            var testCase = TestCases.Single(x => x.DisplayName == testResultData.TestCaseDisplayName);
+            testCase.State = testResultData.TestState;
 
             TestsCompleted++;
-            switch (e.TestState)
+            switch (testResultData.TestState)
             {
                 case TestState.Passed:
                     TestsPassed++;
                     break;
                 case TestState.Failed:
                     TestsFailed++;
-                    Output = Output + e.Output;
+                    Output = Output + testResultData.Output;
                     break;
                 case TestState.Skipped:
                     TestsSkipped++;
                     break;
             }
 
-            if (e.TestState > CurrentRunState)
+            if (testResultData.TestState > CurrentRunState)
             {
-                CurrentRunState = e.TestState;
+                CurrentRunState = testResultData.TestState;
             }
         }
 
@@ -400,6 +503,52 @@ namespace xunit.runner.wpf.ViewModel
         {
             Debug.Assert(CanExecuteCancel());
             this.cancellationTokenSource.Cancel();
+        }
+
+        private void OnExecuteTraitSelectionChanged()
+        {
+            this.searchQuery.TraitSet = new HashSet<TraitViewModel>(
+                this.traitCollectionView.Collection.Where(x => x.IsSelected),
+                TraitViewModelComparer.Instance);
+            FilterAfterDelay();
+        }
+
+        private void OnExecuteTraitsClear()
+        {
+            foreach (var cur in this.traitCollectionView.Collection)
+            {
+                cur.IsSelected = false;
+            }
+        }
+
+        private bool CanExecuteAssemblyReload()
+        {
+            return SelectedAssemblies.Count > 0;
+        }
+
+        private async void OnExecuteAssemblyReload()
+        {
+            await ReloadAssemblies(SelectedAssemblies);
+        }
+
+        private async void OnExecuteAssemblyReloadAll()
+        {
+            await ReloadAssemblies(Assemblies);
+        }
+
+        private bool CanExecuteAssemblyRemove()
+        {
+            return SelectedAssemblies.Count > 0;
+        }
+
+        private void OnExecuteAssemblyRemove()
+        {
+            RemoveAssemblies(SelectedAssemblies);
+        }
+
+        private void OnExecuteAssemblyRemoveAll()
+        {
+            RemoveAssemblies(Assemblies.ToArray());
         }
 
         public bool IncludePassedTests
