@@ -51,6 +51,7 @@
   <ItemGroup>
     <Compile Include="Connection.cs" />
     <Compile Include="DiscoverUtil.cs" />
+    <Compile Include="Listener.cs" />
     <Compile Include="MessageVisitor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

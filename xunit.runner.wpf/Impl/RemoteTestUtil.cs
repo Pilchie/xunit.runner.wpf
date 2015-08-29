@@ -17,38 +17,83 @@ namespace xunit.runner.wpf.Impl
 {
     internal sealed partial class RemoteTestUtil : ITestUtil
     {
+        private struct ProcessInfo
+        {
+            internal readonly string PipeName;
+            internal readonly Process Process;
+
+            internal ProcessInfo(string pipeName, Process process)
+            {
+                PipeName = pipeName;
+                Process = process;
+            }
+        }
+
         private readonly Dispatcher _dispatcher;
+        private ProcessInfo? _processInfo;
 
         internal RemoteTestUtil(Dispatcher dispatcher)
         {
             _dispatcher = dispatcher;
         }
 
-        private static Connection StartWorkerProcess(string action, string argument)
+        private Connection CreateConnection(string action, string argument)
         {
-            var pipeName = $"xunit.runner.wpf.pipe.{Guid.NewGuid()}";
-            var processStartInfo = new ProcessStartInfo();
-            processStartInfo.FileName = typeof(xunit.runner.worker.Program).Assembly.Location;
-            processStartInfo.Arguments = $"{pipeName} {action} {argument}";
-            processStartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            var pipeName = GetPipeName();
 
-            var process = Process.Start(processStartInfo);
             try
             {
                 var stream = new NamedPipeClientStream(pipeName);
                 stream.Connect();
-                return new Connection(stream, process);
+
+                var writer = new ClientWriter(stream);
+                writer.Write(action);
+                writer.Write(argument);
+
+                return new Connection(stream);
             }
             catch
             {
-                process.Kill();
+                try
+                {
+                    _processInfo?.Process.Kill();
+                }
+                catch
+                {
+                    // Inherent race condition here.  Just need to make sure the process is 
+                    // dead as it can't even handle new connections.
+                }
+
                 throw;
             }
         }
 
+        private string GetPipeName()
+        {
+            var process = _processInfo?.Process;
+            if (process != null && !process.HasExited)
+            {
+                return _processInfo.Value.PipeName;
+            }
+
+            _processInfo = StartWorkerProcess();
+            return _processInfo.Value.PipeName;
+        }
+
+        private static ProcessInfo StartWorkerProcess()
+        {
+            var pipeName = $"xunit.runner.wpf.pipe.{Guid.NewGuid()}";
+            var processStartInfo = new ProcessStartInfo();
+            processStartInfo.FileName = typeof(xunit.runner.worker.Program).Assembly.Location;
+            processStartInfo.Arguments = $"{pipeName} {Process.GetCurrentProcess().Id}";
+            processStartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            var process = Process.Start(processStartInfo);
+            return new ProcessInfo(pipeName, process);
+        }
+
         private Task Discover(string assemblyPath, Action<TestCaseData> callback, CancellationToken cancellationToken)
         {
-            var connection = StartWorkerProcess(Constants.ActionDiscover, assemblyPath);
+            var connection = CreateConnection(Constants.ActionDiscover, assemblyPath);
             var queue = new ConcurrentQueue<TestCaseData>();
             var backgroundReader = new BackgroundReader<TestCaseData>(queue, new ClientReader(connection.Stream), r => r.ReadTestCaseData(), cancellationToken);
             backgroundReader.ReadAsync();
