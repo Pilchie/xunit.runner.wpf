@@ -13,6 +13,7 @@ namespace xunit.runner.worker
     internal sealed class Listener
     {
         private readonly string _pipeName;
+        private readonly List<Task> _taskList = new List<Task>();
 
         internal Listener(string pipeName)
         {
@@ -24,19 +25,22 @@ namespace xunit.runner.worker
             bool success;
             do
             {
+                _taskList.RemoveAll(x => x.IsCompleted);
                 success = GoOne();
             } while (success);
+
+            // Wait for the existing tasks to complete before stopping the listener
+            Task.WaitAll(_taskList.ToArray());
         }
 
         private bool GoOne()
         {
             try
             {
-                var namedPipe = new NamedPipeServerStream(_pipeName);
+                var namedPipe = new NamedPipeServerStream(_pipeName, PipeDirection.InOut, maxNumberOfServerInstances: NamedPipeServerStream.MaxAllowedServerInstances);
                 namedPipe.WaitForConnection();
-                Console.WriteLine("Connection established processing");
-                ProcessConnection(namedPipe);
-                Console.WriteLine("Connection completed");
+                _taskList.Add(Task.Run(() => ProcessConnection(namedPipe)));
+
                 return true;
             }
             catch (Exception ex)
@@ -47,6 +51,13 @@ namespace xunit.runner.worker
         }
 
         private static void ProcessConnection(NamedPipeServerStream stream)
+        {
+            Console.WriteLine("Connection established processing");
+            ProcessConnectionCore(stream);
+            Console.WriteLine("Connection completed");
+        }
+
+        private static void ProcessConnectionCore(NamedPipeServerStream stream)
         {
             Debug.Assert(stream.IsConnected);
 

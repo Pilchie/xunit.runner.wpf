@@ -35,6 +35,7 @@ namespace xunit.runner.wpf.Impl
         internal RemoteTestUtil(Dispatcher dispatcher)
         {
             _dispatcher = dispatcher;
+            _processInfo = StartWorkerProcess();
         }
 
         private async Task<Connection> CreateConnection(string action, string argument)
