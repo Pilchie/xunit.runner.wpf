@@ -1,27 +1,23 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using xunit.runner.data;
-using xunit.runner.wpf.ViewModel;
 
 namespace xunit.runner.wpf.Converters
 {
     public class TestStateConverter : IValueConverter
     {
-        private static ImageSource passedSource;
         private static ImageSource failedSource;
+        private static ImageSource passedSource;
         private static ImageSource skippedSource;
+
         static TestStateConverter()
         {
-            passedSource = LoadResourceImage("Passed.ico");
-            failedSource = LoadResourceImage("Failed.ico");
-            skippedSource = LoadResourceImage("Skipped.ico");
+            failedSource = LoadResourceImage("Failed_small.png");
+            passedSource = LoadResourceImage("Passed_small.png");
+            skippedSource = LoadResourceImage("Skipped_small.png");
         }
 
         private static BitmapImage LoadResourceImage(string resourceName)
@@ -42,10 +38,10 @@ namespace xunit.runner.wpf.Converters
                 {
                     case TestState.Failed:
                         return Brushes.Red;
-                    case TestState.Skipped:
-                        return Brushes.Yellow;
                     case TestState.Passed:
                         return Brushes.Green;
+                    case TestState.Skipped:
+                        return Brushes.Yellow;
                     default:
                         return Brushes.Gray;
                 }
@@ -56,10 +52,10 @@ namespace xunit.runner.wpf.Converters
                 {
                     case TestState.Failed:
                         return failedSource;
-                    case TestState.Skipped:
-                        return skippedSource;
                     case TestState.Passed:
                         return passedSource;
+                    case TestState.Skipped:
+                        return skippedSource;
                     default:
                         return null;
                 }
