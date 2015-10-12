@@ -149,9 +149,6 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Artwork\xunit-dot-net-small-logo.png" />
-    <Resource Include="Artwork\Passed.ico" />
-    <Resource Include="Artwork\Skipped.ico" />
-    <Resource Include="Artwork\Failed.ico" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SampleTestAssembly\SampleTestAssembly.csproj">
@@ -169,7 +166,22 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <WCFMetadata Include="Service References\" />
+    <Resource Include="Artwork\Passed_small.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Artwork\Passed_large.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Artwork\Failed_small.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Artwork\Failed_large.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Artwork\Skipped_small.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Artwork\Skipped_large.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

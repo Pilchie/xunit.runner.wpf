@@ -8,6 +8,7 @@
         xmlns:vm="clr-namespace:xunit.runner.wpf.ViewModel"
         xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
         xmlns:cmd="clr-namespace:GalaSoft.MvvmLight.Command;assembly=GalaSoft.MvvmLight.Platform"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
         DataContext="{Binding Main, Source={StaticResource Locator}}"
         Title="xUnit.net Test Runner"
@@ -62,6 +63,7 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="2*" />
             </Grid.ColumnDefinitions>
+            
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="auto" />
@@ -80,6 +82,7 @@
                         <RowDefinition Height="auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
+                    
                     <Label Content="Search:"
                            Grid.Row="0" />
                     <TextBox Grid.Row="1"
@@ -110,6 +113,7 @@
                             </ContextMenu>
                         </ListBox.ContextMenu>
                     </ListBox>
+                    
                     <Label Content="Traits:"
                            Grid.Row="4" />
                     <ListBox Grid.Row="5"
@@ -163,7 +167,7 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <GroupBox Header="{Binding MethodsCaption}"
+                <GroupBox Header="{Binding TestCasesCaption}"
                           Margin="3"
                           Grid.Row="0">
                     <Grid>
@@ -172,42 +176,57 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <ToggleButton IsChecked="{Binding IncludePassedTests}"
-                                          Margin="3">
-                                <StackPanel Orientation="Horizontal">
-                                    <Image Source="Artwork\Passed.ico"
-                                           Height="16" />
-                                    <TextBlock Margin="4,0,0,0"
-                                               Text="{Binding TestsPassed}" />
-                                </StackPanel>
-                            </ToggleButton>
-                            <ToggleButton IsChecked="{Binding IncludeFailedTests}"
-                                          Margin="3"
-                                          Grid.Column="1">
-                                <StackPanel Orientation="Horizontal">
-                                    <Image Source="Artwork\Failed.ico"
-                                           Height="16" />
-                                    <TextBlock Margin="4,0,0,0"
-                                               Text="{Binding TestsFailed}" />
-                                </StackPanel>
-                            </ToggleButton>
-                            <ToggleButton IsChecked="{Binding IncludeSkippedTests}"
-                                          Margin="3"
-                                          Grid.Column="2">
-                                <StackPanel Orientation="Horizontal">
-                                    <Image Source="Artwork\Skipped.ico"
-                                           Height="16" />
-                                    <TextBlock Margin="4,0,0,0"
-                                               Text="{Binding TestsSkipped}" />
-                                </StackPanel>
-                            </ToggleButton>
-                        </Grid>
+                        <!--<ToolBarTray Grid.Row="0"
+                                     ToolBarTray.IsLocked="True"
+                                     Background="Transparent"
+                                     RenderOptions.BitmapScalingMode="NearestNeighbor">
+                            <ToolBar>-->
+                        <StackPanel Orientation="Horizontal">
+                                <ToggleButton IsChecked="{Binding IncludePassedTests}"
+                                              BorderThickness="0"
+                                              Background="Transparent"
+                                              Margin="0,4,2,4"
+                                              Grid.Column="0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Source="Artwork\Passed_large.png" />
+                                        <TextBlock Margin="4,0"
+                                                   FontSize="16"
+                                                   Text="{Binding TestsPassed, StringFormat={}{0:#\,0}}"
+                                                   VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </ToggleButton>
+
+                                <ToggleButton IsChecked="{Binding IncludeFailedTests}"
+                                              BorderThickness="0"
+                                              Background="Transparent"
+                                              Margin="2,4"
+                                              Grid.Column="1">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Source="Artwork\Failed_large.png" />
+                                        <TextBlock Margin="4,0"
+                                                   FontSize="16"
+                                                   Text="{Binding TestsFailed, StringFormat={}{0:#\,0}}" 
+                                                   VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </ToggleButton>
+
+                                <ToggleButton IsChecked="{Binding IncludeSkippedTests}"
+                                              BorderThickness="0"
+                                              Background="Transparent"
+                                              Margin="2,4,0,4"
+                                              Grid.Column="2">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Source="Artwork\Skipped_large.png" />
+                                        <TextBlock Margin="4,0"
+                                                   FontSize="16"
+                                                   Text="{Binding TestsSkipped, StringFormat={}{0:#\,0}}" 
+                                                   VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </ToggleButton>
+                            </StackPanel>
+                            <!--</ToolBar>
+                        </ToolBarTray>-->
+
                         <ListBox ItemsSource="{Binding TestCases}"
                                  SelectionMode="Extended"
                                  Grid.Row="1">
@@ -220,10 +239,11 @@
                                         </Grid.ColumnDefinitions>
 
                                         <Image Width="16"
-                                               Margin="2"
+                                               Margin="0,0,2,0"
                                                Source="{Binding Path=State, Mode=OneWay, Converter={StaticResource TestStateConverter}}"
                                                Grid.Column="0" />
                                         <TextBlock Text="{Binding DisplayName}"
+                                                   VerticalAlignment="Center"
                                                    Grid.Column="1" />
                                     </Grid>
                                 </DataTemplate>
@@ -256,8 +276,45 @@
                     BorderThickness="1"
                     Margin="3" />
             <StatusBar>
-                <StatusBarItem>
-                    <Label />
+                <StatusBar.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="auto" />
+                                <ColumnDefinition Width="auto" />
+                                <ColumnDefinition Width="auto" />
+                                <ColumnDefinition Width="16"/>
+                            </Grid.ColumnDefinitions>
+                        </Grid>
+                    </ItemsPanelTemplate>
+                </StatusBar.ItemsPanel>
+
+                <StatusBarItem Grid.Column="1">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Tests passed: "
+                                   Foreground="DarkGreen"/>
+
+                        <TextBlock Text="{Binding TestsPassed, StringFormat={}{0:#\,0}}"/>
+                    </StackPanel>
+                </StatusBarItem>
+
+                <StatusBarItem Grid.Column="2">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Tests failed: "
+                                   Foreground="DarkRed"/>
+
+                        <TextBlock Text="{Binding TestsFailed, StringFormat={}{0:#\,0}}"/>
+                    </StackPanel>
+                </StatusBarItem>
+
+                <StatusBarItem Grid.Column="3">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Tests skipped: "
+                                   Foreground="DarkGoldenrod"/>
+
+                        <TextBlock Text="{Binding TestsSkipped, StringFormat={}{0:#\,0}}"/>
+                    </StackPanel>
                 </StatusBarItem>
             </StatusBar>
         </StackPanel>

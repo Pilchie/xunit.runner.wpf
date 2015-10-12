@@ -12,9 +12,6 @@ using System.Collections.Specialized;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
-using System.IO.Pipes;
-using System.IO;
-using System.Text;
 using xunit.runner.data;
 using System.Windows.Threading;
 
@@ -40,7 +37,7 @@ namespace xunit.runner.wpf.ViewModel
 
             CommandBindings = CreateCommandBindings();
             this.testUtil = new xunit.runner.wpf.Impl.RemoteTestUtil(Dispatcher.CurrentDispatcher);
-            this.MethodsCaption = "Methods (0)";
+            this.TestCasesCaption = "Test Cases (0)";
 
             TestCases = new FilteredCollectionView<TestCaseViewModel, SearchQuery>(
                 allTestCases, TestCaseMatches, searchQuery, TestComparer.Instance);
@@ -104,7 +101,7 @@ namespace xunit.runner.wpf.ViewModel
 
         private void TestCases_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            MethodsCaption = $"Methods ({TestCases.Count})";
+            TestCasesCaption = $"Test Cases ({TestCases.Count:#,0})";
             MaximumProgress = TestCases.Count;
         }
 
@@ -126,11 +123,11 @@ namespace xunit.runner.wpf.ViewModel
             get { return Assemblies.Where(x => x.IsSelected).ToList(); }
         }
 
-        private string methodsCaption;
-        public string MethodsCaption
+        private string testCasesCaption;
+        public string TestCasesCaption
         {
-            get { return methodsCaption; }
-            private set { Set(ref methodsCaption, value); }
+            get { return testCasesCaption; }
+            private set { Set(ref testCasesCaption, value); }
         }
 
         private int testsCompleted = 0;
