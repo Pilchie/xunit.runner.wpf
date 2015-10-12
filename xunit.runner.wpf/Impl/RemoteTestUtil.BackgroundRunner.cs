@@ -54,26 +54,29 @@ namespace xunit.runner.wpf.Impl
             }
         }
 
+        /// <summary>
+        /// Utility for reading a collection of <see cref="{T}"/> values from the given 
+        /// <see cref="ClientReader"/> value.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
         private sealed class BackgroundReader<T> where T : class
         {
             private readonly ConcurrentQueue<T> _queue;
             private readonly ClientReader _reader;
             private readonly Func<ClientReader, T> _readValue;
-            private readonly CancellationToken _cancellationToken;
 
             internal ClientReader Reader => _reader;
 
-            internal BackgroundReader(ConcurrentQueue<T> queue, ClientReader reader, Func<ClientReader, T> readValue, CancellationToken cancellationToken)
+            internal BackgroundReader(ConcurrentQueue<T> queue, ClientReader reader, Func<ClientReader, T> readValue)
             {
                 _queue = queue;
                 _reader = reader;
                 _readValue = readValue;
-                _cancellationToken = cancellationToken;
             }
 
-            internal Task ReadAsync()
+            internal Task ReadAsync(CancellationToken cancellationToken = default(CancellationToken))
             {
-                return Task.Run(() => GoOnBackground(), _cancellationToken);
+                return Task.Run(() => GoOnBackground(cancellationToken), cancellationToken);
             }
 
             /// <summary>
@@ -81,9 +84,9 @@ namespace xunit.runner.wpf.Impl
             /// named pipe client stream.
             /// </summary>
             /// <returns></returns>
-            private void GoOnBackground()
+            private void GoOnBackground(CancellationToken cancellationToken)
             {
-                while (!_cancellationToken.IsCancellationRequested)
+                while (!cancellationToken.IsCancellationRequested)
                 {
                     try
                     {

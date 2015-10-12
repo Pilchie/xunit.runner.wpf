@@ -17,85 +17,109 @@ namespace xunit.runner.wpf.Impl
 {
     internal sealed partial class RemoteTestUtil : ITestUtil
     {
+        private struct ProcessInfo
+        {
+            internal readonly string PipeName;
+            internal readonly Process Process;
+
+            internal ProcessInfo(string pipeName, Process process)
+            {
+                PipeName = pipeName;
+                Process = process;
+            }
+        }
+
         private readonly Dispatcher _dispatcher;
+        private ProcessInfo? _processInfo;
 
         internal RemoteTestUtil(Dispatcher dispatcher)
         {
             _dispatcher = dispatcher;
+            _processInfo = StartWorkerProcess();
         }
 
-        private static Connection StartWorkerProcess(string action, string argument)
+        private async Task<Connection> CreateConnection(string action, string argument)
         {
-            var pipeName = $"xunit.runner.wpf.pipe.{Guid.NewGuid()}";
-            var processStartInfo = new ProcessStartInfo();
-            processStartInfo.FileName = typeof(xunit.runner.worker.Program).Assembly.Location;
-            processStartInfo.Arguments = $"{pipeName} {action} {argument}";
-            processStartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            var pipeName = GetPipeName();
 
-            var process = Process.Start(processStartInfo);
             try
             {
                 var stream = new NamedPipeClientStream(pipeName);
-                stream.Connect();
-                return new Connection(stream, process);
+                await stream.ConnectAsync();
+
+                var writer = new ClientWriter(stream);
+                writer.Write(action);
+                writer.Write(argument);
+
+                return new Connection(stream);
             }
             catch
             {
-                process.Kill();
+                try
+                {
+                    _processInfo?.Process.Kill();
+                }
+                catch
+                {
+                    // Inherent race condition here.  Just need to make sure the process is 
+                    // dead as it can't even handle new connections.
+                }
+
                 throw;
             }
         }
 
-        private Task Discover(string assemblyPath, Action<TestCaseData> callback, CancellationToken cancellationToken)
+        private string GetPipeName()
         {
-            var connection = StartWorkerProcess(Constants.ActionDiscover, assemblyPath);
-            var queue = new ConcurrentQueue<TestCaseData>();
-            var backgroundReader = new BackgroundReader<TestCaseData>(queue, new ClientReader(connection.Stream), r => r.ReadTestCaseData(), cancellationToken);
-            backgroundReader.ReadAsync();
-
-            var backgroundProducer = new BackgroundProducer<TestCaseData>(connection, _dispatcher, queue, callback);
-            return backgroundProducer.Task;
-        }
-
-        private Task RunCore(string actionName, string assemblyPath, ImmutableArray<string> testCaseDisplayNames, Action<TestResultData> callback, CancellationToken cancellationToken)
-        {
-            var connection = StartWorkerProcess(actionName, assemblyPath);
-            var queue = CreateRunQueue(connection, testCaseDisplayNames, cancellationToken);
-            var backgroundProducer = new BackgroundProducer<TestResultData>(connection, _dispatcher, queue, callback);
-            return backgroundProducer.Task;
-        }
-
-        /// <summary>
-        /// Create the <see cref="ConcurrentQueue{T}"/> which will be populated with the <see cref="TestResultData"/>
-        /// as it arrives from the worker. 
-        /// </summary>
-        private static ConcurrentQueue<TestResultData> CreateRunQueue(Connection connection, ImmutableArray<string> testCaseDisplayNames, CancellationToken cancellationToken)
-        {
-            var queue = new ConcurrentQueue<TestResultData>();
-            var unused = CreateRunQueueCore(queue, connection, testCaseDisplayNames, cancellationToken);
-            return queue;
-        }
-
-        private static async Task CreateRunQueueCore(ConcurrentQueue<TestResultData> queue, Connection connection, ImmutableArray<string> testCaseDisplayNames, CancellationToken cancellationToken)
-        {
-            try
+            var process = _processInfo?.Process;
+            if (process != null && !process.HasExited)
             {
-                if (!testCaseDisplayNames.IsDefaultOrEmpty)
-                {
-                    var backgroundWriter = new BackgroundWriter<string>(new ClientWriter(connection.Stream), testCaseDisplayNames, (w, s) => w.Write(s), cancellationToken);
-                    await backgroundWriter.WriteAsync();
-                }
-
-                var backgroundReader = new BackgroundReader<TestResultData>(queue, new ClientReader(connection.Stream), r => r.ReadTestResultData(), cancellationToken);
-                await backgroundReader.ReadAsync();
+                return _processInfo.Value.PipeName;
             }
-            catch (Exception ex)
+
+            _processInfo = StartWorkerProcess();
+            return _processInfo.Value.PipeName;
+        }
+
+        private static ProcessInfo StartWorkerProcess()
+        {
+            var pipeName = $"xunit.runner.wpf.pipe.{Guid.NewGuid()}";
+            var processStartInfo = new ProcessStartInfo();
+            processStartInfo.FileName = typeof(xunit.runner.worker.Program).Assembly.Location;
+            processStartInfo.Arguments = $"{pipeName} {Process.GetCurrentProcess().Id}";
+            processStartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            var process = Process.Start(processStartInfo);
+            return new ProcessInfo(pipeName, process);
+        }
+
+        private async Task Discover(string assemblyPath, Action<TestCaseData> callback, CancellationToken cancellationToken)
+        {
+            var connection = await CreateConnection(Constants.ActionDiscover, assemblyPath);
+            await ProcessResultsCore(connection, r => r.ReadTestCaseData(), callback, cancellationToken);
+        }
+
+        private async Task RunCore(string actionName, string assemblyPath, ImmutableArray<string> testCaseDisplayNames, Action<TestResultData> callback, CancellationToken cancellationToken)
+        {
+            var connection = await CreateConnection(actionName, assemblyPath);
+
+            if (!testCaseDisplayNames.IsDefaultOrEmpty)
             {
-                Debug.Fail(ex.Message);
-
-                // Signal data completed
-                queue.Enqueue(null);
+                var backgroundWriter = new BackgroundWriter<string>(new ClientWriter(connection.Stream), testCaseDisplayNames, (w, s) => w.Write(s), cancellationToken);
+                await backgroundWriter.WriteAsync();
             }
+
+            await ProcessResultsCore(connection, r => r.ReadTestResultData(), callback, cancellationToken);
+        }
+
+        private async Task ProcessResultsCore<T>(Connection connection, Func<ClientReader, T> readValue, Action<T> callback, CancellationToken cancellationToken)
+            where T : class
+        {
+            var queue = new ConcurrentQueue<T>();
+            var backgroundReader = new BackgroundReader<T>(queue, new ClientReader(connection.Stream), readValue);
+            var backgroundProducer = new BackgroundProducer<T>(connection, _dispatcher, queue, callback);
+
+            await backgroundReader.ReadAsync(cancellationToken);
+            await backgroundProducer.Task;
         }
 
         #region ITestUtil

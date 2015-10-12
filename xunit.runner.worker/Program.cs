@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
@@ -16,83 +17,32 @@ namespace xunit.runner.worker
 
         public static int Main(string[] args)
         {
-            if (args.Length < 3)
+            if (args.Length < 2)
             {
                 Usage();
                 return ExitError;
             }
 
-            string pipeName = args[0];
-            string action = args[1];
-            string argument = args[2];
-
-            try
+            var pipeName = args[0];
+            var parentPid = Int32.Parse(args[1]);
+            var process = Process.GetProcessById(parentPid);
+            if (process == null)
             {
-                using (var connection = CreateConnection(pipeName))
-                {
-                    connection.WaitForClientConnect();
-
-                    var stream = connection.Stream;
-
-                    switch (action)
-                    {
-                        case Constants.ActionDiscover:
-                            Discover(stream, argument);
-                            break;
-                        case Constants.ActionRunAll:
-                            RunAll(stream, argument);
-                            break;
-                        case Constants.ActionRunSpecific:
-                            RunSpecific(stream, argument);
-                            break;
-                        default:
-                            Usage();
-                            return ExitError;
-                    }
-
-                    connection.WaitForClientDone();
-                }
-            }
-            catch (Exception ex)
-            {
-                // Errors will happen during a rude shut down from the client. Print out to the screen
-                // for diagnostics and continue on.
-                Console.Error.WriteLine(ex.Message);
+                Console.WriteLine($"Invalid parent pid {parentPid}");
                 return ExitError;
             }
 
+            Task.Run(() => WaitForParentExit(process));
+
+            var listener = new Listener(pipeName);
+            listener.Go();
             return ExitSuccess;
         }
 
-        private static Connection CreateConnection(string pipeName)
+        private static void WaitForParentExit(Process process)
         {
-            if (pipeName == "test")
-            {
-                return new TestConnection();
-            }
-
-            return new NamedPipeConnection(pipeName);
-        }
-
-        private static void Discover(Stream stream, string assemblyPath)
-        {
-            Console.WriteLine($"discover started: {assemblyPath}");
-            DiscoverUtil.Go(assemblyPath, stream);
-            Console.WriteLine("discover ended");
-        }
-
-        private static void RunAll(Stream stream, string assemblyPath)
-        {
-            Console.WriteLine($"run all started: {assemblyPath}");
-            RunUtil.RunAll(assemblyPath, stream);
-            Console.WriteLine("run all ended");
-        }
-
-        private static void RunSpecific(Stream stream, string assemblyPath)
-        {
-            Console.WriteLine($"run specific started: {assemblyPath}");
-            RunUtil.RunSpecific(assemblyPath, stream);
-            Console.WriteLine("run specific ended");
+            process.WaitForExit();
+            Environment.Exit(ExitSuccess);
         }
 
         private static void Usage()
