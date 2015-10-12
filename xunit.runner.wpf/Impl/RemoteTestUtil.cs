@@ -59,7 +59,7 @@ namespace xunit.runner.wpf.Impl
 
         private Task RunCore(string actionName, string assemblyPath, ImmutableArray<string> testCaseDisplayNames, Action<TestResultData> callback, CancellationToken cancellationToken)
         {
-            var connection = StartWorkerProcess(Constants.ActionRunAll, assemblyPath);
+            var connection = StartWorkerProcess(actionName, assemblyPath);
             var queue = CreateRunQueue(connection, testCaseDisplayNames, cancellationToken);
             var backgroundProducer = new BackgroundProducer<TestResultData>(connection, _dispatcher, queue, callback);
             return backgroundProducer.Task;
