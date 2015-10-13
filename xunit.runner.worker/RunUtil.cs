@@ -122,8 +122,8 @@ namespace xunit.runner.worker
         {
             using (AssemblyHelper.SubscribeResolve())
             using (var xunit = new XunitFrontController(
+                AppDomainSupport.IfAvailable,
                 assemblyFileName: assemblyPath,
-                useAppDomain: true,
                 shadowCopy: false,
                 diagnosticMessageSink: new MessageVisitor()))
             using (var writer = new ClientWriter(stream))
@@ -139,8 +139,8 @@ namespace xunit.runner.worker
         {
             using (AssemblyHelper.SubscribeResolve())
             using (var xunit = new XunitFrontController(
+                AppDomainSupport.IfAvailable,
                 assemblyFileName: assemblyPath,
-                useAppDomain: true,
                 shadowCopy: false,
                 diagnosticMessageSink: new MessageVisitor()))
             using (var writer = new ClientWriter(stream))
