@@ -12,7 +12,7 @@
         mc:Ignorable="d"
         DataContext="{Binding Main, Source={StaticResource Locator}}"
         Title="xUnit.net Test Runner"
-        Icon="Artwork\xunit-dot-net-small-logo.png"
+        Icon="Artwork\Application.ico"
         ResizeMode="CanResizeWithGrip"
         Height="600"
         Width="525">
