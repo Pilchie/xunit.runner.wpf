@@ -1,43 +1,61 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 using xunit.runner.data;
+using System.Threading;
 
 namespace xunit.runner.worker
 {
     internal sealed class DiscoverUtil
     {
-        private sealed class Impl : TestMessageVisitor<IDiscoveryCompleteMessage>
+        private sealed class DiscoverySink : MarshalByRefObject, IMessageSink, IDisposable
         {
             private readonly ITestFrameworkDiscoverer _discoverer;
             private readonly ClientWriter _writer;
             private readonly Dictionary<string, List<string>> _traitMap;
 
-            internal Impl(ITestFrameworkDiscoverer discoverer, ClientWriter writer)
+            public ManualResetEvent Finished { get; }
+
+            internal DiscoverySink(ITestFrameworkDiscoverer discoverer, ClientWriter writer)
             {
+                this.Finished = new ManualResetEvent(false);
+
                 _discoverer = discoverer;
                 _writer = writer;
                 _traitMap = new Dictionary<string, List<string>>(StringComparer.Ordinal);
             }
 
-            protected override bool Visit(ITestCaseDiscoveryMessage testCaseDiscovered)
+            public bool OnMessage(IMessageSinkMessage message)
             {
-                var testCase = testCaseDiscovered.TestCase;
-                var testCaseData = new TestCaseData(
-                    testCase.DisplayName,
-                    testCaseDiscovered.TestAssembly.Assembly.AssemblyPath,
-                    testCase.Traits);
+                if (message is IDiscoveryCompleteMessage)
+                {
+                    // we've gotten the completion message. Signal and return false to receive no more messages.
+                    this.Finished.Set();
+                    return false;
+                }
 
-                Console.WriteLine(testCase.DisplayName);
-                _writer.Write(TestDataKind.Value);
-                _writer.Write(testCaseData);
+                var testCaseDiscovered = message as ITestCaseDiscoveryMessage;
+                if (testCaseDiscovered != null)
+                {
+                    var testCase = testCaseDiscovered.TestCase;
+                    var testCaseData = new TestCaseData(
+                        testCase.DisplayName,
+                        testCaseDiscovered.TestAssembly.Assembly.AssemblyPath,
+                        testCase.Traits);
+
+                    Console.WriteLine(testCase.DisplayName);
+                    _writer.Write(TestDataKind.Value);
+                    _writer.Write(testCaseData);
+                }
 
                 return _writer.IsConnected;
+            }
+
+            public void Dispose()
+            {
+                this.Finished.Dispose();
             }
         }
 
@@ -47,10 +65,9 @@ namespace xunit.runner.worker
             using (var xunit = new XunitFrontController(
                 AppDomainSupport.IfAvailable,
                 assemblyFileName: fileName,
-                diagnosticMessageSink: new MessageVisitor(),
                 shadowCopy: false))
             using (var writer = new ClientWriter(stream))
-            using (var impl = new Impl(xunit, writer))
+            using (var impl = new DiscoverySink(xunit, writer))
             {
                 xunit.Find(includeSourceInformation: false, messageSink: impl, discoveryOptions: TestFrameworkOptions.ForDiscovery());
                 impl.Finished.WaitOne();
