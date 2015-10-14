@@ -92,10 +92,23 @@ namespace xunit.runner.wpf.Impl
             return new ProcessInfo(pipeName, process);
         }
 
+        private void RecycleProcess()
+        {
+            var process = _processInfo?.Process;
+            if (process != null && !process.HasExited)
+            {
+                process.Kill();
+            }
+
+            _processInfo = StartWorkerProcess();
+        }
+
         private async Task Discover(string assemblyPath, Action<List<TestCaseData>> callback, CancellationToken cancellationToken)
         {
             var connection = await CreateConnection(Constants.ActionDiscover, assemblyPath);
             await ProcessResultsCore(connection, r => r.ReadTestCaseData(), callback, cancellationToken);
+
+            RecycleProcess();
         }
 
         private async Task RunCore(string actionName, string assemblyPath, ImmutableArray<string> testCaseDisplayNames, Action<List<TestResultData>> callback, CancellationToken cancellationToken)
