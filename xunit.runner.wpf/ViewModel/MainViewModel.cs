@@ -28,6 +28,10 @@ namespace xunit.runner.wpf.ViewModel
         private bool isBusy;
         private SearchQuery searchQuery = new SearchQuery();
 
+        public ObservableCollection<TestAssemblyViewModel> Assemblies { get; } = new ObservableCollection<TestAssemblyViewModel>();
+        public FilteredCollectionView<TestCaseViewModel, SearchQuery> FilteredTestCases { get; }
+        public ObservableCollection<TraitViewModel> Traits => this.traitCollectionView.Collection;
+
         public MainViewModel()
         {
             if (IsInDesignMode)
@@ -39,10 +43,10 @@ namespace xunit.runner.wpf.ViewModel
             this.testUtil = new xunit.runner.wpf.Impl.RemoteTestUtil(Dispatcher.CurrentDispatcher);
             this.TestCasesCaption = "Test Cases (0)";
 
-            TestCases = new FilteredCollectionView<TestCaseViewModel, SearchQuery>(
+            this.FilteredTestCases = new FilteredCollectionView<TestCaseViewModel, SearchQuery>(
                 allTestCases, TestCaseMatches, searchQuery, TestComparer.Instance);
 
-            this.TestCases.CollectionChanged += TestCases_CollectionChanged;
+            this.FilteredTestCases.CollectionChanged += TestCases_CollectionChanged;
             this.WindowLoadedCommand = new RelayCommand(OnExecuteWindowLoaded);
             this.RunCommand = new RelayCommand(OnExecuteRun, CanExecuteRun);
             this.CancelCommand = new RelayCommand(OnExecuteCancel, CanExecuteCancel);
@@ -101,8 +105,8 @@ namespace xunit.runner.wpf.ViewModel
 
         private void TestCases_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            TestCasesCaption = $"Test Cases ({TestCases.Count:#,0})";
-            MaximumProgress = TestCases.Count;
+            TestCasesCaption = $"Test Cases ({FilteredTestCases.Count:#,0})";
+            MaximumProgress = FilteredTestCases.Count;
         }
 
         public ICommand ExitCommand { get; } = new RelayCommand(OnExecuteExit);
@@ -202,7 +206,7 @@ namespace xunit.runner.wpf.ViewModel
                 .ContinueWith(
                     x =>
                     {
-                        TestCases.FilterArgument = searchQuery;
+                        FilteredTestCases.FilterArgument = searchQuery;
                     },
                     token,
                     TaskContinuationOptions.None,
@@ -219,10 +223,6 @@ namespace xunit.runner.wpf.ViewModel
                 openBinding,
             };
         }
-
-        public ObservableCollection<TestAssemblyViewModel> Assemblies { get; } = new ObservableCollection<TestAssemblyViewModel>();
-        public FilteredCollectionView<TestCaseViewModel, SearchQuery> TestCases { get; }
-        public ObservableCollection<TraitViewModel> Traits => this.traitCollectionView.Collection;
 
         private async void OnExecuteOpen(object sender, ExecutedRoutedEventArgs e)
         {
@@ -249,16 +249,23 @@ namespace xunit.runner.wpf.ViewModel
             }
 
             var loadingDialog = new LoadingDialog { Owner = MainWindow.Instance };
+            var newAssemblyViewModels = new List<TestAssemblyViewModel>();
+
             try
             {
-                await ExecuteTestSessionOperation(() =>
+                await this.ExecuteTestSessionOperation(() =>
                 {
                     var taskList = new List<Task>();
                     foreach (var assembly in assemblies)
                     {
-                        var assemblyPath = assembly.AssemblyFileName;
-                        taskList.Add(this.testUtil.Discover(assemblyPath, OnTestDiscovered, cancellationTokenSource.Token));
-                        Assemblies.Add(new TestAssemblyViewModel(assembly));
+                        taskList.Add(this.testUtil.Discover(assembly.AssemblyFileName, this.OnTestDiscovered, this.cancellationTokenSource.Token));
+
+                        var assemblyViewModel = new TestAssemblyViewModel(assembly);
+
+                        newAssemblyViewModels.Add(assemblyViewModel);
+                        this.Assemblies.Add(assemblyViewModel);
+
+                        assemblyViewModel.State = AssemblyState.Loading;
                     }
 
                     return taskList;
@@ -266,6 +273,11 @@ namespace xunit.runner.wpf.ViewModel
             }
             finally
             {
+                foreach (var assemblyViewModel in newAssemblyViewModels)
+                {
+                    assemblyViewModel.State = AssemblyState.Ready;
+                }
+
                 loadingDialog.Close();
             }
         }
@@ -278,9 +290,11 @@ namespace xunit.runner.wpf.ViewModel
                 await ExecuteTestSessionOperation(() =>
                 {
                     var taskList = new List<Task>();
-                    foreach (var assembly in assemblies)
+                    foreach (var assemblyViewModel in assemblies)
                     {
-                        var assemblyPath = assembly.FileName;
+                        assemblyViewModel.State = AssemblyState.Loading;
+
+                        var assemblyPath = assemblyViewModel.FileName;
                         RemoveAssemblyTestCases(assemblyPath);
 
                         taskList.Add(this.testUtil.Discover(assemblyPath, OnTestDiscovered, cancellationTokenSource.Token));
@@ -293,6 +307,11 @@ namespace xunit.runner.wpf.ViewModel
             }
             finally
             {
+                foreach (var assemblyViewModel in assemblies)
+                {
+                    assemblyViewModel.State = AssemblyState.Ready;
+                }
+
                 loadingDialog.Close();
             }
         }
@@ -313,7 +332,7 @@ namespace xunit.runner.wpf.ViewModel
             var i = 0;
             while (i < this.allTestCases.Count)
             {
-                if (this.allTestCases[i].AssemblyFileName == assemblyPath)
+                if (string.Compare(this.allTestCases[i].AssemblyFileName, assemblyPath, StringComparison.OrdinalIgnoreCase) == 0)
                 {
                     this.allTestCases.RemoveAt(i);
                 }
@@ -383,7 +402,7 @@ namespace xunit.runner.wpf.ViewModel
                (fileName?.EndsWith(".json", StringComparison.OrdinalIgnoreCase) ?? false);
 
         private bool CanExecuteRun()
-            => !IsBusy && TestCases.Any();
+            => !IsBusy && FilteredTestCases.Any();
 
         private async void OnExecuteRun()
         {
@@ -402,15 +421,15 @@ namespace xunit.runner.wpf.ViewModel
             CurrentRunState = TestState.NotRun;
             Output = string.Empty;
 
-            foreach (var tc in TestCases)
+            foreach (var tc in FilteredTestCases)
             {
                 tc.State = TestState.NotRun;
             }
 
-            var runAll = TestCases.Count == this.allTestCases.Count;
+            var runAll = FilteredTestCases.Count == this.allTestCases.Count;
             var testSessionList = new List<Task>();
 
-            foreach (var assemblyPath in TestCases.Select(x => x.AssemblyFileName).Distinct())
+            foreach (var assemblyPath in FilteredTestCases.Select(x => x.AssemblyFileName).Distinct())
             {
                 Task task;
                 if (runAll)
@@ -419,7 +438,7 @@ namespace xunit.runner.wpf.ViewModel
                 }
                 else
                 {
-                    var testCaseDisplayNames = TestCases
+                    var testCaseDisplayNames = FilteredTestCases
                         .Where(x => x.AssemblyFileName == assemblyPath)
                         .Select(x => x.DisplayName)
                         .ToImmutableArray();
@@ -468,7 +487,7 @@ namespace xunit.runner.wpf.ViewModel
 
         private void OnTestFinished(TestResultData testResultData)
         {
-            var testCase = TestCases.Single(x => x.DisplayName == testResultData.TestCaseDisplayName);
+            var testCase = FilteredTestCases.Single(x => x.DisplayName == testResultData.TestCaseDisplayName);
             testCase.State = testResultData.TestState;
 
             TestsCompleted++;
