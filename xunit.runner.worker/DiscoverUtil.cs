@@ -29,7 +29,6 @@ namespace xunit.runner.worker
             {
                 var testCase = testCaseDiscovered.TestCase;
                 var testCaseData = new TestCaseData(
-                    _discoverer.Serialize(testCase),
                     testCase.DisplayName,
                     testCaseDiscovered.TestAssembly.Assembly.AssemblyPath,
                     testCase.Traits);
