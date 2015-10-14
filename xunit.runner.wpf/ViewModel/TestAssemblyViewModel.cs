@@ -1,10 +1,5 @@
 ﻿using GalaSoft.MvvmLight;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace xunit.runner.wpf.ViewModel
 {
@@ -12,6 +7,7 @@ namespace xunit.runner.wpf.ViewModel
     {
         private readonly AssemblyAndConfigFile _assembly;
         private bool _isSelected;
+        private AssemblyState _state;
 
         public TestAssemblyViewModel(AssemblyAndConfigFile assembly)
         {
@@ -27,5 +23,17 @@ namespace xunit.runner.wpf.ViewModel
             get { return _isSelected; }
             set { Set(ref _isSelected, value, nameof(IsSelected)); }
         }
+
+        public AssemblyState State
+        {
+            get { return _state; }
+            set { Set(ref _state, value, nameof(State)); }
+        }
+    }
+
+    public enum AssemblyState
+    {
+        Ready,
+        Loading
     }
 }

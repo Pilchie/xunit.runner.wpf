@@ -63,7 +63,7 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="2*" />
             </Grid.ColumnDefinitions>
-            
+
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="auto" />
@@ -82,11 +82,12 @@
                         <RowDefinition Height="auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    
+
                     <Label Content="Search:"
                            Grid.Row="0" />
                     <TextBox Grid.Row="1"
                              Text="{Binding FilterString, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
                     <Label Content="Assemblies:"
                            Grid.Row="2" />
                     <ListBox Height="175"
@@ -95,14 +96,35 @@
                              Grid.Row="3">
                         <ListBox.ItemTemplate>
                             <DataTemplate DataType="vm:TestAssemblyViewModel">
-                                <TextBlock Text="{Binding DisplayName}" />
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding DisplayName}" />
+
+                                    <TextBlock Text=" Discovering tests..."
+                                               FontStyle="Italic"
+                                               Foreground="Gray">
+
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding State}" Value="{x:Static vm:AssemblyState.Loading}">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+
+                                    </TextBlock>
+                                </StackPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
+                        
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="{x:Type ListBoxItem}">
                                 <Setter Property="IsSelected" Value="{Binding Mode=TwoWay, Path=IsSelected}"/>
                             </Style>
                         </ListBox.ItemContainerStyle>
+                        
                         <ListBox.ContextMenu>
                             <ContextMenu>
                                 <MenuItem Header="Reload" Command="{Binding AssemblyReloadCommand}" />
@@ -113,7 +135,7 @@
                             </ContextMenu>
                         </ListBox.ContextMenu>
                     </ListBox>
-                    
+
                     <Label Content="Traits:"
                            Grid.Row="4" />
                     <ListBox Grid.Row="5"
@@ -176,58 +198,51 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
-                        <!--<ToolBarTray Grid.Row="0"
-                                     ToolBarTray.IsLocked="True"
-                                     Background="Transparent"
-                                     RenderOptions.BitmapScalingMode="NearestNeighbor">
-                            <ToolBar>-->
                         <StackPanel Orientation="Horizontal">
-                                <ToggleButton IsChecked="{Binding IncludePassedTests}"
-                                              BorderThickness="0"
-                                              Background="Transparent"
-                                              Margin="0,4,2,4"
-                                              Grid.Column="0">
-                                    <StackPanel Orientation="Horizontal">
-                                        <Image Source="Artwork\Passed_large.png" />
-                                        <TextBlock Margin="4,0"
-                                                   FontSize="16"
-                                                   Text="{Binding TestsPassed, StringFormat={}{0:#\,0}}"
-                                                   VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </ToggleButton>
+                            <ToggleButton IsChecked="{Binding IncludePassedTests}"
+                                          BorderThickness="0"
+                                          Background="Transparent"
+                                          Margin="0,4,2,4"
+                                          Grid.Column="0">
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="Artwork\Passed_large.png" />
+                                    <TextBlock Margin="4,0"
+                                               FontSize="16"
+                                               Text="{Binding TestsPassed, StringFormat={}{0:#\,0}}"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </ToggleButton>
 
-                                <ToggleButton IsChecked="{Binding IncludeFailedTests}"
-                                              BorderThickness="0"
-                                              Background="Transparent"
-                                              Margin="2,4"
-                                              Grid.Column="1">
-                                    <StackPanel Orientation="Horizontal">
-                                        <Image Source="Artwork\Failed_large.png" />
-                                        <TextBlock Margin="4,0"
-                                                   FontSize="16"
-                                                   Text="{Binding TestsFailed, StringFormat={}{0:#\,0}}" 
-                                                   VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </ToggleButton>
+                            <ToggleButton IsChecked="{Binding IncludeFailedTests}"
+                                          BorderThickness="0"
+                                          Background="Transparent"
+                                          Margin="2,4"
+                                          Grid.Column="1">
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="Artwork\Failed_large.png" />
+                                    <TextBlock Margin="4,0"
+                                               FontSize="16"
+                                               Text="{Binding TestsFailed, StringFormat={}{0:#\,0}}" 
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </ToggleButton>
 
-                                <ToggleButton IsChecked="{Binding IncludeSkippedTests}"
-                                              BorderThickness="0"
-                                              Background="Transparent"
-                                              Margin="2,4,0,4"
-                                              Grid.Column="2">
-                                    <StackPanel Orientation="Horizontal">
-                                        <Image Source="Artwork\Skipped_large.png" />
-                                        <TextBlock Margin="4,0"
-                                                   FontSize="16"
-                                                   Text="{Binding TestsSkipped, StringFormat={}{0:#\,0}}" 
-                                                   VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </ToggleButton>
-                            </StackPanel>
-                            <!--</ToolBar>
-                        </ToolBarTray>-->
+                            <ToggleButton IsChecked="{Binding IncludeSkippedTests}"
+                                          BorderThickness="0"
+                                          Background="Transparent"
+                                          Margin="2,4,0,4"
+                                          Grid.Column="2">
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="Artwork\Skipped_large.png" />
+                                    <TextBlock Margin="4,0"
+                                               FontSize="16"
+                                               Text="{Binding TestsSkipped, StringFormat={}{0:#\,0}}" 
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </ToggleButton>
+                        </StackPanel>
 
-                        <ListBox ItemsSource="{Binding TestCases}"
+                        <ListBox ItemsSource="{Binding FilteredTestCases}"
                                  SelectionMode="Extended"
                                  Grid.Row="1">
                             <ListBox.ItemTemplate>
