@@ -476,13 +476,53 @@ namespace xunit.runner.wpf.ViewModel
             }
         }
 
-        private void OnTestDiscovered(TestCaseData testCaseData)
+        private void OnTestDiscovered(List<TestCaseData> testCaseData)
         {
-            var traitList = testCaseData.TraitMap.Count == 0
-                ? ImmutableArray<TraitViewModel>.Empty
-                : testCaseData.TraitMap.SelectMany(pair => pair.Value.Select(value => new TraitViewModel(pair.Key, value))).ToImmutableArray();
-            this.allTestCases.Add(new TestCaseViewModel(testCaseData.SerializedForm, testCaseData.DisplayName, testCaseData.AssemblyPath, traitList));
-            this.traitCollectionView.Add(traitList);
+            var allTraits = new SortedDictionary<string, SortedSet<string>>();
+            foreach (var data in testCaseData)
+            {
+                AddTraits(allTraits, data);
+            }
+
+            this.allTestCases.AddRange(testCaseData.Select(d =>
+                new TestCaseViewModel(d.DisplayName, d.AssemblyPath, Convert(CreateSortedTraits(d)).ToImmutableArray())));
+            
+            this.traitCollectionView.Add(Convert(allTraits));
+        }
+
+        private SortedDictionary<string, SortedSet<string>> CreateSortedTraits(TestCaseData data)
+        {
+            var traits = new SortedDictionary<string, SortedSet<string>>();
+            AddTraits(traits, data);
+            return traits;
+        }
+
+        private static IEnumerable<TraitViewModel> Convert(SortedDictionary<string, SortedSet<string>> allTraits)
+        {
+            return allTraits.SelectMany(pair => pair.Value.Select(value => new TraitViewModel(pair.Key, value)));
+        }
+
+        private static void AddTraits(SortedDictionary<string, SortedSet<string>> allTraits, TestCaseData data)
+        {
+            foreach (var kvp in data.TraitMap)
+            {
+                SortedSet<string> values;
+                if (!allTraits.TryGetValue(kvp.Key, out values))
+                {
+                    values = new SortedSet<string>();
+                    allTraits.Add(kvp.Key, values);
+                }
+
+                values.AddRange(kvp.Value);
+            }
+        }
+
+        private void OnTestFinished(List<TestResultData> testResultData)
+        {
+            foreach (var data in testResultData)
+            {
+                OnTestFinished(data);
+            }
         }
 
         private void OnTestFinished(TestResultData testResultData)

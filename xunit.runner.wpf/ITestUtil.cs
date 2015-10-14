@@ -17,16 +17,16 @@ namespace xunit.runner.wpf
         /// <summary>
         /// Discover the list of test cases which are available in the specified assembly.
         /// </summary>
-        Task Discover(string assemblyPath, Action<TestCaseData> callback, CancellationToken cancellationToken = default(CancellationToken));
+        Task Discover(string assemblyPath, Action<List<TestCaseData>> callback, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Begin a run of all unit tests for the given assembly.
         /// </summary>
-        Task RunAll(string assemblyPath, Action<TestResultData> callback, CancellationToken cancellationToken = default(CancellationToken));
+        Task RunAll(string assemblyPath, Action<List<TestResultData>> callback, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Begin a run of specific unit tests for the given assembly.
         /// </summary>
-        Task RunSpecific(string assemblyPath, ImmutableArray<string> testCaseDisplayNames, Action<TestResultData> callback, CancellationToken cancellationToken = default(CancellationToken));
+        Task RunSpecific(string assemblyPath, ImmutableArray<string> testCaseDisplayNames, Action<List<TestResultData>> callback, CancellationToken cancellationToken = default(CancellationToken));
     }
 }

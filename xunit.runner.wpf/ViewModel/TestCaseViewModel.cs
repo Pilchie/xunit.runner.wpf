@@ -14,9 +14,8 @@ namespace xunit.runner.wpf.ViewModel
     {
         private TestState _state = TestState.NotRun;
 
-        public TestCaseViewModel(string testCase, string displayName, string assemblyFileName, ImmutableArray<TraitViewModel> traits)
+        public TestCaseViewModel(string displayName, string assemblyFileName, ImmutableArray<TraitViewModel> traits)
         {
-            this.TestCase = testCase;
             this.DisplayName = displayName;
             this.AssemblyFileName = assemblyFileName;
             this.Traits = traits;
@@ -31,8 +30,6 @@ namespace xunit.runner.wpf.ViewModel
         }
 
         public string AssemblyFileName { get; }
-
-        public string TestCase { get; }
 
         public ImmutableArray<TraitViewModel> Traits { get; }
     }

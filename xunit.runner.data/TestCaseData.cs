@@ -6,7 +6,6 @@ namespace xunit.runner.data
 {
     public sealed class TestCaseData
     {
-        public string SerializedForm { get; set; }
         public string DisplayName { get; set; }
         public string AssemblyPath { get; set; }
         public Dictionary<string, List<string>> TraitMap { get; set; }

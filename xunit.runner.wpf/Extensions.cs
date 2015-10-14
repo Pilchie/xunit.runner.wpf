@@ -9,7 +9,7 @@ namespace xunit.runner.wpf
 {
     public static class Extensions
     {
-        public static void AddRange<TList, TEnumerable>(this IList<TList> list, IEnumerable<TEnumerable> items) where TEnumerable : TList
+        public static void AddRange<TList, TEnumerable>(this ICollection<TList> list, IEnumerable<TEnumerable> items) where TEnumerable : TList
         {
             foreach (var i in items)
             {
