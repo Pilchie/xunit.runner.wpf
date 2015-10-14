@@ -476,13 +476,37 @@ namespace xunit.runner.wpf.ViewModel
             }
         }
 
+        private List<TraitViewModel> traitsToAdd = new List<TraitViewModel>();
+        private List<TestCaseViewModel> testCasesToAdd = new List<TestCaseViewModel>();
+        private Task updateTestCasesTask = null;
+
         private void OnTestDiscovered(TestCaseData testCaseData)
         {
+            var scheduler = TaskScheduler.FromCurrentSynchronizationContext();
             var traitList = testCaseData.TraitMap.Count == 0
                 ? ImmutableArray<TraitViewModel>.Empty
                 : testCaseData.TraitMap.SelectMany(pair => pair.Value.Select(value => new TraitViewModel(pair.Key, value))).ToImmutableArray();
-            this.allTestCases.Add(new TestCaseViewModel(testCaseData.SerializedForm, testCaseData.DisplayName, testCaseData.AssemblyPath, traitList));
-            this.traitCollectionView.Add(traitList);
+
+            traitsToAdd.AddRange(traitList);
+            testCasesToAdd.Add(new TestCaseViewModel(testCaseData.DisplayName, testCaseData.AssemblyPath, traitList));
+
+            if (updateTestCasesTask != null)
+            {
+                return;
+            }
+
+            updateTestCasesTask = Task.Delay(TimeSpan.FromSeconds(0.5)).ContinueWith(UpdateUI, scheduler);
+        }
+
+        private void UpdateUI(Task obj)
+        {
+            updateTestCasesTask = null;
+
+            this.allTestCases.AddRange(testCasesToAdd);
+            this.traitCollectionView.Add(traitsToAdd.ToImmutableArray());
+
+            testCasesToAdd.Clear();
+            traitsToAdd.Clear();
         }
 
         private void OnTestFinished(TestResultData testResultData)

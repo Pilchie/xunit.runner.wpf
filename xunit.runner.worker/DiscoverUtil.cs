@@ -7,25 +7,43 @@ using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 using xunit.runner.data;
+using System.Threading;
 
 namespace xunit.runner.worker
 {
     internal sealed class DiscoverUtil
     {
-        private sealed class Impl : TestMessageVisitor<IDiscoveryCompleteMessage>
+        private sealed class Impl : LongLivedMarshalByRefObject, IMessageSink, IDisposable
         {
             private readonly ITestFrameworkDiscoverer _discoverer;
             private readonly ClientWriter _writer;
-            private readonly Dictionary<string, List<string>> _traitMap;
+
+            public ManualResetEvent Finished { get; private set; }
 
             internal Impl(ITestFrameworkDiscoverer discoverer, ClientWriter writer)
             {
+                Finished = new ManualResetEvent(false);
                 _discoverer = discoverer;
                 _writer = writer;
-                _traitMap = new Dictionary<string, List<string>>(StringComparer.Ordinal);
             }
 
-            protected override bool Visit(ITestCaseDiscoveryMessage testCaseDiscovered)
+            public bool OnMessage(IMessageSinkMessage message)
+            {
+                var discoveryMessage = message as ITestCaseDiscoveryMessage;
+                if (discoveryMessage != null)
+                {
+                    OnDiscoveryMessage(discoveryMessage);
+                }
+
+                if (message is IDiscoveryCompleteMessage)
+                {
+                    Finished.Set();
+                }
+
+                return _writer.IsConnected;
+            }
+
+            private bool OnDiscoveryMessage(ITestCaseDiscoveryMessage testCaseDiscovered)
             {
                 var testCase = testCaseDiscovered.TestCase;
                 var testCaseData = new TestCaseData(
@@ -33,11 +51,15 @@ namespace xunit.runner.worker
                     testCaseDiscovered.TestAssembly.Assembly.AssemblyPath,
                     testCase.Traits);
 
-                Console.WriteLine(testCase.DisplayName);
                 _writer.Write(TestDataKind.Value);
                 _writer.Write(testCaseData);
 
                 return _writer.IsConnected;
+            }
+
+            public void Dispose()
+            {
+                ((IDisposable)Finished).Dispose();
             }
         }
 
@@ -45,7 +67,7 @@ namespace xunit.runner.worker
         {
             using (AssemblyHelper.SubscribeResolve())
             using (var xunit = new XunitFrontController(
-                AppDomainSupport.IfAvailable,
+                AppDomainSupport.Denied,
                 assemblyFileName: fileName,
                 diagnosticMessageSink: new MessageVisitor(),
                 shadowCopy: false))
@@ -54,6 +76,7 @@ namespace xunit.runner.worker
             {
                 xunit.Find(includeSourceInformation: false, messageSink: impl, discoveryOptions: TestFrameworkOptions.ForDiscovery());
                 impl.Finished.WaitOne();
+
                 writer.Write(TestDataKind.EndOfData);
             }
         }
