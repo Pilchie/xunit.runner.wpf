@@ -21,13 +21,8 @@ namespace xunit.runner.wpf.ViewModel
 
         }
 
-        public void Add(ImmutableArray<TraitViewModel> traitList)
+        public void Add(IEnumerable<TraitViewModel> traitList)
         {
-            if (traitList.IsDefaultOrEmpty)
-            {
-                return;
-            }
-
             foreach (var traitViewModel in traitList)
             {
                 InsertIfNotPresent(traitViewModel);

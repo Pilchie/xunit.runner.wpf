@@ -476,37 +476,53 @@ namespace xunit.runner.wpf.ViewModel
             }
         }
 
-        private List<TraitViewModel> traitsToAdd = new List<TraitViewModel>();
-        private List<TestCaseViewModel> testCasesToAdd = new List<TestCaseViewModel>();
-        private Task updateTestCasesTask = null;
-
-        private void OnTestDiscovered(TestCaseData testCaseData)
+        private void OnTestDiscovered(List<TestCaseData> testCaseData)
         {
-            var scheduler = TaskScheduler.FromCurrentSynchronizationContext();
-            var traitList = testCaseData.TraitMap.Count == 0
-                ? ImmutableArray<TraitViewModel>.Empty
-                : testCaseData.TraitMap.SelectMany(pair => pair.Value.Select(value => new TraitViewModel(pair.Key, value))).ToImmutableArray();
-
-            traitsToAdd.AddRange(traitList);
-            testCasesToAdd.Add(new TestCaseViewModel(testCaseData.DisplayName, testCaseData.AssemblyPath, traitList));
-
-            if (updateTestCasesTask != null)
+            var allTraits = new SortedDictionary<string, SortedSet<string>>();
+            foreach (var data in testCaseData)
             {
-                return;
+                AddTraits(allTraits, data);
             }
 
-            updateTestCasesTask = Task.Delay(TimeSpan.FromSeconds(0.5)).ContinueWith(UpdateUI, scheduler);
+            this.allTestCases.AddRange(testCaseData.Select(d =>
+                new TestCaseViewModel(d.DisplayName, d.AssemblyPath, Convert(CreateSortedTraits(d)).ToImmutableArray())));
+            
+            this.traitCollectionView.Add(Convert(allTraits));
         }
 
-        private void UpdateUI(Task obj)
+        private SortedDictionary<string, SortedSet<string>> CreateSortedTraits(TestCaseData data)
         {
-            updateTestCasesTask = null;
+            var traits = new SortedDictionary<string, SortedSet<string>>();
+            AddTraits(traits, data);
+            return traits;
+        }
 
-            this.allTestCases.AddRange(testCasesToAdd);
-            this.traitCollectionView.Add(traitsToAdd.ToImmutableArray());
+        private static IEnumerable<TraitViewModel> Convert(SortedDictionary<string, SortedSet<string>> allTraits)
+        {
+            return allTraits.SelectMany(pair => pair.Value.Select(value => new TraitViewModel(pair.Key, value)));
+        }
 
-            testCasesToAdd.Clear();
-            traitsToAdd.Clear();
+        private static void AddTraits(SortedDictionary<string, SortedSet<string>> allTraits, TestCaseData data)
+        {
+            foreach (var kvp in data.TraitMap)
+            {
+                SortedSet<string> values;
+                if (!allTraits.TryGetValue(kvp.Key, out values))
+                {
+                    values = new SortedSet<string>();
+                    allTraits.Add(kvp.Key, values);
+                }
+
+                values.AddRange(kvp.Value);
+            }
+        }
+
+        private void OnTestFinished(List<TestResultData> testResultData)
+        {
+            foreach (var data in testResultData)
+            {
+                OnTestFinished(data);
+            }
         }
 
         private void OnTestFinished(TestResultData testResultData)

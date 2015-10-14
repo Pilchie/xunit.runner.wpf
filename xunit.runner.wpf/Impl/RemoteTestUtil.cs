@@ -92,13 +92,13 @@ namespace xunit.runner.wpf.Impl
             return new ProcessInfo(pipeName, process);
         }
 
-        private async Task Discover(string assemblyPath, Action<TestCaseData> callback, CancellationToken cancellationToken)
+        private async Task Discover(string assemblyPath, Action<List<TestCaseData>> callback, CancellationToken cancellationToken)
         {
             var connection = await CreateConnection(Constants.ActionDiscover, assemblyPath);
             await ProcessResultsCore(connection, r => r.ReadTestCaseData(), callback, cancellationToken);
         }
 
-        private async Task RunCore(string actionName, string assemblyPath, ImmutableArray<string> testCaseDisplayNames, Action<TestResultData> callback, CancellationToken cancellationToken)
+        private async Task RunCore(string actionName, string assemblyPath, ImmutableArray<string> testCaseDisplayNames, Action<List<TestResultData>> callback, CancellationToken cancellationToken)
         {
             var connection = await CreateConnection(actionName, assemblyPath);
 
@@ -111,7 +111,7 @@ namespace xunit.runner.wpf.Impl
             await ProcessResultsCore(connection, r => r.ReadTestResultData(), callback, cancellationToken);
         }
 
-        private async Task ProcessResultsCore<T>(Connection connection, Func<ClientReader, T> readValue, Action<T> callback, CancellationToken cancellationToken)
+        private async Task ProcessResultsCore<T>(Connection connection, Func<ClientReader, T> readValue, Action<List<T>> callback, CancellationToken cancellationToken)
             where T : class
         {
             var queue = new ConcurrentQueue<T>();
@@ -124,17 +124,17 @@ namespace xunit.runner.wpf.Impl
 
         #region ITestUtil
 
-        Task ITestUtil.Discover(string assemblyPath, Action<TestCaseData> callback, CancellationToken cancellationToken)
+        Task ITestUtil.Discover(string assemblyPath, Action<List<TestCaseData>> callback, CancellationToken cancellationToken)
         {
             return Discover(assemblyPath, callback, cancellationToken);
         }
 
-        Task ITestUtil.RunAll(string assemblyPath, Action<TestResultData> callback, CancellationToken cancellationToken)
+        Task ITestUtil.RunAll(string assemblyPath, Action<List<TestResultData>> callback, CancellationToken cancellationToken)
         {
             return RunCore(Constants.ActionRunAll, assemblyPath, ImmutableArray<string>.Empty, callback, cancellationToken);
         }
 
-        Task ITestUtil.RunSpecific(string assemblyPath, ImmutableArray<string> testCaseDisplayNames, Action<TestResultData> callback, CancellationToken cancellationToken)
+        Task ITestUtil.RunSpecific(string assemblyPath, ImmutableArray<string> testCaseDisplayNames, Action<List<TestResultData>> callback, CancellationToken cancellationToken)
         {
             return RunCore(Constants.ActionRunSpecific, assemblyPath, testCaseDisplayNames, callback, cancellationToken);
         }

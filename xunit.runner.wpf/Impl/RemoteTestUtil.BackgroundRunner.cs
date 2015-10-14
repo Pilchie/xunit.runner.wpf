@@ -119,7 +119,7 @@ namespace xunit.runner.wpf.Impl
             private readonly Connection _connection;
             private readonly ConcurrentQueue<T> _queue;
             private readonly DispatcherTimer _timer;
-            private readonly Action<T> _callback;
+            private readonly Action<List<T>> _callback;
             private readonly int _maxPerTick;
             private readonly TaskCompletionSource<bool> _taskCompletionSource;
 
@@ -129,7 +129,7 @@ namespace xunit.runner.wpf.Impl
                 Connection connection, 
                 Dispatcher dispatcher, 
                 ConcurrentQueue<T> queue,
-                Action<T> callback,
+                Action<List<T>> callback,
                 int maxResultPerTick = MaxResultPerTick,
                 TimeSpan? interval = null)
             {
@@ -138,7 +138,7 @@ namespace xunit.runner.wpf.Impl
                 _maxPerTick = maxResultPerTick;
                 _callback = callback;
                 _timer = new DispatcherTimer(
-                    interval ?? TimeSpan.FromMilliseconds(100), 
+                    interval ?? TimeSpan.FromMilliseconds(500), 
                     DispatcherPriority.Normal, 
                     OnTimerTick, 
                     dispatcher);
@@ -162,10 +162,7 @@ namespace xunit.runner.wpf.Impl
                     list.Add(value);
                 }
 
-                foreach (var cur in list)
-                { 
-                    _callback(cur);
-                }
+                _callback(list);
 
                 if (isDone)
                 {
