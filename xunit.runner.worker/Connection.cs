@@ -56,7 +56,7 @@ namespace xunit.runner.worker
 
         protected override void DisposeCore()
         {
-            _stream.Close();
+            _stream.Dispose();
         }
 
         internal override void WaitForClientConnect()
