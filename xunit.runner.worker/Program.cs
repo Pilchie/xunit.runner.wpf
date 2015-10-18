@@ -32,17 +32,11 @@ namespace xunit.runner.worker
                 return ExitError;
             }
 
-            Task.Run(() => WaitForParentExit(process));
+            Task.WaitAny(
+                Task.Run(() => process.WaitForExit()),
+                Task.Run(() => new Listener(pipeName).Go()));
 
-            var listener = new Listener(pipeName);
-            listener.Go();
             return ExitSuccess;
-        }
-
-        private static void WaitForParentExit(Process process)
-        {
-            process.WaitForExit();
-            Environment.Exit(ExitSuccess);
         }
 
         private static void Usage()

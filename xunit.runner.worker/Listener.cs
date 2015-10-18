@@ -37,7 +37,7 @@ namespace xunit.runner.worker
         {
             try
             {
-                var namedPipe = new NamedPipeServerStream(_pipeName, PipeDirection.InOut, maxNumberOfServerInstances: NamedPipeServerStream.MaxAllowedServerInstances);
+                var namedPipe = new NamedPipeServerStream(_pipeName, PipeDirection.InOut, maxNumberOfServerInstances: -1);
                 namedPipe.WaitForConnection();
                 _taskList.Add(Task.Run(() => ProcessConnection(namedPipe)));
 
