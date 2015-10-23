@@ -60,7 +60,7 @@ namespace xunit.runner.wpf.ViewModel
 
         private static bool TestCaseMatches(TestCaseViewModel testCase, SearchQuery searchQuery)
         {
-            if (!testCase.DisplayName.Contains(searchQuery.SearchString))
+            if (testCase.DisplayName.IndexOf(searchQuery.SearchString, StringComparison.CurrentCultureIgnoreCase) < 0)
             {
                 return false;
             }
