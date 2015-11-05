@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using xunit.runner.data;
 using Xunit;
 using Xunit.Abstractions;
@@ -63,7 +61,7 @@ namespace xunit.runner.worker
             }
         }
 
-        private sealed class TestCaseDiscoverer : TestMessageVisitor<IDiscoveryCompleteMessage>
+        private sealed class TestCaseDiscoverer : TestDiscoverySink
         {
             private readonly HashSet<string> _testCaseDisplayNameSet;
             private readonly List<ITestCase> _testCaseList;
@@ -74,15 +72,13 @@ namespace xunit.runner.worker
                 _testCaseList = testCaseList;
             }
 
-            protected override bool Visit(ITestCaseDiscoveryMessage testCaseDiscovered)
+            protected override void OnTestDiscovered(ITestCaseDiscoveryMessage testCaseDiscovered)
             {
                 var testCase = testCaseDiscovered.TestCase;
                 if (_testCaseDisplayNameSet.Contains(testCase.DisplayName))
                 {
                     _testCaseList.Add(testCaseDiscovered.TestCase);
                 }
-
-                return true;
             }
         }
 
