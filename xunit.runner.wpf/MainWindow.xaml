@@ -273,6 +273,7 @@
                           Margin="3"
                           Grid.Row="2">
                     <TextBox IsReadOnly="True"
+                             FontFamily="Consolas"
                              Text="{Binding Output}"/>
                 </GroupBox>
             </Grid>
