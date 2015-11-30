@@ -31,18 +31,19 @@ namespace xunit.runner.worker
             }
         }
 
-        internal static void Go(string fileName, Stream stream)
+        internal static void Go(string assemblyFileName, Stream stream)
         {
             using (AssemblyHelper.SubscribeResolve())
             using (var xunit = new XunitFrontController(
                 AppDomainSupport.Denied,
-                assemblyFileName: fileName,
+                assemblyFileName: assemblyFileName,
                 diagnosticMessageSink: new MessageVisitor(),
                 shadowCopy: false))
             using (var writer = new ClientWriter(stream))
             using (var impl = new Impl(writer))
             {
-                xunit.Find(includeSourceInformation: false, messageSink: impl, discoveryOptions: TestFrameworkOptions.ForDiscovery());
+                var testAssemblyConfiguration = ConfigReader.Load(assemblyFileName);
+                xunit.Find(includeSourceInformation: false, messageSink: impl, discoveryOptions: TestFrameworkOptions.ForDiscovery(testAssemblyConfiguration));
                 impl.Finished.WaitOne();
 
                 writer.Write(TestDataKind.EndOfData);
