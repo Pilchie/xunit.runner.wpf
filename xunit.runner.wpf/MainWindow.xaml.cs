@@ -1,25 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace xunit.runner.wpf
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
+        public static Window Instance { get; private set; }
+
         public MainWindow()
         {
             Instance = this;
@@ -27,6 +15,18 @@ namespace xunit.runner.wpf
             InitializeComponent();
         }
 
-        public static Window Instance { get; private set; }
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+
+            Storage.RestoreWindowLayout(this);
+        }
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            Storage.SaveWindowLayout(this);
+
+            base.OnClosing(e);
+        }
     }
 }

@@ -15,7 +15,8 @@
         Icon="Artwork\Application.ico"
         ResizeMode="CanResizeWithGrip"
         Height="600"
-        Width="525">
+        Width="525"
+        Name="Main">
 
     <i:Interaction.Triggers>
         <i:EventTrigger EventName="Loaded">

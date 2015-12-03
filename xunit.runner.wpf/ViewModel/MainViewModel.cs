@@ -1,19 +1,19 @@
-using GalaSoft.MvvmLight;
-using System.Windows.Input;
 using System;
-using System.Windows;
-using GalaSoft.MvvmLight.CommandWpf;
-using Microsoft.Win32;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Collections.Specialized;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Diagnostics;
-using xunit.runner.data;
+using System.Windows;
+using System.Windows.Input;
 using System.Windows.Threading;
+using GalaSoft.MvvmLight;
+using GalaSoft.MvvmLight.CommandWpf;
+using Microsoft.Win32;
+using xunit.runner.data;
 
 namespace xunit.runner.wpf.ViewModel
 {
