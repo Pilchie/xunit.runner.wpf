@@ -100,6 +100,8 @@
     <Compile Include="LoadingDialog.xaml.cs">
       <DependentUpon>LoadingDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Storage.cs" />
+    <Compile Include="Storage.WindowPlacement.cs" />
     <Compile Include="ViewModel\TraitCollectionView.cs" />
     <Compile Include="ViewModel\AssemblyAndConfigFile.cs" />
     <Compile Include="ViewModel\MainViewModel.cs" />
