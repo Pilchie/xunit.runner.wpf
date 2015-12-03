@@ -44,8 +44,8 @@
                           Command="ApplicationCommands.Open" />
                 <MenuItem Header="R_ecent" />
                 <Separator />
-                <MenuItem Header="_Unload" />
-                <MenuItem Header="_Reload" />
+                <MenuItem Header="_Unload" Command="{Binding AssemblyRemoveAllCommand}"/>
+                <MenuItem Header="_Reload" Command="{Binding AssemblyReloadAllCommand}" />
             </MenuItem>
             <MenuItem Header="_Project">
                 <MenuItem Header="_Open" />
