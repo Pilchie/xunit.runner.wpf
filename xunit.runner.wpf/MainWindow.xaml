@@ -119,13 +119,13 @@
                                 </StackPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
-                        
+
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="{x:Type ListBoxItem}">
                                 <Setter Property="IsSelected" Value="{Binding Mode=TwoWay, Path=IsSelected}"/>
                             </Style>
                         </ListBox.ItemContainerStyle>
-                        
+
                         <ListBox.ContextMenu>
                             <ContextMenu>
                                 <MenuItem Header="Reload" Command="{Binding AssemblyReloadCommand}" />
@@ -139,29 +139,44 @@
 
                     <Label Content="Traits:"
                            Grid.Row="4" />
-                    <ListBox Grid.Row="5"
-                             ItemsSource="{Binding Traits}">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate DataType="vm:TraitViewModel">
-                                <TextBlock Text="{Binding DisplayName}" />
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                        <ListBox.ItemContainerStyle>
-                            <Style TargetType="{x:Type ListBoxItem}">
-                                <Setter Property="IsSelected" Value="{Binding Mode=TwoWay, Path=IsSelected}"/>
+
+                    <TreeView Grid.Row="5"
+                              ItemsSource="{Binding Traits}">
+
+                        <TreeView.Resources>
+                            <HierarchicalDataTemplate DataType="{x:Type vm:TraitViewModel}"
+                                                      ItemsSource="{Binding Children}">
+
+                                <CheckBox IsChecked="{Binding IsChecked}" Content="{Binding Text}" >
+                                    <i:Interaction.Triggers>
+                                        <i:EventTrigger EventName="Checked">
+                                            <cmd:EventToCommand Command="{Binding DataContext.TraitCheckedChangedCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                CommandParameter="{Binding}" />
+                                        </i:EventTrigger>
+
+                                        <i:EventTrigger EventName="Unchecked">
+                                            <cmd:EventToCommand Command="{Binding DataContext.TraitCheckedChangedCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                CommandParameter="{Binding}" />
+                                        </i:EventTrigger>
+                                    </i:Interaction.Triggers>
+                                </CheckBox>
+
+                            </HierarchicalDataTemplate>
+                        </TreeView.Resources>
+
+                        <TreeView.ItemContainerStyle>
+                            <Style TargetType="TreeViewItem">
+                                <Setter Property="IsExpanded" Value="{Binding IsExpanded}" />
                             </Style>
-                        </ListBox.ItemContainerStyle>
-                        <ListBox.ContextMenu>
+                        </TreeView.ItemContainerStyle>
+
+                        <TreeView.ContextMenu>
                             <ContextMenu>
                                 <MenuItem Header="Clear" Command="{Binding TraitsClearCommand}" />
                             </ContextMenu>
-                        </ListBox.ContextMenu>
-                        <i:Interaction.Triggers>
-                            <i:EventTrigger EventName="SelectionChanged">
-                                <cmd:EventToCommand Command="{Binding TraitSelectionChangedCommand}" />
-                            </i:EventTrigger>
-                        </i:Interaction.Triggers>
-                    </ListBox>
+                        </TreeView.ContextMenu>
+
+                    </TreeView>
                 </Grid>
             </GroupBox>
 

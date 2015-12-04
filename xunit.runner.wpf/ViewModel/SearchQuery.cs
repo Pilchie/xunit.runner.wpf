@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace xunit.runner.wpf.ViewModel
 {
@@ -12,6 +8,6 @@ namespace xunit.runner.wpf.ViewModel
         public bool IncludePassedTests = true;
         public bool IncludeSkippedTests = true;
         public string SearchString = string.Empty;
-        public HashSet<TraitViewModel> TraitSet = new HashSet<TraitViewModel>(TraitViewModelComparer.Instance);
+        public ISet<TraitViewModel> TraitSet = new HashSet<TraitViewModel>(TraitViewModel.EqualityComparer);
     }
 }

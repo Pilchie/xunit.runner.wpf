@@ -1,12 +1,7 @@
 ﻿using GalaSoft.MvvmLight;
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using xunit.runner.data;
+using System.Collections.Generic;
 
 namespace xunit.runner.wpf.ViewModel
 {
@@ -14,11 +9,11 @@ namespace xunit.runner.wpf.ViewModel
     {
         private TestState _state = TestState.NotRun;
 
-        public TestCaseViewModel(string displayName, string assemblyFileName, ImmutableArray<TraitViewModel> traits)
+        public TestCaseViewModel(string displayName, string assemblyFileName, IEnumerable<TraitViewModel> traits)
         {
             this.DisplayName = displayName;
             this.AssemblyFileName = assemblyFileName;
-            this.Traits = traits;
+            this.Traits = traits.ToImmutableArray();
         }
 
         public string DisplayName { get; }

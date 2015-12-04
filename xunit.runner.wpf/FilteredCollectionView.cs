@@ -45,11 +45,7 @@ namespace xunit.runner.wpf
 
         protected virtual void OnItemChanged(T sender, PropertyChangedEventArgs args)
         {
-            var itemChanged = this.ItemChanged;
-            if (itemChanged != null)
-            {
-                itemChanged(sender, args);
-            }
+            this.ItemChanged?.Invoke(sender, args);
         }
 
         private TFilterArg filterArgument;
@@ -187,11 +183,7 @@ namespace xunit.runner.wpf
 
         protected void OnCollectionChanged(NotifyCollectionChangedEventArgs args)
         {
-            var collectionChanged = this.CollectionChanged;
-            if (collectionChanged != null)
-            {
-                collectionChanged(this, args);
-            }
+            this.CollectionChanged?.Invoke(this, args);
         }
 
         public void Add(T item)
