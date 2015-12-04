@@ -273,6 +273,8 @@
                           Margin="3"
                           Grid.Row="2">
                     <TextBox IsReadOnly="True"
+                             HorizontalScrollBarVisibility="Auto"
+                             VerticalScrollBarVisibility="Visible"
                              FontFamily="Consolas"
                              Text="{Binding Output}"/>
                 </GroupBox>
