@@ -15,6 +15,9 @@ using GalaSoft.MvvmLight.CommandWpf;
 using Microsoft.Win32;
 using xunit.runner.data;
 
+using Microsoft.WindowsAPICodePack.Taskbar;
+using Microsoft.WindowsAPICodePack.Shell;
+
 namespace xunit.runner.wpf.ViewModel
 {
     public class MainViewModel : ViewModelBase
@@ -138,7 +141,28 @@ namespace xunit.runner.wpf.ViewModel
         public int TestsCompleted
         {
             get { return testsCompleted; }
-            set { Set(ref testsCompleted, value); }
+            set { Set(ref testsCompleted, value);
+
+                if (TaskbarManager.IsPlatformSupported)
+                {
+                    var tb = TaskbarManager.Instance;
+                    tb.SetProgressState(GetTaskBarState());
+                    tb.SetProgressValue(value, this.MaximumProgress);
+                }
+            }
+        }
+
+        private TaskbarProgressBarState GetTaskBarState()
+        {
+            switch (this.CurrentRunState)
+            {
+                case TestState.Failed:
+                    return TaskbarProgressBarState.Error;
+                case TestState.Skipped:
+                    return TaskbarProgressBarState.Paused;
+                default:
+                    return TaskbarProgressBarState.Normal;
+            }
         }
 
         private int testsPassed = 0;
