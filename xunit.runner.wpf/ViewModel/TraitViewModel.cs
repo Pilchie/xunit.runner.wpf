@@ -87,6 +87,20 @@ namespace xunit.runner.wpf.ViewModel
             }
         }
 
+        public TraitViewModel GetOrAdd(string text)
+        {
+            var index = this.Children.BinarySearch(text, StringComparer.Ordinal, vm => vm.Text);
+
+            if (index < 0)
+            {
+                var viewModel = new TraitViewModel(this, text);
+                this.Children.Insert(~index, viewModel);
+                return viewModel;
+            }
+
+            return this.Children[index];
+        }
+
         public bool? IsChecked
         {
             get { return _isChecked; }

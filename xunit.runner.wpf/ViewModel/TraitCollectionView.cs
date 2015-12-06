@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
@@ -24,6 +25,20 @@ namespace xunit.runner.wpf.ViewModel
                     originalTrait.AddValues(trait.Children.Select(x => x.Text));
                 }
             }
+        }
+
+        public TraitViewModel GetOrAdd(string text)
+        {
+            var index = this.Collection.BinarySearch(text, StringComparer.Ordinal, vm => vm.Text);
+
+            if (index < 0)
+            {
+                var viewModel = new TraitViewModel(text);
+                this.Collection.Insert(~index, viewModel);
+                return viewModel;
+            }
+
+            return this.Collection[index];
         }
 
         public ISet<TraitViewModel> GetCheckedTraits()

@@ -477,57 +477,42 @@ namespace xunit.runner.wpf.ViewModel
             }
         }
 
-        private void OnTestDiscovered(List<TestCaseData> testCaseDataList)
+        private void OnTestDiscovered(IEnumerable<TestCaseData> testCases)
         {
-            var allTraits = new SortedDictionary<string, SortedSet<string>>();
-            foreach (var data in testCaseDataList)
+            var traitWorkerList = new List<TraitViewModel>();
+
+            foreach (var testCase in testCases)
             {
-                AddTraits(allTraits, data);
-            }
+                traitWorkerList.Clear();
 
-            this.allTestCases.AddRange(testCaseDataList.Select(d =>
-                new TestCaseViewModel(d.DisplayName, d.AssemblyPath, Convert(CreateSortedTraits(d)))));
-
-            this.traitCollectionView.AddRange(Convert(allTraits));
-        }
-
-        private SortedDictionary<string, SortedSet<string>> CreateSortedTraits(TestCaseData data)
-        {
-            var traits = new SortedDictionary<string, SortedSet<string>>();
-            AddTraits(traits, data);
-            return traits;
-        }
-
-        private static IEnumerable<TraitViewModel> Convert(SortedDictionary<string, SortedSet<string>> allTraits)
-        {
-            foreach (var trait in allTraits)
-            {
-                var name = trait.Key;
-                var values = trait.Value;
-
-                var viewModel = new TraitViewModel(name);
-                viewModel.AddValues(values);
-
-                yield return viewModel;
-            }
-        }
-
-        private static void AddTraits(SortedDictionary<string, SortedSet<string>> allTraits, TestCaseData data)
-        {
-            foreach (var kvp in data.TraitMap)
-            {
-                SortedSet<string> values;
-                if (!allTraits.TryGetValue(kvp.Key, out values))
+                // Get or create traits.
+                if (testCase.TraitMap?.Count > 0)
                 {
-                    values = new SortedSet<string>();
-                    allTraits.Add(kvp.Key, values);
+                    foreach (var kvp in testCase.TraitMap)
+                    {
+                        var name = kvp.Key;
+                        var values = kvp.Value;
+
+                        var parentTraitViewModel = traitCollectionView.GetOrAdd(name);
+
+                        foreach (var value in values)
+                        {
+                            var traitViewModel = parentTraitViewModel.GetOrAdd(value);
+                            traitWorkerList.Add(traitViewModel);
+                        }
+                    }
                 }
 
-                values.AddRange(kvp.Value);
+                var testCaseViewModel = new TestCaseViewModel(
+                    testCase.DisplayName,
+                    testCase.AssemblyPath,
+                    traitWorkerList);
+
+                this.allTestCases.Add(testCaseViewModel);
             }
         }
 
-        private void OnTestFinished(List<TestResultData> testResultData)
+        private void OnTestFinished(IEnumerable<TestResultData> testResultData)
         {
             foreach (var data in testResultData)
             {
