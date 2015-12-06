@@ -33,6 +33,8 @@ namespace Xunit.Runner.Wpf.ViewModel
         public FilteredCollectionView<TestCaseViewModel, SearchQuery> FilteredTestCases { get; }
         public ObservableCollection<TraitViewModel> Traits => this.traitCollectionView.Collection;
 
+        private ImmutableList<TestCaseViewModel> runningTests;
+
         public MainViewModel()
         {
             if (IsInDesignMode)
@@ -425,13 +427,18 @@ namespace Xunit.Runner.Wpf.ViewModel
 
         private async void OnExecuteRun()
         {
+            Debug.Assert(this.runningTests == null);
+
             await ExecuteTestSessionOperation(RunTests);
+
+            this.runningTests = null;
         }
 
         private List<Task> RunTests()
         {
             Debug.Assert(this.isBusy);
             Debug.Assert(this.cancellationTokenSource != null);
+            Debug.Assert(this.runningTests == null);
 
             TestsCompleted = 0;
             TestsPassed = 0;
@@ -440,15 +447,17 @@ namespace Xunit.Runner.Wpf.ViewModel
             CurrentRunState = TestState.NotRun;
             Output = string.Empty;
 
-            foreach (var tc in FilteredTestCases)
+            this.runningTests = FilteredTestCases.ToImmutableList();
+
+            foreach (var tc in this.runningTests)
             {
                 tc.State = TestState.NotRun;
             }
 
-            var runAll = FilteredTestCases.Count == this.allTestCases.Count;
+            var runAll = this.runningTests.Count == this.allTestCases.Count;
             var testSessionList = new List<Task>();
 
-            foreach (var assemblyFileName in FilteredTestCases.Select(x => x.AssemblyFileName).Distinct())
+            foreach (var assemblyFileName in this.runningTests.Select(x => x.AssemblyFileName).Distinct())
             {
                 Task task;
                 if (runAll)
@@ -459,7 +468,7 @@ namespace Xunit.Runner.Wpf.ViewModel
                 {
                     var builder = ImmutableArray.CreateBuilder<string>();
 
-                    foreach (var testCase in FilteredTestCases)
+                    foreach (var testCase in this.runningTests)
                     {
                         if (testCase.AssemblyFileName == assemblyFileName)
                         {
@@ -544,35 +553,32 @@ namespace Xunit.Runner.Wpf.ViewModel
 
         private void OnTestsFinished(IEnumerable<TestResultData> testResultData)
         {
-            foreach (var data in testResultData)
-            {
-                OnTestFinished(data);
-            }
-        }
+            Debug.Assert(this.runningTests != null);
 
-        private void OnTestFinished(TestResultData testResultData)
-        {
-            var testCase = FilteredTestCases.Single(x => x.DisplayName == testResultData.TestCaseDisplayName);
-            testCase.State = testResultData.TestState;
-
-            TestsCompleted++;
-            switch (testResultData.TestState)
+            foreach (var result in testResultData)
             {
-                case TestState.Passed:
-                    TestsPassed++;
-                    break;
-                case TestState.Failed:
-                    TestsFailed++;
-                    Output = Output + testResultData.Output;
-                    break;
-                case TestState.Skipped:
-                    TestsSkipped++;
-                    break;
-            }
+                var testCase = this.runningTests.Single(x => x.DisplayName == result.TestCaseDisplayName);
+                testCase.State = result.TestState;
 
-            if (testResultData.TestState > CurrentRunState)
-            {
-                CurrentRunState = testResultData.TestState;
+                TestsCompleted++;
+                switch (result.TestState)
+                {
+                    case TestState.Passed:
+                        TestsPassed++;
+                        break;
+                    case TestState.Failed:
+                        TestsFailed++;
+                        Output = Output + result.Output;
+                        break;
+                    case TestState.Skipped:
+                        TestsSkipped++;
+                        break;
+                }
+
+                if (result.TestState > CurrentRunState)
+                {
+                    CurrentRunState = result.TestState;
+                }
             }
         }
 
