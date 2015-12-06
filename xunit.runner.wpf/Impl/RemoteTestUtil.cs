@@ -3,15 +3,11 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.IO;
 using System.IO.Pipes;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 using xunit.runner.data;
-using xunit.runner.wpf.ViewModel;
 
 namespace xunit.runner.wpf.Impl
 {
@@ -137,17 +133,17 @@ namespace xunit.runner.wpf.Impl
 
         #region ITestUtil
 
-        Task ITestUtil.Discover(string assemblyPath, Action<List<TestCaseData>> callback, CancellationToken cancellationToken)
+        Task ITestUtil.Discover(string assemblyPath, Action<IEnumerable<TestCaseData>> callback, CancellationToken cancellationToken)
         {
             return Discover(assemblyPath, callback, cancellationToken);
         }
 
-        Task ITestUtil.RunAll(string assemblyPath, Action<List<TestResultData>> callback, CancellationToken cancellationToken)
+        Task ITestUtil.RunAll(string assemblyPath, Action<IEnumerable<TestResultData>> callback, CancellationToken cancellationToken)
         {
             return RunCore(Constants.ActionRunAll, assemblyPath, ImmutableArray<string>.Empty, callback, cancellationToken);
         }
 
-        Task ITestUtil.RunSpecific(string assemblyPath, ImmutableArray<string> testCaseDisplayNames, Action<List<TestResultData>> callback, CancellationToken cancellationToken)
+        Task ITestUtil.RunSpecific(string assemblyPath, ImmutableArray<string> testCaseDisplayNames, Action<IEnumerable<TestResultData>> callback, CancellationToken cancellationToken)
         {
             return RunCore(Constants.ActionRunSpecific, assemblyPath, testCaseDisplayNames, callback, cancellationToken);
         }

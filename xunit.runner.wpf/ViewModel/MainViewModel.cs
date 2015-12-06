@@ -53,7 +53,7 @@ namespace xunit.runner.wpf.ViewModel
             this.WindowLoadedCommand = new RelayCommand(OnExecuteWindowLoaded);
             this.RunCommand = new RelayCommand(OnExecuteRun, CanExecuteRun);
             this.CancelCommand = new RelayCommand(OnExecuteCancel, CanExecuteCancel);
-            this.TraitSelectionChangedCommand = new RelayCommand(OnExecuteTraitSelectionChanged);
+            this.TraitCheckedChangedCommand = new RelayCommand<TraitViewModel>(OnExecuteTraitCheckedChanged);
             this.TraitsClearCommand = new RelayCommand(OnExecuteTraitsClear);
             this.AssemblyReloadCommand = new RelayCommand(OnExecuteAssemblyReload, CanExecuteAssemblyReload);
             this.AssemblyReloadAllCommand = new RelayCommand(OnExecuteAssemblyReloadAll);
@@ -116,6 +116,7 @@ namespace xunit.runner.wpf.ViewModel
         public ICommand WindowLoadedCommand { get; }
         public RelayCommand RunCommand { get; }
         public RelayCommand CancelCommand { get; }
+        public ICommand TraitCheckedChangedCommand { get; }
         public ICommand TraitSelectionChangedCommand { get; }
         public ICommand TraitsClearCommand { get; }
         public ICommand AssemblyReloadCommand { get; }
@@ -378,7 +379,7 @@ namespace xunit.runner.wpf.ViewModel
             this.traitCollectionView.Collection.Clear();
             foreach (var testCase in this.allTestCases)
             {
-                this.traitCollectionView.Add(testCase.Traits);
+                this.traitCollectionView.AddRange(testCase.Traits);
             }
         }
 
@@ -500,48 +501,42 @@ namespace xunit.runner.wpf.ViewModel
             }
         }
 
-        private void OnTestDiscovered(List<TestCaseData> testCaseData)
+        private void OnTestDiscovered(IEnumerable<TestCaseData> testCases)
         {
-            var allTraits = new SortedDictionary<string, SortedSet<string>>();
-            foreach (var data in testCaseData)
+            var traitWorkerList = new List<TraitViewModel>();
+
+            foreach (var testCase in testCases)
             {
-                AddTraits(allTraits, data);
-            }
+                traitWorkerList.Clear();
 
-            this.allTestCases.AddRange(testCaseData.Select(d =>
-                new TestCaseViewModel(d.DisplayName, d.AssemblyPath, Convert(CreateSortedTraits(d)).ToImmutableArray())));
-            
-            this.traitCollectionView.Add(Convert(allTraits));
-        }
-
-        private SortedDictionary<string, SortedSet<string>> CreateSortedTraits(TestCaseData data)
-        {
-            var traits = new SortedDictionary<string, SortedSet<string>>();
-            AddTraits(traits, data);
-            return traits;
-        }
-
-        private static IEnumerable<TraitViewModel> Convert(SortedDictionary<string, SortedSet<string>> allTraits)
-        {
-            return allTraits.SelectMany(pair => pair.Value.Select(value => new TraitViewModel(pair.Key, value)));
-        }
-
-        private static void AddTraits(SortedDictionary<string, SortedSet<string>> allTraits, TestCaseData data)
-        {
-            foreach (var kvp in data.TraitMap)
-            {
-                SortedSet<string> values;
-                if (!allTraits.TryGetValue(kvp.Key, out values))
+                // Get or create traits.
+                if (testCase.TraitMap?.Count > 0)
                 {
-                    values = new SortedSet<string>();
-                    allTraits.Add(kvp.Key, values);
+                    foreach (var kvp in testCase.TraitMap)
+                    {
+                        var name = kvp.Key;
+                        var values = kvp.Value;
+
+                        var parentTraitViewModel = traitCollectionView.GetOrAdd(name);
+
+                        foreach (var value in values)
+                        {
+                            var traitViewModel = parentTraitViewModel.GetOrAdd(value);
+                            traitWorkerList.Add(traitViewModel);
+                        }
+                    }
                 }
 
-                values.AddRange(kvp.Value);
+                var testCaseViewModel = new TestCaseViewModel(
+                    testCase.DisplayName,
+                    testCase.AssemblyPath,
+                    traitWorkerList);
+
+                this.allTestCases.Add(testCaseViewModel);
             }
         }
 
-        private void OnTestFinished(List<TestResultData> testResultData)
+        private void OnTestFinished(IEnumerable<TestResultData> testResultData)
         {
             foreach (var data in testResultData)
             {
@@ -586,11 +581,9 @@ namespace xunit.runner.wpf.ViewModel
             this.cancellationTokenSource.Cancel();
         }
 
-        private void OnExecuteTraitSelectionChanged()
+        private void OnExecuteTraitCheckedChanged(TraitViewModel trait)
         {
-            this.searchQuery.TraitSet = new HashSet<TraitViewModel>(
-                this.traitCollectionView.Collection.Where(x => x.IsSelected),
-                TraitViewModelComparer.Instance);
+            this.searchQuery.TraitSet = this.traitCollectionView.GetCheckedTraits();
             FilterAfterDelay();
         }
 
@@ -598,7 +591,7 @@ namespace xunit.runner.wpf.ViewModel
         {
             foreach (var cur in this.traitCollectionView.Collection)
             {
-                cur.IsSelected = false;
+                cur.IsChecked = false;
             }
         }
 

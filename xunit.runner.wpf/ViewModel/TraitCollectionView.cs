@@ -1,54 +1,51 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace xunit.runner.wpf.ViewModel
 {
     public sealed partial class TraitCollectionView
     {
-        private readonly TraitViewModelComparer _comparer = TraitViewModelComparer.Instance;
-        private readonly ObservableCollection<TraitViewModel> _collection = new ObservableCollection<TraitViewModel>();
+        public ObservableCollection<TraitViewModel> Collection { get; } = new ObservableCollection<TraitViewModel>();
 
-        public ObservableCollection<TraitViewModel> Collection => _collection;
-
-        public TraitCollectionView()
+        public void AddRange(IEnumerable<TraitViewModel> traits)
         {
-
-        }
-
-        public void Add(IEnumerable<TraitViewModel> traitList)
-        {
-            foreach (var traitViewModel in traitList)
+            foreach (var trait in traits)
             {
-                InsertIfNotPresent(traitViewModel);
-            }
-        }
-
-        private void InsertIfNotPresent(TraitViewModel trait)
-        {
-            // TODO: make it a binary search
-            for (int i = 0; i < _collection.Count; i++)
-            {
-                var current = _collection[i];
-                var result = _comparer.Compare(trait, current);
-                if (result < 0)
+                var index = Collection.BinarySearch(trait, TraitViewModel.Comparer);
+                if (index < 0)
                 {
-                    _collection.Insert(i, trait);
-                    return;
+                    Collection.Insert(~index, trait);
                 }
-
-                if (result == 0)
+                else
                 {
-                    return;
+                    // This trait already exists, add more values.
+                    var originalTrait = Collection[index];
+                    originalTrait.AddValues(trait.Children.Select(x => x.Text));
                 }
             }
+        }
 
-            _collection.Add(trait);
+        public TraitViewModel GetOrAdd(string text)
+        {
+            var index = this.Collection.BinarySearch(text, StringComparer.Ordinal, vm => vm.Text);
+
+            if (index < 0)
+            {
+                var viewModel = new TraitViewModel(text);
+                this.Collection.Insert(~index, viewModel);
+                return viewModel;
+            }
+
+            return this.Collection[index];
+        }
+
+        public ISet<TraitViewModel> GetCheckedTraits()
+        {
+            return new HashSet<TraitViewModel>(
+                Collection.SelectMany(x => x.Children).Where(x => x.IsChecked == true),
+                comparer: TraitViewModel.EqualityComparer);
         }
     }
 }
