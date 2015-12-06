@@ -215,11 +215,12 @@
                         </Grid.RowDefinitions>
 
                         <StackPanel Orientation="Horizontal">
-                            <ToggleButton IsChecked="{Binding IncludePassedTests}"
+                            <ToggleButton IsChecked="{Binding FilterPassedTests}"
                                           BorderThickness="0"
                                           Background="Transparent"
                                           Margin="0,4,2,4"
-                                          Grid.Column="0">
+                                          Grid.Column="0"
+                                          Command="{Binding TestFilterChanged}">
                                 <StackPanel Orientation="Horizontal">
                                     <Image Source="Artwork\Passed_large.png" />
                                     <TextBlock Margin="4,0"
@@ -229,11 +230,12 @@
                                 </StackPanel>
                             </ToggleButton>
 
-                            <ToggleButton IsChecked="{Binding IncludeFailedTests}"
+                            <ToggleButton IsChecked="{Binding FilterFailedTests}"
                                           BorderThickness="0"
                                           Background="Transparent"
                                           Margin="2,4"
-                                          Grid.Column="1">
+                                          Grid.Column="1"
+                                          Command="{Binding TestFilterChanged}">
                                 <StackPanel Orientation="Horizontal">
                                     <Image Source="Artwork\Failed_large.png" />
                                     <TextBlock Margin="4,0"
@@ -243,11 +245,12 @@
                                 </StackPanel>
                             </ToggleButton>
 
-                            <ToggleButton IsChecked="{Binding IncludeSkippedTests}"
+                            <ToggleButton IsChecked="{Binding FilterSkippedTests}"
                                           BorderThickness="0"
                                           Background="Transparent"
                                           Margin="2,4,0,4"
-                                          Grid.Column="2">
+                                          Grid.Column="2"
+                                          Command="{Binding TestFilterChanged}">
                                 <StackPanel Orientation="Horizontal">
                                     <Image Source="Artwork\Skipped_large.png" />
                                     <TextBlock Margin="4,0"
@@ -273,6 +276,7 @@
                                                Margin="0,0,2,0"
                                                Source="{Binding Path=State, Mode=OneWay, Converter={StaticResource TestStateConverter}}"
                                                Grid.Column="0" />
+
                                         <TextBlock Text="{Binding DisplayName}"
                                                    VerticalAlignment="Center"
                                                    Grid.Column="1" />
