@@ -9,14 +9,12 @@ namespace Xunit.Runner.Wpf.ViewModel
     {
         private TestState _state = TestState.NotRun;
 
-        public TestCaseViewModel(string displayName, string assemblyFileName, IEnumerable<TraitViewModel> traits)
-        {
-            this.DisplayName = displayName;
-            this.AssemblyFileName = assemblyFileName;
-            this.Traits = traits.ToImmutableArray();
-        }
-
         public string DisplayName { get; }
+        public string SkipReason { get; }
+        public string AssemblyFileName { get; }
+        public ImmutableArray<TraitViewModel> Traits { get; }
+
+        public bool HasSkipReason => !string.IsNullOrEmpty(this.SkipReason);
 
         public TestState State
         {
@@ -24,8 +22,17 @@ namespace Xunit.Runner.Wpf.ViewModel
             set { Set(ref _state, value); }
         }
 
-        public string AssemblyFileName { get; }
+        public TestCaseViewModel(string displayName, string skipReason, string assemblyFileName, IEnumerable<TraitViewModel> traits)
+        {
+            this.DisplayName = displayName;
+            this.SkipReason = skipReason;
+            this.AssemblyFileName = assemblyFileName;
+            this.Traits = traits.ToImmutableArray();
 
-        public ImmutableArray<TraitViewModel> Traits { get; }
+            if (!string.IsNullOrEmpty(skipReason))
+            {
+                _state = TestState.Skipped;
+            }
+        }
     }
 }

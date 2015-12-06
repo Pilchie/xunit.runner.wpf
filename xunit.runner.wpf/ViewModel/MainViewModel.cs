@@ -84,19 +84,21 @@ namespace Xunit.Runner.Wpf.ViewModel
                 }
             }
 
+            var noFilter = !(searchQuery.FilterFailedTests | searchQuery.FilterPassedTests | searchQuery.FilterSkippedTests);
+
             switch (testCase.State)
             {
                 case TestState.Passed:
-                    return searchQuery.IncludePassedTests;
+                    return noFilter || searchQuery.FilterPassedTests;
 
                 case TestState.Skipped:
-                    return searchQuery.IncludeSkippedTests;
+                    return noFilter || searchQuery.FilterSkippedTests;
 
                 case TestState.Failed:
-                    return searchQuery.IncludeFailedTests;
+                    return noFilter || searchQuery.FilterFailedTests;
 
                 case TestState.NotRun:
-                    return true;
+                    return noFilter;
 
                 default:
                     Debug.Assert(false, "What state is this test case in?");
@@ -527,8 +529,14 @@ namespace Xunit.Runner.Wpf.ViewModel
 
                 var testCaseViewModel = new TestCaseViewModel(
                     testCase.DisplayName,
+                    testCase.SkipReason,
                     testCase.AssemblyPath,
                     traitWorkerList);
+
+                if (testCaseViewModel.State == TestState.Skipped)
+                {
+                    TestsSkipped++;
+                }
 
                 this.allTestCases.Add(testCaseViewModel);
             }
@@ -623,36 +631,36 @@ namespace Xunit.Runner.Wpf.ViewModel
             RemoveAssemblies(Assemblies.ToArray());
         }
 
-        public bool IncludePassedTests
+        public bool FilterPassedTests
         {
-            get { return searchQuery.IncludePassedTests; }
+            get { return searchQuery.FilterPassedTests; }
             set
             {
-                if (Set(ref searchQuery.IncludePassedTests, value))
+                if (Set(ref searchQuery.FilterPassedTests, value))
                 {
                     FilterAfterDelay();
                 }
             }
         }
 
-        public bool IncludeFailedTests
+        public bool FilterFailedTests
         {
-            get { return searchQuery.IncludeFailedTests; }
+            get { return searchQuery.FilterFailedTests; }
             set
             {
-                if (Set(ref searchQuery.IncludeFailedTests, value))
+                if (Set(ref searchQuery.FilterFailedTests, value))
                 {
                     FilterAfterDelay();
                 }
             }
         }
 
-        public bool IncludeSkippedTests
+        public bool FilterSkippedTests
         {
-            get { return searchQuery.IncludeSkippedTests; }
+            get { return searchQuery.FilterSkippedTests; }
             set
             {
-                if (Set(ref searchQuery.IncludeSkippedTests, value))
+                if (Set(ref searchQuery.FilterSkippedTests, value))
                 {
                     FilterAfterDelay();
                 }

@@ -23,6 +23,7 @@ namespace Xunit.Runner.Worker
                 var testCase = testCaseDiscovered.TestCase;
                 var testCaseData = new TestCaseData(
                     testCase.DisplayName,
+                    testCase.SkipReason,
                     testCaseDiscovered.TestAssembly.Assembly.AssemblyPath,
                     testCase.Traits);
 
