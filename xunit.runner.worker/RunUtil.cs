@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using xunit.runner.data;
-using Xunit;
+using Xunit.Runner.Data;
 using Xunit.Abstractions;
 
-namespace xunit.runner.worker
+namespace Xunit.Runner.Worker
 {
     internal sealed class RunUtil
     {

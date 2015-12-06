@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Threading;
-using Xunit;
 using Xunit.Abstractions;
 
-namespace xunit.runner.worker
+namespace Xunit.Runner.Worker
 {
     internal abstract class TestDiscoverySink : LongLivedMarshalByRefObject, IMessageSink, IDisposable
     {

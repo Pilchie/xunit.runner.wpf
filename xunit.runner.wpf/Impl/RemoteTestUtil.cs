@@ -7,9 +7,9 @@ using System.IO.Pipes;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
-using xunit.runner.data;
+using Xunit.Runner.Data;
 
-namespace xunit.runner.wpf.Impl
+namespace Xunit.Runner.Wpf.Impl
 {
     internal sealed partial class RemoteTestUtil : ITestUtil
     {
@@ -81,7 +81,7 @@ namespace xunit.runner.wpf.Impl
         {
             var pipeName = $"xunit.runner.wpf.pipe.{Guid.NewGuid()}";
             var processStartInfo = new ProcessStartInfo();
-            processStartInfo.FileName = typeof(xunit.runner.worker.Program).Assembly.Location;
+            processStartInfo.FileName = typeof(Xunit.Runner.Worker.Program).Assembly.Location;
             processStartInfo.Arguments = $"{pipeName} {Process.GetCurrentProcess().Id}";
             processStartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             var process = Process.Start(processStartInfo);

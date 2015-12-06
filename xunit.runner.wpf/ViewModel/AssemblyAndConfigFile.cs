@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace xunit.runner.wpf.ViewModel
+namespace Xunit.Runner.Wpf.ViewModel
 {
     public class AssemblyAndConfigFile
     {

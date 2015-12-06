@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using xunit.runner.data;
+using Xunit.Runner.Data;
 
-namespace xunit.runner.worker
+namespace Xunit.Runner.Worker
 {
     internal sealed class Listener
     {
@@ -27,7 +25,8 @@ namespace xunit.runner.worker
             {
                 _taskList.RemoveAll(x => x.IsCompleted);
                 success = GoOne();
-            } while (success);
+            }
+            while (success);
 
             // Wait for the existing tasks to complete before stopping the listener
             Task.WaitAll(_taskList.ToArray());

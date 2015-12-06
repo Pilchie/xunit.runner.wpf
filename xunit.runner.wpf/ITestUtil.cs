@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading;
 using System.Threading.Tasks;
-using xunit.runner.data;
+using Xunit.Runner.Data;
 
-namespace xunit.runner.wpf
+namespace Xunit.Runner.Wpf
 {
     internal interface ITestUtil
     {

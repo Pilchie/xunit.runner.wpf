@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.IO;
 
-namespace xunit.runner.data
+namespace Xunit.Runner.Data
 {
     /// <summary>
     /// Note: More severe states are higher numbers.

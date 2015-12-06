@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Xunit;
-using Xunit.Abstractions;
+﻿using Xunit.Abstractions;
 
-namespace xunit.runner.worker
+namespace Xunit.Runner.Worker
 {
     internal sealed class MessageVisitor : TestMessageVisitor
     {

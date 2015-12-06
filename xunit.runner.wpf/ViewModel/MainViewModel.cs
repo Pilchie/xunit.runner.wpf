@@ -13,12 +13,10 @@ using System.Windows.Threading;
 using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.CommandWpf;
 using Microsoft.Win32;
-using xunit.runner.data;
-
 using Microsoft.WindowsAPICodePack.Taskbar;
-using Microsoft.WindowsAPICodePack.Shell;
+using Xunit.Runner.Data;
 
-namespace xunit.runner.wpf.ViewModel
+namespace Xunit.Runner.Wpf.ViewModel
 {
     public class MainViewModel : ViewModelBase
     {
@@ -43,7 +41,7 @@ namespace xunit.runner.wpf.ViewModel
             }
 
             CommandBindings = CreateCommandBindings();
-            this.testUtil = new xunit.runner.wpf.Impl.RemoteTestUtil(Dispatcher.CurrentDispatcher);
+            this.testUtil = new Xunit.Runner.Wpf.Impl.RemoteTestUtil(Dispatcher.CurrentDispatcher);
             this.TestCasesCaption = "Test Cases (0)";
 
             this.FilteredTestCases = new FilteredCollectionView<TestCaseViewModel, SearchQuery>(

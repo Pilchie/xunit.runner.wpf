@@ -1,9 +1,8 @@
 ﻿using System.IO;
-using Xunit;
 using Xunit.Abstractions;
-using xunit.runner.data;
+using Xunit.Runner.Data;
 
-namespace xunit.runner.worker
+namespace Xunit.Runner.Worker
 {
     internal sealed class DiscoverUtil
     {

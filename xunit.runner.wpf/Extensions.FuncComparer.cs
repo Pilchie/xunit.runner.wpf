@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace xunit.runner.wpf
+namespace Xunit.Runner.Wpf
 {
     public static partial class Extensions
     {
