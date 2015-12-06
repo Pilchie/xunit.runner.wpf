@@ -133,19 +133,19 @@ namespace Xunit.Runner.Wpf.Impl
 
         #region ITestUtil
 
-        Task ITestUtil.Discover(string assemblyPath, Action<IEnumerable<TestCaseData>> callback, CancellationToken cancellationToken)
+        Task ITestUtil.Discover(string assemblyFileName, Action<IEnumerable<TestCaseData>> testsDiscovered, CancellationToken cancellationToken)
         {
-            return Discover(assemblyPath, callback, cancellationToken);
+            return Discover(assemblyFileName, testsDiscovered, cancellationToken);
         }
 
-        Task ITestUtil.RunAll(string assemblyPath, Action<IEnumerable<TestResultData>> callback, CancellationToken cancellationToken)
+        Task ITestUtil.RunAll(string assemblyFileName, Action<IEnumerable<TestResultData>> testsFinished, CancellationToken cancellationToken)
         {
-            return RunCore(Constants.ActionRunAll, assemblyPath, ImmutableArray<string>.Empty, callback, cancellationToken);
+            return RunCore(Constants.ActionRunAll, assemblyFileName, ImmutableArray<string>.Empty, testsFinished, cancellationToken);
         }
 
-        Task ITestUtil.RunSpecific(string assemblyPath, ImmutableArray<string> testCaseDisplayNames, Action<IEnumerable<TestResultData>> callback, CancellationToken cancellationToken)
+        Task ITestUtil.RunSpecific(string assemblyFileName, ImmutableArray<string> testCases, Action<IEnumerable<TestResultData>> testsFinished, CancellationToken cancellationToken)
         {
-            return RunCore(Constants.ActionRunSpecific, assemblyPath, testCaseDisplayNames, callback, cancellationToken);
+            return RunCore(Constants.ActionRunSpecific, assemblyFileName, testCases, testsFinished, cancellationToken);
         }
 
         #endregion

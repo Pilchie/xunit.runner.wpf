@@ -64,17 +64,18 @@ namespace Xunit.Runner.Worker
             {
                 var reader = new ClientReader(stream);
                 var action = reader.ReadString();
-                var argument = reader.ReadString();
+                var assemblyFileName = reader.ReadString();
+
                 switch (action)
                 {
                     case Constants.ActionDiscover:
-                        Discover(stream, argument);
+                        Discover(stream, assemblyFileName);
                         break;
                     case Constants.ActionRunAll:
-                        RunAll(stream, argument);
+                        RunAll(stream, assemblyFileName);
                         break;
                     case Constants.ActionRunSpecific:
-                        RunSpecific(stream, argument);
+                        RunSpecific(stream, assemblyFileName);
                         break;
                     default:
                         Debug.Fail($"Invalid action {action}");
@@ -92,24 +93,24 @@ namespace Xunit.Runner.Worker
             }
         }
 
-        private static void Discover(Stream stream, string assemblyPath)
+        private static void Discover(Stream stream, string assemblyFileName)
         {
-            Console.WriteLine($"discover started: {assemblyPath}");
-            DiscoverUtil.Go(assemblyPath, stream);
+            Console.WriteLine($"discover started: {assemblyFileName}");
+            DiscoverUtil.Go(assemblyFileName, stream);
             Console.WriteLine("discover ended");
         }
 
-        private static void RunAll(Stream stream, string assemblyPath)
+        private static void RunAll(Stream stream, string assemblyFileName)
         {
-            Console.WriteLine($"run all started: {assemblyPath}");
-            RunUtil.RunAll(assemblyPath, stream);
+            Console.WriteLine($"run all started: {assemblyFileName}");
+            RunUtil.RunAll(assemblyFileName, stream);
             Console.WriteLine("run all ended");
         }
 
-        private static void RunSpecific(Stream stream, string assemblyPath)
+        private static void RunSpecific(Stream stream, string assemblyFileName)
         {
-            Console.WriteLine($"run specific started: {assemblyPath}");
-            RunUtil.RunSpecific(assemblyPath, stream);
+            Console.WriteLine($"run specific started: {assemblyFileName}");
+            RunUtil.RunSpecific(assemblyFileName, stream);
             Console.WriteLine("run specific ended");
         }
     }

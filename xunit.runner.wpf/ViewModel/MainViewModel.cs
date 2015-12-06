@@ -271,7 +271,6 @@ namespace Xunit.Runner.Wpf.ViewModel
                 return;
             }
 
-            var loadingDialog = new LoadingDialog { Owner = MainWindow.Instance };
             var newAssemblyViewModels = new List<TestAssemblyViewModel>();
 
             try
@@ -281,7 +280,7 @@ namespace Xunit.Runner.Wpf.ViewModel
                     var taskList = new List<Task>();
                     foreach (var assembly in assemblies)
                     {
-                        taskList.Add(this.testUtil.Discover(assembly.AssemblyFileName, this.OnTestDiscovered, this.cancellationTokenSource.Token));
+                        taskList.Add(this.testUtil.Discover(assembly.AssemblyFileName, this.OnTestsDiscovered, this.cancellationTokenSource.Token));
 
                         var assemblyViewModel = new TestAssemblyViewModel(assembly);
 
@@ -300,14 +299,11 @@ namespace Xunit.Runner.Wpf.ViewModel
                 {
                     assemblyViewModel.State = AssemblyState.Ready;
                 }
-
-                loadingDialog.Close();
             }
         }
 
         private async Task ReloadAssemblies(IEnumerable<TestAssemblyViewModel> assemblies)
         {
-            var loadingDialog = new LoadingDialog { Owner = MainWindow.Instance };
             try
             {
                 await ExecuteTestSessionOperation(() =>
@@ -317,10 +313,10 @@ namespace Xunit.Runner.Wpf.ViewModel
                     {
                         assemblyViewModel.State = AssemblyState.Loading;
 
-                        var assemblyPath = assemblyViewModel.FileName;
-                        RemoveAssemblyTestCases(assemblyPath);
+                        var assemblyFileName = assemblyViewModel.FileName;
+                        RemoveAssemblyTestCases(assemblyFileName);
 
-                        taskList.Add(this.testUtil.Discover(assemblyPath, OnTestDiscovered, cancellationTokenSource.Token));
+                        taskList.Add(this.testUtil.Discover(assemblyFileName, OnTestsDiscovered, cancellationTokenSource.Token));
                     }
 
                     return taskList;
@@ -334,8 +330,6 @@ namespace Xunit.Runner.Wpf.ViewModel
                 {
                     assemblyViewModel.State = AssemblyState.Ready;
                 }
-
-                loadingDialog.Close();
             }
         }
 
@@ -452,20 +446,26 @@ namespace Xunit.Runner.Wpf.ViewModel
             var runAll = FilteredTestCases.Count == this.allTestCases.Count;
             var testSessionList = new List<Task>();
 
-            foreach (var assemblyPath in FilteredTestCases.Select(x => x.AssemblyFileName).Distinct())
+            foreach (var assemblyFileName in FilteredTestCases.Select(x => x.AssemblyFileName).Distinct())
             {
                 Task task;
                 if (runAll)
                 {
-                    task = this.testUtil.RunAll(assemblyPath, OnTestFinished, this.cancellationTokenSource.Token);
+                    task = this.testUtil.RunAll(assemblyFileName, OnTestsFinished, this.cancellationTokenSource.Token);
                 }
                 else
                 {
-                    var testCaseDisplayNames = FilteredTestCases
-                        .Where(x => x.AssemblyFileName == assemblyPath)
-                        .Select(x => x.DisplayName)
-                        .ToImmutableArray();
-                    task = this.testUtil.RunSpecific(assemblyPath, testCaseDisplayNames, OnTestFinished, this.cancellationTokenSource.Token);
+                    var builder = ImmutableArray.CreateBuilder<string>();
+
+                    foreach (var testCase in FilteredTestCases)
+                    {
+                        if (testCase.AssemblyFileName == assemblyFileName)
+                        {
+                            builder.Add(testCase.DisplayName);
+                        }
+                    }
+
+                    task = this.testUtil.RunSpecific(assemblyFileName, builder.ToImmutable(), OnTestsFinished, this.cancellationTokenSource.Token);
                 }
 
                 testSessionList.Add(task);
@@ -499,7 +499,7 @@ namespace Xunit.Runner.Wpf.ViewModel
             }
         }
 
-        private void OnTestDiscovered(IEnumerable<TestCaseData> testCases)
+        private void OnTestsDiscovered(IEnumerable<TestCaseData> testCases)
         {
             var traitWorkerList = new List<TraitViewModel>();
 
@@ -534,7 +534,7 @@ namespace Xunit.Runner.Wpf.ViewModel
             }
         }
 
-        private void OnTestFinished(IEnumerable<TestResultData> testResultData)
+        private void OnTestsFinished(IEnumerable<TestResultData> testResultData)
         {
             foreach (var data in testResultData)
             {
