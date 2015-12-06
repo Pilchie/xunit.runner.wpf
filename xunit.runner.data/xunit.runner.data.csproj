@@ -7,7 +7,7 @@
     <ProjectGuid>{A1F579F4-443E-4F64-BC55-998AB86FF293}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>xunit.runner.data</RootNamespace>
+    <RootNamespace>Xunit.Runner.Data</RootNamespace>
     <AssemblyName>xunit.runner.data</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>

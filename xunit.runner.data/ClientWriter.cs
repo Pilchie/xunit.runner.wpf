@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace xunit.runner.data
+namespace Xunit.Runner.Data
 {
     public sealed class ClientWriter : IDisposable
     {

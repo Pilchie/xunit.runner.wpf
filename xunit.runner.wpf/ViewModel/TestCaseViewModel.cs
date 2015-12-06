@@ -1,9 +1,9 @@
-﻿using GalaSoft.MvvmLight;
+﻿using System.Collections.Generic;
 using System.Collections.Immutable;
-using xunit.runner.data;
-using System.Collections.Generic;
+using GalaSoft.MvvmLight;
+using Xunit.Runner.Data;
 
-namespace xunit.runner.wpf.ViewModel
+namespace Xunit.Runner.Wpf.ViewModel
 {
     public class TestCaseViewModel : ViewModelBase
     {

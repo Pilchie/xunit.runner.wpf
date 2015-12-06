@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
 
-namespace xunit.runner.data
+namespace Xunit.Runner.Data
 {
     public static class Constants
     {

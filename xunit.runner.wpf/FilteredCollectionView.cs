@@ -8,7 +8,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 
-namespace xunit.runner.wpf
+namespace Xunit.Runner.Wpf
 {
     public class FilteredCollectionView<T, TFilterArg> : IList<T>, IList, INotifyCollectionChanged, IDisposable
     {

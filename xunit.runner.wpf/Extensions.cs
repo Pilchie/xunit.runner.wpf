@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
-namespace xunit.runner.wpf
+namespace Xunit.Runner.Wpf
 {
     public static partial class Extensions
     {

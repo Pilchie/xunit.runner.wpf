@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using xunit.runner.data;
+using Xunit.Runner.Data;
 
-namespace xunit.runner.worker
+namespace Xunit.Runner.Worker
 {
     internal sealed class Listener
     {
@@ -27,7 +25,8 @@ namespace xunit.runner.worker
             {
                 _taskList.RemoveAll(x => x.IsCompleted);
                 success = GoOne();
-            } while (success);
+            }
+            while (success);
 
             // Wait for the existing tasks to complete before stopping the listener
             Task.WaitAll(_taskList.ToArray());
@@ -65,17 +64,18 @@ namespace xunit.runner.worker
             {
                 var reader = new ClientReader(stream);
                 var action = reader.ReadString();
-                var argument = reader.ReadString();
+                var assemblyFileName = reader.ReadString();
+
                 switch (action)
                 {
                     case Constants.ActionDiscover:
-                        Discover(stream, argument);
+                        Discover(stream, assemblyFileName);
                         break;
                     case Constants.ActionRunAll:
-                        RunAll(stream, argument);
+                        RunAll(stream, assemblyFileName);
                         break;
                     case Constants.ActionRunSpecific:
-                        RunSpecific(stream, argument);
+                        RunSpecific(stream, assemblyFileName);
                         break;
                     default:
                         Debug.Fail($"Invalid action {action}");
@@ -93,24 +93,24 @@ namespace xunit.runner.worker
             }
         }
 
-        private static void Discover(Stream stream, string assemblyPath)
+        private static void Discover(Stream stream, string assemblyFileName)
         {
-            Console.WriteLine($"discover started: {assemblyPath}");
-            DiscoverUtil.Go(assemblyPath, stream);
+            Console.WriteLine($"discover started: {assemblyFileName}");
+            DiscoverUtil.Go(assemblyFileName, stream);
             Console.WriteLine("discover ended");
         }
 
-        private static void RunAll(Stream stream, string assemblyPath)
+        private static void RunAll(Stream stream, string assemblyFileName)
         {
-            Console.WriteLine($"run all started: {assemblyPath}");
-            RunUtil.RunAll(assemblyPath, stream);
+            Console.WriteLine($"run all started: {assemblyFileName}");
+            RunUtil.RunAll(assemblyFileName, stream);
             Console.WriteLine("run all ended");
         }
 
-        private static void RunSpecific(Stream stream, string assemblyPath)
+        private static void RunSpecific(Stream stream, string assemblyFileName)
         {
-            Console.WriteLine($"run specific started: {assemblyPath}");
-            RunUtil.RunSpecific(assemblyPath, stream);
+            Console.WriteLine($"run specific started: {assemblyFileName}");
+            RunUtil.RunSpecific(assemblyFileName, stream);
             Console.WriteLine("run specific ended");
         }
     }

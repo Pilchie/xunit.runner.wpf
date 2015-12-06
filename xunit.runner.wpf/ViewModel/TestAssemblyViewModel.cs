@@ -1,7 +1,7 @@
-﻿using GalaSoft.MvvmLight;
-using System.IO;
+﻿using System.IO;
+using GalaSoft.MvvmLight;
 
-namespace xunit.runner.wpf.ViewModel
+namespace Xunit.Runner.Wpf.ViewModel
 {
     public class TestAssemblyViewModel : ViewModelBase
     {

@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using System.Windows;
 
-namespace xunit.runner.wpf
+namespace Xunit.Runner.Wpf
 {
     public partial class MainWindow : Window
     {

@@ -3,9 +3,9 @@ using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using xunit.runner.data;
+using Xunit.Runner.Data;
 
-namespace xunit.runner.wpf.Converters
+namespace Xunit.Runner.Wpf.Converters
 {
     public class TestStateConverter : IValueConverter
     {

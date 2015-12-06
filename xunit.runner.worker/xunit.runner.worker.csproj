@@ -7,7 +7,7 @@
     <ProjectGuid>{9DF97A2B-0EB5-4B12-9F81-69DFAC979814}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>xunit.runner.worker</RootNamespace>
+    <RootNamespace>Xunit.Runner.Worker</RootNamespace>
     <AssemblyName>xunit.runner.worker</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -54,11 +54,14 @@
     <Compile Include="Connection.cs" />
     <Compile Include="DiscoverUtil.cs" />
     <Compile Include="Listener.cs" />
-    <Compile Include="MessageVisitor.cs" />
+    <Compile Include="MessageSinks\BaseMessageSink.cs" />
+    <Compile Include="MessageSinks\BaseTestRunSink.cs" />
+    <Compile Include="MessageSinks\DiagnosticSink.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RunUtil.cs" />
-    <Compile Include="TestDiscoverySink.cs" />
+    <Compile Include="MessageSinks\BaseTestDiscoverySink.cs" />
+    <Compile Include="XunitUtil.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

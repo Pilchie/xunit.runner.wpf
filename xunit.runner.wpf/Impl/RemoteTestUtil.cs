@@ -7,9 +7,9 @@ using System.IO.Pipes;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
-using xunit.runner.data;
+using Xunit.Runner.Data;
 
-namespace xunit.runner.wpf.Impl
+namespace Xunit.Runner.Wpf.Impl
 {
     internal sealed partial class RemoteTestUtil : ITestUtil
     {
@@ -81,7 +81,7 @@ namespace xunit.runner.wpf.Impl
         {
             var pipeName = $"xunit.runner.wpf.pipe.{Guid.NewGuid()}";
             var processStartInfo = new ProcessStartInfo();
-            processStartInfo.FileName = typeof(xunit.runner.worker.Program).Assembly.Location;
+            processStartInfo.FileName = typeof(Xunit.Runner.Worker.Program).Assembly.Location;
             processStartInfo.Arguments = $"{pipeName} {Process.GetCurrentProcess().Id}";
             processStartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             var process = Process.Start(processStartInfo);
@@ -133,19 +133,19 @@ namespace xunit.runner.wpf.Impl
 
         #region ITestUtil
 
-        Task ITestUtil.Discover(string assemblyPath, Action<IEnumerable<TestCaseData>> callback, CancellationToken cancellationToken)
+        Task ITestUtil.Discover(string assemblyFileName, Action<IEnumerable<TestCaseData>> testsDiscovered, CancellationToken cancellationToken)
         {
-            return Discover(assemblyPath, callback, cancellationToken);
+            return Discover(assemblyFileName, testsDiscovered, cancellationToken);
         }
 
-        Task ITestUtil.RunAll(string assemblyPath, Action<IEnumerable<TestResultData>> callback, CancellationToken cancellationToken)
+        Task ITestUtil.RunAll(string assemblyFileName, Action<IEnumerable<TestResultData>> testsFinished, CancellationToken cancellationToken)
         {
-            return RunCore(Constants.ActionRunAll, assemblyPath, ImmutableArray<string>.Empty, callback, cancellationToken);
+            return RunCore(Constants.ActionRunAll, assemblyFileName, ImmutableArray<string>.Empty, testsFinished, cancellationToken);
         }
 
-        Task ITestUtil.RunSpecific(string assemblyPath, ImmutableArray<string> testCaseDisplayNames, Action<IEnumerable<TestResultData>> callback, CancellationToken cancellationToken)
+        Task ITestUtil.RunSpecific(string assemblyFileName, ImmutableArray<string> testCases, Action<IEnumerable<TestResultData>> testsFinished, CancellationToken cancellationToken)
         {
-            return RunCore(Constants.ActionRunSpecific, assemblyPath, testCaseDisplayNames, callback, cancellationToken);
+            return RunCore(Constants.ActionRunSpecific, assemblyFileName, testCases, testsFinished, cancellationToken);
         }
 
         #endregion

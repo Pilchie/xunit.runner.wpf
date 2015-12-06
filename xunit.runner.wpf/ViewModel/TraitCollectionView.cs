@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
-namespace xunit.runner.wpf.ViewModel
+namespace Xunit.Runner.Wpf.ViewModel
 {
     public sealed partial class TraitCollectionView
     {

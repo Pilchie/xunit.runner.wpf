@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 
-namespace xunit.runner.data
+namespace Xunit.Runner.Data
 {
     public sealed class TestCaseData
     {

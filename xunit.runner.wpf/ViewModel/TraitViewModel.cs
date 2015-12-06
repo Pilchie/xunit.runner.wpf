@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using GalaSoft.MvvmLight;
 
-namespace xunit.runner.wpf.ViewModel
+namespace Xunit.Runner.Wpf.ViewModel
 {
     public partial class TraitViewModel : ViewModelBase
     {

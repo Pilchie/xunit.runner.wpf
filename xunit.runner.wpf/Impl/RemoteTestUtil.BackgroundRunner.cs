@@ -2,18 +2,12 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
-using System.IO;
-using System.IO.Pipes;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
-using xunit.runner.data;
-using xunit.runner.wpf.ViewModel;
+using Xunit.Runner.Data;
 
-namespace xunit.runner.wpf.Impl
+namespace Xunit.Runner.Wpf.Impl
 {
     internal partial class RemoteTestUtil 
     {

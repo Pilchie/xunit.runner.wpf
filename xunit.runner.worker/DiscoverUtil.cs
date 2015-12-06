@@ -1,17 +1,17 @@
 ﻿using System.IO;
-using Xunit;
 using Xunit.Abstractions;
-using xunit.runner.data;
+using Xunit.Runner.Data;
+using Xunit.Runner.Worker.MessageSinks;
 
-namespace xunit.runner.worker
+namespace Xunit.Runner.Worker
 {
-    internal sealed class DiscoverUtil
+    internal sealed class DiscoverUtil : XunitUtil
     {
-        private sealed class Impl : TestDiscoverySink
+        private sealed class TestDiscoverySink : BaseTestDiscoverySink
         {
             private readonly ClientWriter _writer;
 
-            internal Impl(ClientWriter writer)
+            internal TestDiscoverySink(ClientWriter writer)
             {
                 _writer = writer;
             }
@@ -33,21 +33,19 @@ namespace xunit.runner.worker
 
         internal static void Go(string assemblyFileName, Stream stream)
         {
-            using (AssemblyHelper.SubscribeResolve())
-            using (var xunit = new XunitFrontController(
-                AppDomainSupport.Denied,
-                assemblyFileName: assemblyFileName,
-                diagnosticMessageSink: new MessageVisitor(),
-                shadowCopy: false))
-            using (var writer = new ClientWriter(stream))
-            using (var impl = new Impl(writer))
-            {
-                var testAssemblyConfiguration = ConfigReader.Load(assemblyFileName);
-                xunit.Find(includeSourceInformation: false, messageSink: impl, discoveryOptions: TestFrameworkOptions.ForDiscovery(testAssemblyConfiguration));
-                impl.Finished.WaitOne();
+            Go(assemblyFileName, stream, AppDomainSupport.Denied,
+                (xunit, configuration, writer) =>
+                {
+                    using (var sink = new TestDiscoverySink(writer))
+                    {
+                        xunit.Find(includeSourceInformation: false, messageSink: sink,
+                            discoveryOptions: TestFrameworkOptions.ForDiscovery(configuration));
 
-                writer.Write(TestDataKind.EndOfData);
-            }
+                        sink.Finished.WaitOne();
+
+                        writer.Write(TestDataKind.EndOfData);
+                    }
+                });
         }
     }
 }

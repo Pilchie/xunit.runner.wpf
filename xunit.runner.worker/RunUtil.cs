@@ -2,22 +2,24 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using xunit.runner.data;
-using Xunit;
+using Xunit.Runner.Data;
 using Xunit.Abstractions;
+using Xunit.Runner.Worker.MessageSinks;
 
-namespace xunit.runner.worker
+namespace Xunit.Runner.Worker
 {
-    internal sealed class RunUtil
+    internal sealed class RunUtil : XunitUtil
     {
-        private sealed class TestRunVisitor : TestMessageVisitor<ITestAssemblyFinished>
+        private sealed class TestRunSink : BaseTestRunSink
         {
             private readonly ClientWriter _writer;
 
-            public TestRunVisitor(ClientWriter writer)
+            public TestRunSink(ClientWriter writer)
             {
                 _writer = writer;
             }
+
+            protected override bool ShouldContinue => _writer.IsConnected;
 
             private void Process(string displayName, TestState state, string output = "")
             {
@@ -28,7 +30,7 @@ namespace xunit.runner.worker
                 _writer.Write(result);
             }
 
-            protected override bool Visit(ITestFailed testFailed)
+            protected override void OnTestFailed(ITestFailed testFailed)
             {
                 var displayName = testFailed.TestCase.DisplayName;
                 var builder = new StringBuilder();
@@ -41,41 +43,38 @@ namespace xunit.runner.worker
                     builder.AppendLine($"\tException stacktrace");
                     builder.AppendLine(testFailed.StackTraces[i]);
                 }
+
                 builder.AppendLine();
 
                 Process(testFailed.TestCase.DisplayName, TestState.Failed, builder.ToString());
-
-                return _writer.IsConnected;
             }
 
-            protected override bool Visit(ITestPassed testPassed)
+            protected override void OnTestPassed(ITestPassed testPassed)
             {
                 Process(testPassed.TestCase.DisplayName, TestState.Passed);
-                return _writer.IsConnected;
             }
 
-            protected override bool Visit(ITestSkipped testSkipped)
+            protected override void OnTestSkipped(ITestSkipped testSkipped)
             {
                 Process(testSkipped.TestCase.DisplayName, TestState.Skipped);
-                return _writer.IsConnected;
             }
         }
 
-        private sealed class TestCaseDiscoverer : TestDiscoverySink
+        private sealed class TestDiscoverySink : BaseTestDiscoverySink
         {
-            private readonly HashSet<string> _testCaseDisplayNameSet;
+            private readonly HashSet<string> _testCaseNameSet;
             private readonly List<ITestCase> _testCaseList;
 
-            internal TestCaseDiscoverer(HashSet<string> testCaseDisplayNameSet, List<ITestCase> testCaseList)
+            internal TestDiscoverySink(HashSet<string> testCaseDisplayNameSet, List<ITestCase> testCaseList)
             {
-                _testCaseDisplayNameSet = testCaseDisplayNameSet;
+                _testCaseNameSet = testCaseDisplayNameSet;
                 _testCaseList = testCaseList;
             }
 
             protected override void OnTestDiscovered(ITestCaseDiscoveryMessage testCaseDiscovered)
             {
                 var testCase = testCaseDiscovered.TestCase;
-                if (_testCaseDisplayNameSet.Contains(testCase.DisplayName))
+                if (_testCaseNameSet.Contains(testCase.DisplayName))
                 {
                     _testCaseList.Add(testCaseDiscovered.TestCase);
                 }
@@ -99,16 +98,16 @@ namespace xunit.runner.worker
             }
         }
 
-        private static List<ITestCase> GetTestCaseList(XunitFrontController xunit, Stream stream, TestAssemblyConfiguration testAssemblyConfiguration)
+        private static List<ITestCase> GetTestCaseList(XunitFrontController xunit, TestAssemblyConfiguration configuration, HashSet<string> testCaseNameSet)
         {
-            var testCaseDisplayNames = ReadTestCaseDisplayNames(stream);
-            var testCaseDisplayNameSet = new HashSet<string>(testCaseDisplayNames, StringComparer.Ordinal);
             var testCaseList = new List<ITestCase>();
 
-            using (var discoverer = new TestCaseDiscoverer(testCaseDisplayNameSet, testCaseList))
+            using (var sink = new TestDiscoverySink(testCaseNameSet, testCaseList))
             {
-                xunit.Find(includeSourceInformation: false, messageSink: discoverer, discoveryOptions: TestFrameworkOptions.ForDiscovery(testAssemblyConfiguration));
-                discoverer.Finished.WaitOne();
+                xunit.Find(includeSourceInformation: false, messageSink: sink,
+                    discoveryOptions: TestFrameworkOptions.ForDiscovery(configuration));
+
+                sink.Finished.WaitOne();
             }
 
             return testCaseList;
@@ -116,42 +115,41 @@ namespace xunit.runner.worker
 
         internal static void RunAll(string assemblyFileName, Stream stream)
         {
-            using (AssemblyHelper.SubscribeResolve())
-            using (var xunit = new XunitFrontController(
-                AppDomainSupport.IfAvailable,
-                assemblyFileName: assemblyFileName,
-                shadowCopy: false,
-                diagnosticMessageSink: new MessageVisitor()))
-            using (var writer = new ClientWriter(stream))
-            using (var testRunVisitor = new TestRunVisitor(writer))
-            {
-                var testAssemblyConfiguration = ConfigReader.Load(assemblyFileName);
-                xunit.RunAll(testRunVisitor, 
-                    discoveryOptions: TestFrameworkOptions.ForDiscovery(testAssemblyConfiguration),
-                    executionOptions: TestFrameworkOptions.ForExecution(testAssemblyConfiguration));
-                testRunVisitor.Finished.WaitOne();
-                writer.Write(TestDataKind.EndOfData);
-            }
+            Go(assemblyFileName, stream, AppDomainSupport.IfAvailable,
+                (xunit, configuration, writer) =>
+                {
+                    using (var sink = new TestRunSink(writer))
+                    {
+                        xunit.RunAll(sink,
+                            discoveryOptions: TestFrameworkOptions.ForDiscovery(configuration),
+                            executionOptions: TestFrameworkOptions.ForExecution(configuration));
+
+                        sink.Finished.WaitOne();
+
+                        writer.Write(TestDataKind.EndOfData);
+                    }
+                });
         }
 
         internal static void RunSpecific(string assemblyFileName, Stream stream)
         {
-            using (AssemblyHelper.SubscribeResolve())
-            using (var xunit = new XunitFrontController(
-                AppDomainSupport.IfAvailable,
-                assemblyFileName: assemblyFileName,
-                shadowCopy: false,
-                diagnosticMessageSink: new MessageVisitor()))
-            using (var writer = new ClientWriter(stream))
-            using (var testRunVisitor = new TestRunVisitor(writer))
-            {
-                var testAssemblyConfiguration = ConfigReader.Load(assemblyFileName);
-                var testCaseList = GetTestCaseList(xunit, stream, testAssemblyConfiguration);
-                xunit.RunTests(testCaseList, testRunVisitor,
-                    executionOptions: TestFrameworkOptions.ForExecution(testAssemblyConfiguration));
-                testRunVisitor.Finished.WaitOne();
-                writer.Write(TestDataKind.EndOfData);
-            }
+            var testCaseNameSet = new HashSet<string>(ReadTestCaseDisplayNames(stream), StringComparer.Ordinal);
+
+            Go(assemblyFileName, stream, AppDomainSupport.IfAvailable,
+                (xunit, configuration, writer) =>
+                {
+                    using (var sink = new TestRunSink(writer))
+                    {
+                        var testCaseList = GetTestCaseList(xunit, configuration, testCaseNameSet);
+
+                        xunit.RunTests(testCaseList, sink,
+                            executionOptions: TestFrameworkOptions.ForExecution(configuration));
+
+                        sink.Finished.WaitOne();
+
+                        writer.Write(TestDataKind.EndOfData);
+                    }
+                });
         }
     }
 }
