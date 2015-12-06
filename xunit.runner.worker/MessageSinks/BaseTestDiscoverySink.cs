@@ -1,19 +1,23 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 using Xunit.Abstractions;
 
-namespace Xunit.Runner.Worker
+namespace Xunit.Runner.Worker.MessageSinks
 {
-    internal abstract class TestDiscoverySink : LongLivedMarshalByRefObject, IMessageSink, IDisposable
+    internal abstract class BaseTestDiscoverySink : BaseMessageSink
     {
         public ManualResetEvent Finished { get; }
 
-        protected TestDiscoverySink()
+        protected BaseTestDiscoverySink()
         {
             Finished = new ManualResetEvent(false);
         }
 
-        public bool OnMessage(IMessageSinkMessage message)
+        protected override void DisposeCore(bool disposing)
+        {
+            Finished.Dispose();
+        }
+
+        protected override bool OnMessage(IMessageSinkMessage message)
         {
             var discoveryMessage = message as ITestCaseDiscoveryMessage;
             if (discoveryMessage != null)
@@ -32,10 +36,5 @@ namespace Xunit.Runner.Worker
         protected virtual bool ShouldContinue => true;
 
         protected abstract void OnTestDiscovered(ITestCaseDiscoveryMessage testCaseDiscovered);
-
-        public void Dispose()
-        {
-            Finished.Dispose();
-        }
     }
 }
