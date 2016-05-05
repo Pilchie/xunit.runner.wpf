@@ -287,7 +287,7 @@
                     </Grid>
                 </GroupBox>
 
-                <GridSplitter Grid.Row="1" />
+                <GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" Height="3" Background="White"/>
 
                 <GroupBox Header="Output"
                           Margin="3"
