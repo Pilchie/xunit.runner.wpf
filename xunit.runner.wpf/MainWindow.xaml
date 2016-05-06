@@ -15,7 +15,9 @@
         Icon="Artwork\Application.ico"
         ResizeMode="CanResizeWithGrip"
         Height="600"
+        MinHeight="525"
         Width="525"
+        MinWidth="425"
         Name="Main">
 
     <i:Interaction.Triggers>
@@ -61,8 +63,8 @@
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="*" MinWidth="200px" />
+                <ColumnDefinition Width="2*" MinWidth="200px" />
             </Grid.ColumnDefinitions>
 
             <Grid.RowDefinitions>
@@ -200,9 +202,9 @@
             <Grid Grid.Column="1"
                   Grid.Row="0">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" MinHeight="200px" />
                     <RowDefinition Height="auto" />
-                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*"  MinHeight="200px"/>
                 </Grid.RowDefinitions>
 
                 <GroupBox Header="{Binding TestCasesCaption}"
@@ -299,7 +301,9 @@
                              Text="{Binding Output}"/>
                 </GroupBox>
             </Grid>
-
+            
+            <GridSplitter Grid.Column="0" VerticalAlignment="Stretch" Width="3" Background="White"/>
+            
             <ProgressBar Foreground="{Binding Path=CurrentRunState, Converter={StaticResource TestStateConverter}, Mode=OneWay}"
                          Minimum="0"
                          Maximum="{Binding MaximumProgress}"
