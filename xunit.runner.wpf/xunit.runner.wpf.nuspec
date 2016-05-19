@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package >
   <metadata>
-    <id>xUnit.Runner.WPF</id>
+    <id>xunit.runner.wpf</id>
     <version>1.0.0</version>
     <title>xUnit.Runner.WPF</title>
     <authors>Pilchie</authors>
@@ -9,8 +9,6 @@
     <projectUrl>https://github.com/Pilchie/xunit.runner.wpf</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>XUnit Gui written in WPF</description>
-    <releaseNotes>Summary of changes made in this release of the package.</releaseNotes>
-    <copyright>Copyright 2016</copyright>
     <tags>XUnit Gui test runner</tags>
   </metadata>
   <files>
