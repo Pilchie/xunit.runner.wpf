@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -15,11 +16,14 @@ using GalaSoft.MvvmLight.CommandWpf;
 using Microsoft.Win32;
 using Microsoft.WindowsAPICodePack.Taskbar;
 using Xunit.Runner.Data;
+using Xunit.Runner.Wpf.Persistence;
 
 namespace Xunit.Runner.Wpf.ViewModel
 {
     public class MainViewModel : ViewModelBase
     {
+        private readonly Settings settings;
+
         private readonly ITestUtil testUtil;
         private readonly ObservableCollection<TestCaseViewModel> allTestCases = new ObservableCollection<TestCaseViewModel>();
         private readonly TraitCollectionView traitCollectionView = new TraitCollectionView();
@@ -33,16 +37,36 @@ namespace Xunit.Runner.Wpf.ViewModel
         public FilteredCollectionView<TestCaseViewModel, SearchQuery> FilteredTestCases { get; }
         public ObservableCollection<TraitViewModel> Traits => this.traitCollectionView.Collection;
 
+        public ObservableCollection<RecentAssemblyViewModel> RecentAssemblies { get; } = new ObservableCollection<RecentAssemblyViewModel>();
+
         private ImmutableList<TestCaseViewModel> runningTests;
+
+        public ICommand ExitCommand { get; }
+        public ICommand WindowLoadedCommand { get; }
+        public RelayCommand<CancelEventArgs> WindowClosingCommand { get; }
+        public RelayCommand RunCommand { get; }
+        public RelayCommand CancelCommand { get; }
+        public ICommand TraitCheckedChangedCommand { get; }
+        public ICommand TraitSelectionChangedCommand { get; }
+        public ICommand TraitsClearCommand { get; }
+        public ICommand AssemblyReloadCommand { get; }
+        public ICommand AssemblyReloadAllCommand { get; }
+        public ICommand AssemblyRemoveCommand { get; }
+        public ICommand AssemblyRemoveAllCommand { get; }
+
+        public CommandBindingCollection CommandBindings { get; }
 
         public MainViewModel()
         {
+            this.settings = Settings.Load();
+
             if (IsInDesignMode)
             {
                 this.Assemblies.Add(new TestAssemblyViewModel(new AssemblyAndConfigFile(@"C:\Code\TestAssembly.dll", null)));
             }
 
             CommandBindings = CreateCommandBindings();
+
             this.testUtil = new Xunit.Runner.Wpf.Impl.RemoteTestUtil(Dispatcher.CurrentDispatcher);
             this.TestCasesCaption = "Test Cases (0)";
 
@@ -50,7 +74,10 @@ namespace Xunit.Runner.Wpf.ViewModel
                 allTestCases, TestCaseMatches, searchQuery, TestComparer.Instance);
 
             this.FilteredTestCases.CollectionChanged += TestCases_CollectionChanged;
+
+            this.ExitCommand = new RelayCommand(OnExecuteExit);
             this.WindowLoadedCommand = new RelayCommand(OnExecuteWindowLoaded);
+            this.WindowClosingCommand = new RelayCommand<CancelEventArgs>(OnExecuteWindowClosing);
             this.RunCommand = new RelayCommand(OnExecuteRun, CanExecuteRun);
             this.CancelCommand = new RelayCommand(OnExecuteCancel, CanExecuteCancel);
             this.TraitCheckedChangedCommand = new RelayCommand<TraitViewModel>(OnExecuteTraitCheckedChanged);
@@ -59,6 +86,26 @@ namespace Xunit.Runner.Wpf.ViewModel
             this.AssemblyReloadAllCommand = new RelayCommand(OnExecuteAssemblyReloadAll);
             this.AssemblyRemoveCommand = new RelayCommand(OnExecuteAssemblyRemove, CanExecuteAssemblyRemove);
             this.AssemblyRemoveAllCommand = new RelayCommand(OnExecuteAssemblyRemoveAll);
+
+            RebuildRecentAssembliesMenu();
+        }
+
+        private void RebuildRecentAssembliesMenu()
+        {
+            this.RecentAssemblies.Clear();
+
+            foreach (var recentAssembly in this.settings.GetRecentAssemblies())
+            {
+                var viewModel = new RecentAssemblyViewModel(recentAssembly, new RelayCommand<RecentAssemblyViewModel>(this.OnExecuteRecentAssembly));
+                this.RecentAssemblies.Add(viewModel);
+            }
+        }
+
+        private async void OnExecuteRecentAssembly(RecentAssemblyViewModel recentAssembly)
+        {
+            var assemblyAndConfig = new AssemblyAndConfigFile(recentAssembly.FilePath, configFileName: null);
+
+            await this.AddAssemblies(new[] { assemblyAndConfig });
         }
 
         private static bool TestCaseMatches(TestCaseViewModel testCase, SearchQuery searchQuery)
@@ -113,20 +160,6 @@ namespace Xunit.Runner.Wpf.ViewModel
             TestCasesCaption = $"Test Cases ({FilteredTestCases.Count:#,0})";
             MaximumProgress = FilteredTestCases.Count;
         }
-
-        public ICommand ExitCommand { get; } = new RelayCommand(OnExecuteExit);
-        public ICommand WindowLoadedCommand { get; }
-        public RelayCommand RunCommand { get; }
-        public RelayCommand CancelCommand { get; }
-        public ICommand TraitCheckedChangedCommand { get; }
-        public ICommand TraitSelectionChangedCommand { get; }
-        public ICommand TraitsClearCommand { get; }
-        public ICommand AssemblyReloadCommand { get; }
-        public ICommand AssemblyReloadAllCommand { get; }
-        public ICommand AssemblyRemoveCommand { get; }
-        public ICommand AssemblyRemoveAllCommand { get; }
-
-        public CommandBindingCollection CommandBindings { get; }
 
         public List<TestAssemblyViewModel> SelectedAssemblies
         {
@@ -290,6 +323,7 @@ namespace Xunit.Runner.Wpf.ViewModel
 
                         newAssemblyViewModels.Add(assemblyViewModel);
                         this.Assemblies.Add(assemblyViewModel);
+                        this.settings.AddRecentAssembly(assembly.AssemblyFileName);
 
                         assemblyViewModel.State = AssemblyState.Loading;
                     }
@@ -303,6 +337,8 @@ namespace Xunit.Runner.Wpf.ViewModel
                 {
                     assemblyViewModel.State = AssemblyState.Ready;
                 }
+
+                RebuildRecentAssembliesMenu();
             }
         }
 
@@ -398,6 +434,11 @@ namespace Xunit.Runner.Wpf.ViewModel
         private async void OnExecuteWindowLoaded()
         {
             await AddAssemblies(ParseCommandLine(Environment.GetCommandLineArgs().Skip(1)));
+        }
+
+        private void OnExecuteWindowClosing(CancelEventArgs e)
+        {
+            this.settings.Save();
         }
 
         private IEnumerable<AssemblyAndConfigFile> ParseCommandLine(IEnumerable<string> enumerable)

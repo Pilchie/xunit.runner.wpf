@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Windows;
+using Xunit.Runner.Wpf.Persistence;
 
 namespace Xunit.Runner.Wpf
 {
