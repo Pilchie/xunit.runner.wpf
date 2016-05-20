@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>xunit.runner.wpf</id>
+    <version>1.0.0</version>
+    <title>xUnit.Runner.WPF</title>
+    <authors>Pilchie</authors>
+    <owners>Pilchie</owners>
+    <projectUrl>https://github.com/Pilchie/xunit.runner.wpf</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>XUnit Gui written in WPF</description>
+    <tags>XUnit Gui test runner</tags>
+  </metadata>
+  <files>
+    <file src="*.dll" target="tools\"/>
+    <file src="*.exe" target="tools\" exclude="*vshost*"/>
+    <file src="*.config" target="tools\" exclude="*vshost*"/>
+  </files>
+</package>
