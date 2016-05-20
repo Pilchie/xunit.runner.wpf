@@ -6,7 +6,7 @@ using System.Windows;
 using System.Xml;
 using System.Xml.Linq;
 
-namespace Xunit.Runner.Wpf
+namespace Xunit.Runner.Wpf.Persistence
 {
     internal static partial class Storage
     {

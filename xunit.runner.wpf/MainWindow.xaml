@@ -24,6 +24,10 @@
         <i:EventTrigger EventName="Loaded">
             <cmd:EventToCommand Command="{Binding WindowLoadedCommand}" />
         </i:EventTrigger>
+
+        <i:EventTrigger EventName="Closing">
+            <cmd:EventToCommand Command="{Binding WindowClosingCommand}" PassEventArgsToCommand="True" />
+        </i:EventTrigger>
     </i:Interaction.Triggers>
 
     <Window.Resources>
@@ -45,7 +49,15 @@
             <MenuItem Header="_Assembly">
                 <MenuItem Header="_Open"
                           Command="ApplicationCommands.Open" />
-                <MenuItem Header="R_ecent" />
+                <MenuItem Header="R_ecent" ItemsSource="{Binding RecentAssemblies}">
+                    <MenuItem.ItemContainerStyle>
+                        <Style TargetType="MenuItem">
+                            <Setter Property="Header" Value="{Binding FilePath}" />
+                            <Setter Property="Command" Value="{Binding Command}" />
+                            <Setter Property="CommandParameter" Value="{Binding}" />
+                        </Style>
+                    </MenuItem.ItemContainerStyle>
+                </MenuItem>
                 <Separator />
                 <MenuItem Header="_Unload" Command="{Binding AssemblyRemoveAllCommand}"/>
                 <MenuItem Header="_Reload" Command="{Binding AssemblyReloadAllCommand}" />
