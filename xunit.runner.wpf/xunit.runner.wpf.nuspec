@@ -13,6 +13,7 @@
   </metadata>
   <files>
     <file src="*.dll" target="tools\"/>
+    <file src="xunit.runner.wpf.targets" target="build"/>
     <file src="*.exe" target="tools\" exclude="*vshost*"/>
     <file src="*.config" target="tools\" exclude="*vshost*"/>
   </files>
