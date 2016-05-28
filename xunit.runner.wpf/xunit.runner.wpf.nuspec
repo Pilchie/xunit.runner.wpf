@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>xunit.runner.wpf</id>
-    <version>1.0.0</version>
+    <version>$version$</version>
     <title>xUnit.Runner.WPF</title>
     <authors>Pilchie</authors>
     <owners>Pilchie</owners>
