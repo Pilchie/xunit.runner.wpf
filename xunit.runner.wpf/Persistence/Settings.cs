@@ -28,7 +28,7 @@ namespace Xunit.Runner.Wpf.Persistence
 
         public void AddRecentAssembly(string filePath)
         {
-            for (int i = recentAssemblies.Count - 1; i > 0; i--)
+            for (int i = recentAssemblies.Count - 1; i >= 0; i--)
             {
                 if (StringComparer.OrdinalIgnoreCase.Equals(recentAssemblies[i], filePath))
                 {
