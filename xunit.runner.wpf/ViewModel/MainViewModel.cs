@@ -177,14 +177,21 @@ namespace Xunit.Runner.Wpf.ViewModel
         public int TestsCompleted
         {
             get { return testsCompleted; }
-            set { Set(ref testsCompleted, value);
 
-                if (TaskbarManager.IsPlatformSupported)
-                {
-                    var tb = TaskbarManager.Instance;
-                    tb.SetProgressState(GetTaskBarState());
-                    tb.SetProgressValue(value, this.MaximumProgress);
-                }
+            set
+            {
+                Set(ref testsCompleted, value);
+                UpdateProgress();
+            }
+        }
+
+        private void UpdateProgress()
+        {
+            if (TaskbarManager.IsPlatformSupported)
+            {
+                var tb = TaskbarManager.Instance;
+                tb.SetProgressState(GetTaskBarState());
+                tb.SetProgressValue(this.TestsCompleted, this.MaximumProgress);
             }
         }
 
@@ -226,14 +233,24 @@ namespace Xunit.Runner.Wpf.ViewModel
         public int MaximumProgress
         {
             get { return maximumProgress; }
-            set { Set(ref maximumProgress, value); }
+
+            set
+            {
+                Set(ref maximumProgress, value);
+                UpdateProgress();
+            }
         }
 
         private TestState currentRunState;
         public TestState CurrentRunState
         {
             get { return currentRunState; }
-            set { Set(ref currentRunState, value); }
+
+            set
+            {
+                Set(ref currentRunState, value);
+                UpdateProgress();
+            }
         }
 
         private string output = string.Empty;
