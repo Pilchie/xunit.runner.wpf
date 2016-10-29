@@ -161,6 +161,15 @@ namespace Xunit.Runner.Wpf.ViewModel
         private void TestCases_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             UpdateTestCaseInfo(useSelected: false);
+            ClearSelectionFlags();
+        }
+
+        private void ClearSelectionFlags()
+        {
+            foreach (var test in this.allTestCases)
+            {
+                test.IsSelected = false;
+            }
         }
 
         void UpdateTestCaseInfo(bool useSelected)
