@@ -13,6 +13,7 @@ namespace Xunit.Runner.Wpf.ViewModel
         public string SkipReason { get; }
         public string AssemblyFileName { get; }
         public ImmutableArray<TraitViewModel> Traits { get; }
+        public bool IsSelected { get; set; }
 
         public bool HasSkipReason => !string.IsNullOrEmpty(this.SkipReason);
 

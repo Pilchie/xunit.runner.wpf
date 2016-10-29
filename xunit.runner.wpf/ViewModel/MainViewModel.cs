@@ -17,6 +17,7 @@ using Microsoft.Win32;
 using Microsoft.WindowsAPICodePack.Taskbar;
 using Xunit.Runner.Data;
 using Xunit.Runner.Wpf.Persistence;
+using System.Collections;
 
 namespace Xunit.Runner.Wpf.ViewModel
 {
@@ -44,7 +45,8 @@ namespace Xunit.Runner.Wpf.ViewModel
         public ICommand ExitCommand { get; }
         public ICommand WindowLoadedCommand { get; }
         public RelayCommand<CancelEventArgs> WindowClosingCommand { get; }
-        public RelayCommand RunCommand { get; }
+        public RelayCommand RunAllCommand { get; }
+        public RelayCommand RunSelectedCommand { get; }
         public RelayCommand CancelCommand { get; }
         public ICommand TraitCheckedChangedCommand { get; }
         public ICommand TraitSelectionChangedCommand { get; }
@@ -74,11 +76,12 @@ namespace Xunit.Runner.Wpf.ViewModel
                 allTestCases, TestCaseMatches, searchQuery, TestComparer.Instance);
 
             this.FilteredTestCases.CollectionChanged += TestCases_CollectionChanged;
-
+            
             this.ExitCommand = new RelayCommand(OnExecuteExit);
             this.WindowLoadedCommand = new RelayCommand(OnExecuteWindowLoaded);
             this.WindowClosingCommand = new RelayCommand<CancelEventArgs>(OnExecuteWindowClosing);
-            this.RunCommand = new RelayCommand(OnExecuteRun, CanExecuteRun);
+            this.RunAllCommand = new RelayCommand(OnExecuteRunAll, CanExecuteRunAll);
+            this.RunSelectedCommand = new RelayCommand(OnExecuteRunSelected, CanExecuteRunSelected);
             this.CancelCommand = new RelayCommand(OnExecuteCancel, CanExecuteCancel);
             this.TraitCheckedChangedCommand = new RelayCommand<TraitViewModel>(OnExecuteTraitCheckedChanged);
             this.TraitsClearCommand = new RelayCommand(OnExecuteTraitsClear);
@@ -157,8 +160,23 @@ namespace Xunit.Runner.Wpf.ViewModel
 
         private void TestCases_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            TestCasesCaption = $"Test Cases ({FilteredTestCases.Count:#,0})";
-            MaximumProgress = FilteredTestCases.Count;
+            UpdateTestCaseInfo(useSelected: false);
+        }
+
+        void UpdateTestCaseInfo(bool useSelected)
+        {
+            var count = FilteredTestCases.Count;
+            if (useSelected)
+            {
+                var selected = FilteredTestCases.Count(tc => tc.IsSelected);
+                if (selected > 0)
+                {
+                    count = selected;
+                }
+            }
+
+            TestCasesCaption = $"Test Cases ({count:#,0})";
+            MaximumProgress = count;
         }
 
         public List<TestAssemblyViewModel> SelectedAssemblies
@@ -182,6 +200,17 @@ namespace Xunit.Runner.Wpf.ViewModel
             {
                 Set(ref testsCompleted, value);
                 UpdateProgress();
+            }
+        }
+
+        private TestCaseViewModel selectedTest;
+        public TestCaseViewModel SelectedTestCase
+        {
+            get { return selectedTest; }
+
+            set
+            {
+                Set(ref selectedTest, value);
             }
         }
 
@@ -438,7 +467,8 @@ namespace Xunit.Runner.Wpf.ViewModel
             set
             {
                 isBusy = value;
-                RunCommand.RaiseCanExecuteChanged();
+                RunAllCommand.RaiseCanExecuteChanged();
+                RunSelectedCommand.RaiseCanExecuteChanged();
                 CancelCommand.RaiseCanExecuteChanged();
             }
         }
@@ -480,19 +510,44 @@ namespace Xunit.Runner.Wpf.ViewModel
             => (fileName?.EndsWith(".config", StringComparison.OrdinalIgnoreCase) ?? false) ||
                (fileName?.EndsWith(".json", StringComparison.OrdinalIgnoreCase) ?? false);
 
-        private bool CanExecuteRun()
+        private bool CanExecuteRunAll()
             => !IsBusy && FilteredTestCases.Any();
 
-        private async void OnExecuteRun()
+        private bool CanExecuteRunSelected()
+            => !IsBusy && SelectedTestCase != null;
+
+        private async void OnExecuteRunAll()
         {
             Debug.Assert(this.runningTests == null);
+            UpdateTestCaseInfo(useSelected: false);
 
-            await ExecuteTestSessionOperation(RunTests);
+            await ExecuteTestSessionOperation(RunFilteredTests);
 
             this.runningTests = null;
         }
 
-        private List<Task> RunTests()
+        private List<Task> RunFilteredTests()
+        {
+            return RunTests(FilteredTestCases.ToImmutableList());
+        }
+
+        private async void OnExecuteRunSelected()
+        {
+            Debug.Assert(this.runningTests == null);
+            Debug.Assert(this.SelectedTestCase != null);
+            UpdateTestCaseInfo(useSelected: true);
+
+            await ExecuteTestSessionOperation(RunSelectedTests);
+
+            this.runningTests = null;
+        }
+
+        private List<Task> RunSelectedTests()
+        {
+            return RunTests(ImmutableList.CreateRange(this.FilteredTestCases.Where(tc => tc.IsSelected)));
+        }
+
+        private List<Task> RunTests(ImmutableList<TestCaseViewModel> tests)
         {
             Debug.Assert(this.isBusy);
             Debug.Assert(this.cancellationTokenSource != null);
@@ -505,7 +560,7 @@ namespace Xunit.Runner.Wpf.ViewModel
             CurrentRunState = TestState.NotRun;
             Output = string.Empty;
 
-            this.runningTests = FilteredTestCases.ToImmutableList();
+            this.runningTests = tests;
 
             foreach (var tc in this.runningTests)
             {
