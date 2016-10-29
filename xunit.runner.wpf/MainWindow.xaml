@@ -198,17 +198,19 @@
                   Grid.Row="1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
                 <Button Content="_Run All"
-                        Command="{Binding RunCommand}"
-                        Margin="3"
-                        Grid.Column="0" />
+                        Command="{Binding RunAllCommand}"
+                        Grid.Column="0" Margin="10,0,0,0"/>
+                <Button Content="Run _Selected"
+                        Command="{Binding RunSelectedCommand}"
+                        Grid.Column="1"/>
                 <Button Content="_Cancel"
                         Command="{Binding CancelCommand}"
-                        Margin="0,3,3,3"
-                        Grid.Column="1" />
+                        Grid.Column="2" Margin="0,0,10,0" />
             </Grid>
 
             <Grid Grid.Column="1"
@@ -275,9 +277,10 @@
                             </ToggleButton>
                         </StackPanel>
 
-                        <ListBox ItemsSource="{Binding FilteredTestCases}"
+                        <ListBox x:Name="TestCases" ItemsSource="{Binding FilteredTestCases}"
                                  SelectionMode="Extended"
-                                 Grid.Row="1">
+                                 SelectedItem="{Binding SelectedTestCase, Mode=TwoWay}"
+                                 Grid.Row="1" SelectionChanged="TestCases_SelectionChanged">
                             <ListBox.ItemTemplate>
                                 <DataTemplate DataType="vm:TestCaseViewModel">
                                     <Grid>
@@ -313,9 +316,9 @@
                              Text="{Binding Output}"/>
                 </GroupBox>
             </Grid>
-            
+
             <GridSplitter Grid.Column="0" VerticalAlignment="Stretch" Width="3" Background="White"/>
-            
+
             <ProgressBar Foreground="{Binding Path=CurrentRunState, Converter={StaticResource TestStateConverter}, Mode=OneWay}"
                          Minimum="0"
                          Maximum="{Binding MaximumProgress}"
