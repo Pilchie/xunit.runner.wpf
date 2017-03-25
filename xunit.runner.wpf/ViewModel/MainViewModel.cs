@@ -594,7 +594,7 @@ namespace Xunit.Runner.Wpf.ViewModel
                     {
                         if (testCase.AssemblyFileName == assemblyFileName)
                         {
-                            builder.Add(testCase.DisplayName);
+                            builder.Add(testCase.UniqueID);
                         }
                     }
 
@@ -660,6 +660,7 @@ namespace Xunit.Runner.Wpf.ViewModel
 
                 var testCaseViewModel = new TestCaseViewModel(
                     testCase.DisplayName,
+                    testCase.UniqueID,
                     testCase.SkipReason,
                     testCase.AssemblyPath,
                     traitWorkerList);
@@ -679,7 +680,7 @@ namespace Xunit.Runner.Wpf.ViewModel
 
             foreach (var result in testResultData)
             {
-                var testCase = this.runningTests.Single(x => x.DisplayName == result.TestCaseDisplayName);
+                var testCase = this.runningTests.Single(x => x.UniqueID == result.TestCaseUniqueID);
                 testCase.State = result.TestState;
 
                 TestsCompleted++;

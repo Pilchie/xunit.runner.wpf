@@ -21,10 +21,10 @@ namespace Xunit.Runner.Worker
 
             protected override bool ShouldContinue => _writer.IsConnected;
 
-            private void Process(string displayName, TestState state, string output = "")
+            private void Process(string displayName, string uniqueID, TestState state, string output = "")
             {
                 Console.WriteLine($"{state} - {displayName}");
-                var result = new TestResultData(displayName, state, output);
+                var result = new TestResultData(displayName, uniqueID, state, output);
 
                 _writer.Write(TestDataKind.Value);
                 _writer.Write(result);
@@ -46,35 +46,35 @@ namespace Xunit.Runner.Worker
 
                 builder.AppendLine();
 
-                Process(testFailed.TestCase.DisplayName, TestState.Failed, builder.ToString());
+                Process(testFailed.TestCase.DisplayName, testFailed.TestCase.UniqueID, TestState.Failed, builder.ToString());
             }
 
             protected override void OnTestPassed(ITestPassed testPassed)
             {
-                Process(testPassed.TestCase.DisplayName, TestState.Passed);
+                Process(testPassed.TestCase.DisplayName, testPassed.TestCase.UniqueID, TestState.Passed);
             }
 
             protected override void OnTestSkipped(ITestSkipped testSkipped)
             {
-                Process(testSkipped.TestCase.DisplayName, TestState.Skipped);
+                Process(testSkipped.TestCase.DisplayName, testSkipped.TestCase.UniqueID, TestState.Skipped);
             }
         }
 
         private sealed class TestDiscoverySink : BaseTestDiscoverySink
         {
-            private readonly HashSet<string> _testCaseNameSet;
+            private readonly HashSet<string> _testCaseUniqueIDSet;
             private readonly List<ITestCase> _testCaseList;
 
-            internal TestDiscoverySink(HashSet<string> testCaseDisplayNameSet, List<ITestCase> testCaseList)
+            internal TestDiscoverySink(HashSet<string> testCaseUniqueIDSet, List<ITestCase> testCaseList)
             {
-                _testCaseNameSet = testCaseDisplayNameSet;
+                _testCaseUniqueIDSet = testCaseUniqueIDSet;
                 _testCaseList = testCaseList;
             }
 
             protected override void OnTestDiscovered(ITestCaseDiscoveryMessage testCaseDiscovered)
             {
                 var testCase = testCaseDiscovered.TestCase;
-                if (_testCaseNameSet.Contains(testCase.DisplayName))
+                if (_testCaseUniqueIDSet.Contains(testCase.UniqueID))
                 {
                     _testCaseList.Add(testCaseDiscovered.TestCase);
                 }
@@ -82,9 +82,9 @@ namespace Xunit.Runner.Worker
         }
 
         /// <summary>
-        /// Read out the set of test case display names to run.
+        /// Read out the set of test case unique IDs to run.
         /// </summary>
-        private static List<string> ReadTestCaseDisplayNames(Stream stream)
+        private static List<string> ReadTestCaseUniqueIDs(Stream stream)
         {
             using (var reader = new ClientReader(stream))
             {
@@ -133,14 +133,14 @@ namespace Xunit.Runner.Worker
 
         internal static void RunSpecific(string assemblyFileName, Stream stream)
         {
-            var testCaseNameSet = new HashSet<string>(ReadTestCaseDisplayNames(stream), StringComparer.Ordinal);
+            var testCaseUniqueIDSet = new HashSet<string>(ReadTestCaseUniqueIDs(stream), StringComparer.Ordinal);
 
             Go(assemblyFileName, stream, AppDomainSupport.IfAvailable,
                 (xunit, configuration, writer) =>
                 {
                     using (var sink = new TestRunSink(writer))
                     {
-                        var testCaseList = GetTestCaseList(xunit, configuration, testCaseNameSet);
+                        var testCaseList = GetTestCaseList(xunit, configuration, testCaseUniqueIDSet);
 
                         xunit.RunTests(testCaseList, sink,
                             executionOptions: TestFrameworkOptions.ForExecution(configuration));

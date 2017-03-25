@@ -18,12 +18,14 @@ namespace Xunit.Runner.Data
     public sealed class TestResultData
     {
         public string TestCaseDisplayName { get; set; }
+        public string TestCaseUniqueID { get; set; }
         public TestState TestState { get; set; }
         public string Output { get; set; }
 
-        public TestResultData(string displayName, TestState state, string output = "")
+        public TestResultData(string displayName, string uniqueID, TestState state, string output = "")
         {
             TestCaseDisplayName = displayName;
+            TestCaseUniqueID = uniqueID;
             TestState = state;
             Output = output;
         }
@@ -31,14 +33,16 @@ namespace Xunit.Runner.Data
         public static TestResultData ReadFrom(BinaryReader reader)
         {
             var displayName = reader.ReadString();
+            var uniqueID = reader.ReadString();
             var state = (TestState)reader.ReadInt32();
             var output = reader.ReadString();
-            return new TestResultData(displayName, state, output);
+            return new TestResultData(displayName, uniqueID, state, output);
         }
 
         public void WriteTo(BinaryWriter writer)
         {
             writer.Write(TestCaseDisplayName);
+            writer.Write(TestCaseUniqueID);
             writer.Write((int)TestState);
             writer.Write(Output);
         }
