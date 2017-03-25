@@ -808,7 +808,17 @@ namespace Xunit.Runner.Wpf.ViewModel
         public static TestComparer Instance { get; } = new TestComparer();
 
         public int Compare(TestCaseViewModel x, TestCaseViewModel y)
-            => StringComparer.Ordinal.Compare(x.DisplayName, y.DisplayName);
+        {
+            int result = StringComparer.OrdinalIgnoreCase.Compare(x.DisplayName, y.DisplayName);
+            if (result != 0)
+                return result;
+
+            result = StringComparer.Ordinal.Compare(x.DisplayName, y.DisplayName);
+            if (result != 0)
+                return result;
+
+            return StringComparer.Ordinal.Compare(x.UniqueID, y.UniqueID);
+        }
 
         private TestComparer() { }
     }
