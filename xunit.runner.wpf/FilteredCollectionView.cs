@@ -15,6 +15,7 @@ namespace Xunit.Runner.Wpf
         private readonly ObservableCollection<T> dataSource;
         private readonly List<T> filteredList;
         private readonly Func<T, TFilterArg, bool> filter;
+        private readonly IComparer<T> sort;
 
         public FilteredCollectionView(ObservableCollection<T> dataSource, Func<T, TFilterArg, bool> filter, TFilterArg filterArgument, IComparer<T> sort)
         {
@@ -26,6 +27,7 @@ namespace Xunit.Runner.Wpf
             this.filter = filter;
             this.filterArgument = filterArgument;
             this.filteredList = new List<T>();
+            this.sort = sort;
 
             this.dataSource.CollectionChanged += this.dataSource_CollectionChanged;
 
@@ -71,6 +73,7 @@ namespace Xunit.Runner.Wpf
                 }
             }
 
+            this.filteredList.Sort(sort);
             this.OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
 
@@ -115,7 +118,7 @@ namespace Xunit.Runner.Wpf
         {
             if (this.filter(item, this.filterArgument))
             {
-                int index = this.filteredList.IndexOf(item);
+                int index = this.filteredList.BinarySearch(item, sort);
                 if (index < 0)
                 {
                     this.filteredList.Insert(~index, item);
@@ -138,7 +141,7 @@ namespace Xunit.Runner.Wpf
                 observable.PropertyChanged -= this.dataSource_ItemChanged;
             }
 
-            int index = this.filteredList.IndexOf(item);
+            int index = this.filteredList.BinarySearch(item, sort);
             if (index >= 0)
             {
                 this.filteredList.RemoveAt(index);
@@ -149,7 +152,7 @@ namespace Xunit.Runner.Wpf
         private void dataSource_ItemChanged(object sender, PropertyChangedEventArgs e)
         {
             var item = (T)sender;
-            int index = this.filteredList.IndexOf(item);
+            int index = this.filteredList.BinarySearch(item, sort);
             if (this.filter(item, this.FilterArgument))
             {
                 if (index < 0)
@@ -196,7 +199,7 @@ namespace Xunit.Runner.Wpf
             throw new NotSupportedException();
         }
 
-        public bool Contains(T item) => this.filteredList.Contains(item);
+        public bool Contains(T item) => this.filteredList.BinarySearch(item, sort) >= 0;
 
         public void CopyTo(T[] array, int arrayIndex)
         {
@@ -216,7 +219,14 @@ namespace Xunit.Runner.Wpf
 
         IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 
-        public int IndexOf(T item) => this.filteredList.IndexOf(item);
+        public int IndexOf(T item)
+        {
+            int location = this.filteredList.BinarySearch(item, sort);
+            if (location < 0)
+                return -1;
+
+            return location;
+        }
 
         public void Insert(int index, T item)
         {
