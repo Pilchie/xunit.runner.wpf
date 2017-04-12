@@ -34,14 +34,14 @@ namespace Xunit.Runner.Wpf.Impl
             _processInfo = StartWorkerProcess();
         }
 
-        private async Task<Connection> CreateConnection(string action, string argument)
+        private async Task<Connection> CreateConnection(string action, string argument, CancellationToken cancellationToken)
         {
             var pipeName = GetPipeName();
 
             try
             {
                 var stream = new NamedPipeClientStream(pipeName);
-                await stream.ConnectAsync();
+                await stream.ConnectAsync(cancellationToken);
 
                 var writer = new ClientWriter(stream);
                 writer.Write(action);
@@ -101,7 +101,7 @@ namespace Xunit.Runner.Wpf.Impl
 
         private async Task Discover(string assemblyPath, Action<List<TestCaseData>> callback, CancellationToken cancellationToken)
         {
-            var connection = await CreateConnection(Constants.ActionDiscover, assemblyPath);
+            var connection = await CreateConnection(Constants.ActionDiscover, assemblyPath, cancellationToken);
             await ProcessResultsCore(connection, r => r.ReadTestCaseData(), callback, cancellationToken);
 
             RecycleProcess();
@@ -109,7 +109,7 @@ namespace Xunit.Runner.Wpf.Impl
 
         private async Task RunCore(string actionName, string assemblyPath, ImmutableArray<string> testCaseDisplayNames, Action<List<TestResultData>> callback, CancellationToken cancellationToken)
         {
-            var connection = await CreateConnection(actionName, assemblyPath);
+            var connection = await CreateConnection(actionName, assemblyPath, cancellationToken);
 
             if (!testCaseDisplayNames.IsDefaultOrEmpty)
             {
