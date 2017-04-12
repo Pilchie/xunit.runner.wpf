@@ -10,6 +10,7 @@ namespace Xunit.Runner.Wpf.ViewModel
         private TestState _state = TestState.NotRun;
 
         public string DisplayName { get; }
+        public string UniqueID { get; }
         public string SkipReason { get; }
         public string AssemblyFileName { get; }
         public ImmutableArray<TraitViewModel> Traits { get; }
@@ -23,9 +24,10 @@ namespace Xunit.Runner.Wpf.ViewModel
             set { Set(ref _state, value); }
         }
 
-        public TestCaseViewModel(string displayName, string skipReason, string assemblyFileName, IEnumerable<TraitViewModel> traits)
+        public TestCaseViewModel(string displayName, string uniqueID, string skipReason, string assemblyFileName, IEnumerable<TraitViewModel> traits)
         {
             this.DisplayName = displayName;
+            this.UniqueID = uniqueID;
             this.SkipReason = skipReason;
             this.AssemblyFileName = assemblyFileName;
             this.Traits = traits.ToImmutableArray();

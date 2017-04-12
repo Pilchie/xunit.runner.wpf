@@ -6,13 +6,15 @@ namespace Xunit.Runner.Data
     public sealed class TestCaseData
     {
         public string DisplayName { get; set; }
+        public string UniqueID { get; set; }
         public string SkipReason { get; set; }
         public string AssemblyPath { get; set; }
         public Dictionary<string, List<string>> TraitMap { get; set; }
 
-        public TestCaseData(string displayName, string skipReason, string assemblyPath, Dictionary<string, List<string>> traitMap)
+        public TestCaseData(string displayName, string uniqueID, string skipReason, string assemblyPath, Dictionary<string, List<string>> traitMap)
         {
             DisplayName = displayName;
+            UniqueID = uniqueID;
             SkipReason = skipReason;
             AssemblyPath = assemblyPath;
             TraitMap = traitMap;
@@ -21,6 +23,7 @@ namespace Xunit.Runner.Data
         public static TestCaseData ReadFrom(BinaryReader reader)
         {
             var displayName = reader.ReadString();
+            var uniqueID = reader.ReadString();
             var skipReason = reader.ReadString();
             var assemblyPath = reader.ReadString();
             var count = reader.ReadInt32();
@@ -40,12 +43,13 @@ namespace Xunit.Runner.Data
                 traitMap.Add(key, values);
             }
 
-            return new TestCaseData(displayName, skipReason, assemblyPath, traitMap);
+            return new TestCaseData(displayName, uniqueID, skipReason, assemblyPath, traitMap);
         }
 
         public void WriteTo(BinaryWriter writer)
         {
             writer.Write(DisplayName);
+            writer.Write(UniqueID);
             writer.Write(SkipReason ?? string.Empty);
             writer.Write(AssemblyPath);
             writer.Write(TraitMap.Count);

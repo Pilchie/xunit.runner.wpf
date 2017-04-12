@@ -26,6 +26,7 @@ namespace Xunit.Runner.Wpf.ViewModel
         private readonly Settings settings;
 
         private readonly ITestUtil testUtil;
+        private readonly HashSet<string> allTestCaseUniqueIDs = new HashSet<string>();
         private readonly ObservableCollection<TestCaseViewModel> allTestCases = new ObservableCollection<TestCaseViewModel>();
         private readonly TraitCollectionView traitCollectionView = new TraitCollectionView();
         private CancellationTokenSource filterCancellationTokenSource = new CancellationTokenSource();
@@ -446,6 +447,7 @@ namespace Xunit.Runner.Wpf.ViewModel
             {
                 if (string.Compare(this.allTestCases[i].AssemblyFileName, assemblyPath, StringComparison.OrdinalIgnoreCase) == 0)
                 {
+                    this.allTestCaseUniqueIDs.Remove(this.allTestCases[i].UniqueID);
                     this.allTestCases.RemoveAt(i);
                 }
                 else
@@ -594,7 +596,7 @@ namespace Xunit.Runner.Wpf.ViewModel
                     {
                         if (testCase.AssemblyFileName == assemblyFileName)
                         {
-                            builder.Add(testCase.DisplayName);
+                            builder.Add(testCase.UniqueID);
                         }
                     }
 
@@ -638,6 +640,9 @@ namespace Xunit.Runner.Wpf.ViewModel
 
             foreach (var testCase in testCases)
             {
+                if (this.allTestCaseUniqueIDs.Contains(testCase.UniqueID))
+                    continue;
+
                 traitWorkerList.Clear();
 
                 // Get or create traits.
@@ -660,6 +665,7 @@ namespace Xunit.Runner.Wpf.ViewModel
 
                 var testCaseViewModel = new TestCaseViewModel(
                     testCase.DisplayName,
+                    testCase.UniqueID,
                     testCase.SkipReason,
                     testCase.AssemblyPath,
                     traitWorkerList);
@@ -669,6 +675,7 @@ namespace Xunit.Runner.Wpf.ViewModel
                     TestsSkipped++;
                 }
 
+                this.allTestCaseUniqueIDs.Add(testCase.UniqueID);
                 this.allTestCases.Add(testCaseViewModel);
             }
         }
@@ -679,7 +686,7 @@ namespace Xunit.Runner.Wpf.ViewModel
 
             foreach (var result in testResultData)
             {
-                var testCase = this.runningTests.Single(x => x.DisplayName == result.TestCaseDisplayName);
+                var testCase = this.runningTests.Single(x => x.UniqueID == result.TestCaseUniqueID);
                 testCase.State = result.TestState;
 
                 TestsCompleted++;
