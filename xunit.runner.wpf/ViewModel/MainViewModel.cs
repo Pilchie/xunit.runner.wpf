@@ -462,6 +462,7 @@ namespace Xunit.Runner.Wpf.ViewModel
         {
             foreach (var assembly in assemblies.ToList())
             {
+                assemblyWatcher.RemoveAssembly(assembly.FileName);
                 RemoveAssemblyTestCases(assembly.FileName);
                 Assemblies.Remove(assembly);
             }
