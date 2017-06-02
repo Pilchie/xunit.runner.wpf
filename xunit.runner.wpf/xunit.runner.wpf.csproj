@@ -107,6 +107,8 @@
     <Compile Include="Impl\RemoteTestUtil.Connection.cs" />
     <Compile Include="Impl\RemoteTestUtil.BackgroundRunner.cs" />
     <Compile Include="Impl\RemoteTestUtil.cs" />
+    <Compile Include="Impl\TestAssemblyWatcher.cs" />
+    <Compile Include="ITestAssemblyWatcher.cs" />
     <Compile Include="ITestUtil.cs" />
     <Compile Include="Persistence\Settings.cs" />
     <Compile Include="Persistence\Storage.cs" />

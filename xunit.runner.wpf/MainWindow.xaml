@@ -61,6 +61,8 @@
                 <Separator />
                 <MenuItem Header="_Unload" Command="{Binding AssemblyRemoveAllCommand}"/>
                 <MenuItem Header="_Reload" Command="{Binding AssemblyReloadAllCommand}" />
+                <Separator />
+                <MenuItem Header="_Auto Reload Test Assemblies" IsCheckable="True" IsChecked="{Binding AutoReloadAssemblies}" Command="{Binding AutoReloadAssembliesCommand}" />
             </MenuItem>
             <MenuItem Header="_Project">
                 <MenuItem Header="_Open" />
