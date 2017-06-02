@@ -256,7 +256,7 @@
                                     <Image Source="Artwork\Failed_large.png" />
                                     <TextBlock Margin="4,0"
                                                FontSize="16"
-                                               Text="{Binding TestsFailed, StringFormat={}{0:#\,0}}" 
+                                               Text="{Binding TestsFailed, StringFormat={}{0:#\,0}}"
                                                VerticalAlignment="Center" />
                                 </StackPanel>
                             </ToggleButton>
@@ -271,7 +271,7 @@
                                     <Image Source="Artwork\Skipped_large.png" />
                                     <TextBlock Margin="4,0"
                                                FontSize="16"
-                                               Text="{Binding TestsSkipped, StringFormat={}{0:#\,0}}" 
+                                               Text="{Binding TestsSkipped, StringFormat={}{0:#\,0}}"
                                                VerticalAlignment="Center" />
                                 </StackPanel>
                             </ToggleButton>

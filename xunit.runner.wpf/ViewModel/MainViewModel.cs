@@ -17,7 +17,6 @@ using Microsoft.Win32;
 using Microsoft.WindowsAPICodePack.Taskbar;
 using Xunit.Runner.Data;
 using Xunit.Runner.Wpf.Persistence;
-using System.Collections;
 
 namespace Xunit.Runner.Wpf.ViewModel
 {
@@ -458,10 +457,10 @@ namespace Xunit.Runner.Wpf.ViewModel
         }
 
         /// <summary>
-        /// Reloading an assembly could have changed the traits.  There is no easy way 
-        /// to selectively edit this list (traits can cross assembly boundaries).  Just 
+        /// Reloading an assembly could have changed the traits.  There is no easy way
+        /// to selectively edit this list (traits can cross assembly boundaries).  Just
         /// do a full reload instead.
-        /// way to 
+        /// way to
         /// </summary>
         private void RebuildTraits()
         {
