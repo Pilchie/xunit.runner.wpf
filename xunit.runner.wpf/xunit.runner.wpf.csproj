@@ -161,6 +161,7 @@
   <ItemGroup>
     <NuGetManifest Include="xunit.runner.wpf.nuspec">
       <Version>$(NuPkgVersion)</Version>
+      <PackageAnalysis>False</PackageAnalysis>
     </NuGetManifest>
   </ItemGroup>
   <ItemGroup>

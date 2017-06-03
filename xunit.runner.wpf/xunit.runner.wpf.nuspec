@@ -12,9 +12,9 @@
     <tags>XUnit Gui test runner</tags>
   </metadata>
   <files>
-    <file src="*.dll" target="tools\"/>
-    <file src="xunit.runner.wpf.targets" target="build"/>
-    <file src="*.exe" target="tools\" exclude="*vshost*"/>
-    <file src="*.config" target="tools\" exclude="*vshost*"/>
+    <file src="bin\$Configuration$\*.dll" target="tools\"/>
+    <file src="xunit.runner.wpf.targets" target="build\net45"/>
+    <file src="bin\$Configuration$\*.exe" target="tools\" exclude="**\*vshost*"/>
+    <file src="bin\$Configuration$\*.config" target="tools\" exclude="**\*vshost*"/>
   </files>
 </package>
