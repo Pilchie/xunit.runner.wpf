@@ -61,6 +61,8 @@
                 <Separator />
                 <MenuItem Header="_Unload" Command="{Binding AssemblyRemoveAllCommand}"/>
                 <MenuItem Header="_Reload" Command="{Binding AssemblyReloadAllCommand}" />
+                <Separator />
+                <MenuItem Header="_Auto Reload Test Assemblies" IsCheckable="True" IsChecked="{Binding AutoReloadAssemblies}" Command="{Binding AutoReloadAssembliesCommand}" />
             </MenuItem>
             <MenuItem Header="_Project">
                 <MenuItem Header="_Open" />
@@ -256,7 +258,7 @@
                                     <Image Source="Artwork\Failed_large.png" />
                                     <TextBlock Margin="4,0"
                                                FontSize="16"
-                                               Text="{Binding TestsFailed, StringFormat={}{0:#\,0}}" 
+                                               Text="{Binding TestsFailed, StringFormat={}{0:#\,0}}"
                                                VerticalAlignment="Center" />
                                 </StackPanel>
                             </ToggleButton>
@@ -271,7 +273,7 @@
                                     <Image Source="Artwork\Skipped_large.png" />
                                     <TextBlock Margin="4,0"
                                                FontSize="16"
-                                               Text="{Binding TestsSkipped, StringFormat={}{0:#\,0}}" 
+                                               Text="{Binding TestsSkipped, StringFormat={}{0:#\,0}}"
                                                VerticalAlignment="Center" />
                                 </StackPanel>
                             </ToggleButton>

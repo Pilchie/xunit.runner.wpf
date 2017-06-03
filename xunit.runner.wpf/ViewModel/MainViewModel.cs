@@ -17,7 +17,6 @@ using Microsoft.Win32;
 using Microsoft.WindowsAPICodePack.Taskbar;
 using Xunit.Runner.Data;
 using Xunit.Runner.Wpf.Persistence;
-using System.Collections;
 
 namespace Xunit.Runner.Wpf.ViewModel
 {
@@ -26,6 +25,7 @@ namespace Xunit.Runner.Wpf.ViewModel
         private readonly Settings settings;
 
         private readonly ITestUtil testUtil;
+        private readonly ITestAssemblyWatcher assemblyWatcher;
         private readonly HashSet<string> allTestCaseUniqueIDs = new HashSet<string>();
         private readonly ObservableCollection<TestCaseViewModel> allTestCases = new ObservableCollection<TestCaseViewModel>();
         private readonly TraitCollectionView traitCollectionView = new TraitCollectionView();
@@ -34,10 +34,21 @@ namespace Xunit.Runner.Wpf.ViewModel
         private CancellationTokenSource cancellationTokenSource;
         private bool isBusy;
         private SearchQuery searchQuery = new SearchQuery();
+        private bool autoReloadAssemblies;
 
         public ObservableCollection<TestAssemblyViewModel> Assemblies { get; } = new ObservableCollection<TestAssemblyViewModel>();
         public FilteredCollectionView<TestCaseViewModel, SearchQuery> FilteredTestCases { get; }
         public ObservableCollection<TraitViewModel> Traits => this.traitCollectionView.Collection;
+        public bool AutoReloadAssemblies
+        {
+            get => autoReloadAssemblies;
+            set
+            {
+                var oldVal = autoReloadAssemblies;
+                autoReloadAssemblies = value;
+                RaisePropertyChanged(nameof(AutoReloadAssemblies), oldVal, autoReloadAssemblies);
+            }
+        }
 
         public ObservableCollection<RecentAssemblyViewModel> RecentAssemblies { get; } = new ObservableCollection<RecentAssemblyViewModel>();
 
@@ -56,6 +67,7 @@ namespace Xunit.Runner.Wpf.ViewModel
         public ICommand AssemblyReloadAllCommand { get; }
         public ICommand AssemblyRemoveCommand { get; }
         public ICommand AssemblyRemoveAllCommand { get; }
+        public ICommand AutoReloadAssembliesCommand { get; }
 
         public CommandBindingCollection CommandBindings { get; }
 
@@ -71,13 +83,14 @@ namespace Xunit.Runner.Wpf.ViewModel
             CommandBindings = CreateCommandBindings();
 
             this.testUtil = new Xunit.Runner.Wpf.Impl.RemoteTestUtil(Dispatcher.CurrentDispatcher);
+            this.assemblyWatcher = new Impl.TestAssemblyWatcher(Dispatcher.CurrentDispatcher);
             this.TestCasesCaption = "Test Cases (0)";
 
             this.FilteredTestCases = new FilteredCollectionView<TestCaseViewModel, SearchQuery>(
                 allTestCases, TestCaseMatches, searchQuery, TestComparer.Instance);
 
             this.FilteredTestCases.CollectionChanged += TestCases_CollectionChanged;
-            
+
             this.ExitCommand = new RelayCommand(OnExecuteExit);
             this.WindowLoadedCommand = new RelayCommand(OnExecuteWindowLoaded);
             this.WindowClosingCommand = new RelayCommand<CancelEventArgs>(OnExecuteWindowClosing);
@@ -90,8 +103,10 @@ namespace Xunit.Runner.Wpf.ViewModel
             this.AssemblyReloadAllCommand = new RelayCommand(OnExecuteAssemblyReloadAll);
             this.AssemblyRemoveCommand = new RelayCommand(OnExecuteAssemblyRemove, CanExecuteAssemblyRemove);
             this.AssemblyRemoveAllCommand = new RelayCommand(OnExecuteAssemblyRemoveAll);
+            this.AutoReloadAssembliesCommand = new RelayCommand(OnToggleAutoReloadAssemblies);
 
             RebuildRecentAssembliesMenu();
+            AutoReloadAssemblies = this.settings.GetAutoReloadAssemblies();
         }
 
         private void RebuildRecentAssembliesMenu()
@@ -392,10 +407,24 @@ namespace Xunit.Runner.Wpf.ViewModel
                 foreach (var assemblyViewModel in newAssemblyViewModels)
                 {
                     assemblyViewModel.State = AssemblyState.Ready;
+                    assemblyWatcher.AddAssembly(assemblyViewModel.FileName);
                 }
 
                 RebuildRecentAssembliesMenu();
             }
+        }
+
+        public bool ReloadAssemblies(IEnumerable<string> assemblies)
+        {
+            if (IsBusy)
+            {
+                return false;
+            }
+
+            var testAssemblies = Assemblies.Where(assembly => assemblies.Contains(assembly.FileName));
+            Application.Current.Dispatcher.InvokeAsync(() => ReloadAssemblies(testAssemblies));
+
+            return true;
         }
 
         private async Task ReloadAssemblies(IEnumerable<TestAssemblyViewModel> assemblies)
@@ -433,6 +462,7 @@ namespace Xunit.Runner.Wpf.ViewModel
         {
             foreach (var assembly in assemblies.ToList())
             {
+                assemblyWatcher.RemoveAssembly(assembly.FileName);
                 RemoveAssemblyTestCases(assembly.FileName);
                 Assemblies.Remove(assembly);
             }
@@ -458,10 +488,10 @@ namespace Xunit.Runner.Wpf.ViewModel
         }
 
         /// <summary>
-        /// Reloading an assembly could have changed the traits.  There is no easy way 
-        /// to selectively edit this list (traits can cross assembly boundaries).  Just 
+        /// Reloading an assembly could have changed the traits.  There is no easy way
+        /// to selectively edit this list (traits can cross assembly boundaries).  Just
         /// do a full reload instead.
-        /// way to 
+        /// way to
         /// </summary>
         private void RebuildTraits()
         {
@@ -764,6 +794,29 @@ namespace Xunit.Runner.Wpf.ViewModel
         private void OnExecuteAssemblyRemoveAll()
         {
             RemoveAssemblies(Assemblies.ToArray());
+        }
+        private void OnToggleAutoReloadAssemblies()
+        {
+            ToggleReloadAssemblies();
+        }
+
+        private void ToggleReloadAssemblies()
+        {
+            this.settings.ToggleAutoReloadAssemblies();
+            AutoReloadAssemblies = this.settings.GetAutoReloadAssemblies();
+            UpdateAutoReloadStatus();
+        }
+
+        private void UpdateAutoReloadStatus()
+        {
+            if (AutoReloadAssemblies)
+            {
+                assemblyWatcher.EnableWatch(ReloadAssemblies);
+            }
+            else
+            {
+                assemblyWatcher.DisableWatch();
+            }
         }
 
         public bool FilterPassedTests

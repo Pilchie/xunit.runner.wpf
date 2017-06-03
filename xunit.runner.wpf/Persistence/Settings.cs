@@ -14,16 +14,19 @@ namespace Xunit.Runner.Wpf.Persistence
         private const string RecentAssemblyElementName = "recent_assembly";
         private const string SettingsElementName = "settings";
         private const string VersionAttributeName = "version";
+        private const string AutoReloadAssembliesElementName = "auto_reload_assemblies";
 
         private const int MaxRecentAssemblies = 10;
 
         private static readonly Version s_latestVersion = new Version(1, 0, 0, 0);
 
         private List<string> recentAssemblies;
+        private bool autoReloadAssemblies;
 
         private Settings()
         {
             recentAssemblies = new List<string>();
+            autoReloadAssemblies = true;
         }
 
         public void AddRecentAssembly(string filePath)
@@ -43,6 +46,13 @@ namespace Xunit.Runner.Wpf.Persistence
                 recentAssemblies.RemoveRange(MaxRecentAssemblies - 1, recentAssemblies.Count - MaxRecentAssemblies);
             }
         }
+
+        public void ToggleAutoReloadAssemblies()
+        {
+            autoReloadAssemblies = !autoReloadAssemblies;
+        }
+
+        public bool GetAutoReloadAssemblies() => autoReloadAssemblies;
 
         public ImmutableArray<string> GetRecentAssemblies()
         {
@@ -65,6 +75,8 @@ namespace Xunit.Runner.Wpf.Persistence
 
                     xml.Add(recentAssembliesElement);
                 }
+
+                xml.Add(new XElement(AutoReloadAssembliesElementName, autoReloadAssemblies));
 
                 xml.Save(xmlFile);
             }
@@ -101,6 +113,17 @@ namespace Xunit.Runner.Wpf.Persistence
                         var filePath = (string)recentAssemblyElement;
                         settings.AddRecentAssembly(filePath);
                     }
+                }
+
+                var autoReloadAssembliesElement = xml.Element(AutoReloadAssembliesElementName);
+                if (autoReloadAssembliesElement != null)
+                {
+                    if (!bool.TryParse(autoReloadAssembliesElement.Value, out var autoReloadAssemblies))
+                    {
+                        autoReloadAssemblies = true;
+                    }
+
+                    settings.autoReloadAssemblies = autoReloadAssemblies;
                 }
 
                 return settings;
