@@ -107,6 +107,7 @@ namespace Xunit.Runner.Wpf.ViewModel
 
             RebuildRecentAssembliesMenu();
             AutoReloadAssemblies = this.settings.GetAutoReloadAssemblies();
+            UpdateAutoReloadStatus();
         }
 
         private void RebuildRecentAssembliesMenu()

@@ -125,6 +125,10 @@ namespace Xunit.Runner.Wpf.Persistence
 
                     settings.autoReloadAssemblies = autoReloadAssemblies;
                 }
+                else
+                {
+                    settings.autoReloadAssemblies = true;
+                }
 
                 return settings;
             }
