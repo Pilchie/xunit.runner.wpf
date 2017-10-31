@@ -35,7 +35,7 @@ namespace Xunit.Runner.Worker
 
         internal static void Go(string assemblyFileName, Stream stream)
         {
-            Go(assemblyFileName, stream, AppDomainSupport.Denied,
+            Go(assemblyFileName, stream, AppDomainSupport.IfAvailable,
                 (xunit, configuration, writer) =>
                 {
                     using (var sink = new TestDiscoverySink(writer))
