@@ -10,6 +10,7 @@ namespace Xunit.Runner.Data
     {
         All = 0,
         NotRun,
+        Running,
         Passed,
         Skipped,
         Failed,

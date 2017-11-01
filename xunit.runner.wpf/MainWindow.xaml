@@ -277,6 +277,21 @@
                                                VerticalAlignment="Center" />
                                 </StackPanel>
                             </ToggleButton>
+
+                            <ToggleButton IsChecked="{Binding FilterRunningTests}"
+                                          BorderThickness="0"
+                                          Background="Transparent"
+                                          Margin="2,4,0,4"
+                                          Grid.Column="2"
+                                          Command="{Binding TestFilterChanged}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="Artwork\Running_large.png" />
+                                    <TextBlock Margin="4,0"
+                                               FontSize="16"
+                                               Text="{Binding TestsRunning, StringFormat={}{0:#\,0}}"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </ToggleButton>
                         </StackPanel>
 
                         <ListBox x:Name="TestCases" ItemsSource="{Binding FilteredTestCases}"

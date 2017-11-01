@@ -23,11 +23,16 @@ namespace Xunit.Runner.Worker
 
             private void Process(string displayName, string uniqueID, TestState state, string output = "")
             {
-                Console.WriteLine($"{state} - {displayName}");
+                System.Diagnostics.Trace.WriteLine($"{state} - {displayName}");
                 var result = new TestResultData(displayName, uniqueID, state, output);
 
                 _writer.Write(TestDataKind.Value);
                 _writer.Write(result);
+            }
+
+            protected override void OnTestStarted(ITestStarting testStarted)
+            {
+                Process(testStarted.TestCase.DisplayName, testStarted.TestCase.UniqueID, TestState.Running);
             }
 
             protected override void OnTestFailed(ITestFailed testFailed)

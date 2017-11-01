@@ -19,6 +19,12 @@ namespace Xunit.Runner.Worker.MessageSinks
 
         protected override bool OnMessage(IMessageSinkMessage message)
         {
+            var testStarted = message as ITestStarting;
+            if (testStarted != null)
+            {
+                OnTestStarted(testStarted);
+            }
+
             var testFailed = message as ITestFailed;
             if (testFailed != null)
             {
@@ -47,6 +53,7 @@ namespace Xunit.Runner.Worker.MessageSinks
 
         protected virtual bool ShouldContinue => true;
 
+        protected abstract void OnTestStarted(ITestStarting testStarted);
         protected abstract void OnTestFailed(ITestFailed testFailed);
         protected abstract void OnTestPassed(ITestPassed testPassed);
         protected abstract void OnTestSkipped(ITestSkipped testSkipped);
