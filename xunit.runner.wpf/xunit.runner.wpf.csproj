@@ -203,6 +203,12 @@
   <ItemGroup>
     <Resource Include="Artwork\Application.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Artwork\Running_large.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Artwork\Running_small.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

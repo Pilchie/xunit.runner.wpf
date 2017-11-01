@@ -30,6 +30,11 @@ namespace Xunit.Runner.Worker
                 _writer.Write(result);
             }
 
+            protected override void OnTestStarted(ITestStarting testStarted)
+            {
+                Process(testStarted.TestCase.DisplayName, testStarted.TestCase.UniqueID, TestState.Running);
+            }
+
             protected override void OnTestFailed(ITestFailed testFailed)
             {
                 var displayName = testFailed.TestCase.DisplayName;

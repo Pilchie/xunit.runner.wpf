@@ -4,6 +4,7 @@ namespace Xunit.Runner.Wpf.ViewModel
 {
     public class SearchQuery
     {
+        public bool FilterRunningTests = false;
         public bool FilterFailedTests = false;
         public bool FilterPassedTests = false;
         public bool FilterSkippedTests = false;

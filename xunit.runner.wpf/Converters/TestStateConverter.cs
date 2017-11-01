@@ -9,6 +9,7 @@ namespace Xunit.Runner.Wpf.Converters
 {
     public class TestStateConverter : IValueConverter
     {
+        private static ImageSource runningSource;
         private static ImageSource failedSource;
         private static ImageSource passedSource;
         private static ImageSource skippedSource;
@@ -17,6 +18,7 @@ namespace Xunit.Runner.Wpf.Converters
 
         static TestStateConverter()
         {
+            runningSource = LoadResourceImage("Running_small.png");
             failedSource = LoadResourceImage("Failed_small.png");
             passedSource = LoadResourceImage("Passed_small.png");
             skippedSource = LoadResourceImage("Skipped_small.png");
@@ -38,6 +40,8 @@ namespace Xunit.Runner.Wpf.Converters
             {
                 switch (state)
                 {
+                    case TestState.Running:
+                        return Brushes.Blue;
                     case TestState.Failed:
                         return Brushes.Red;
                     case TestState.Passed:
@@ -52,6 +56,8 @@ namespace Xunit.Runner.Wpf.Converters
             {
                 switch (state)
                 {
+                    case TestState.Running:
+                        return runningSource;
                     case TestState.Failed:
                         return failedSource;
                     case TestState.Passed:

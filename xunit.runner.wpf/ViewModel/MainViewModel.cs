@@ -29,6 +29,8 @@ namespace Xunit.Runner.Wpf.ViewModel
         private readonly HashSet<string> allTestCaseUniqueIDs = new HashSet<string>();
         private readonly ObservableCollection<TestCaseViewModel> allTestCases = new ObservableCollection<TestCaseViewModel>();
         private readonly TraitCollectionView traitCollectionView = new TraitCollectionView();
+        private readonly HashSet<string> runningTestSet = new HashSet<string>();
+
         private CancellationTokenSource filterCancellationTokenSource = new CancellationTokenSource();
 
         private CancellationTokenSource cancellationTokenSource;
@@ -52,7 +54,7 @@ namespace Xunit.Runner.Wpf.ViewModel
 
         public ObservableCollection<RecentAssemblyViewModel> RecentAssemblies { get; } = new ObservableCollection<RecentAssemblyViewModel>();
 
-        private ImmutableList<TestCaseViewModel> runningTests;
+        private ImmutableList<TestCaseViewModel> testsToRun;
 
         public ICommand ExitCommand { get; }
         public ICommand WindowLoadedCommand { get; }
@@ -153,10 +155,13 @@ namespace Xunit.Runner.Wpf.ViewModel
                 }
             }
 
-            var noFilter = !(searchQuery.FilterFailedTests | searchQuery.FilterPassedTests | searchQuery.FilterSkippedTests);
+            var noFilter = !(searchQuery.FilterRunningTests | searchQuery.FilterFailedTests | searchQuery.FilterPassedTests | searchQuery.FilterSkippedTests);
 
             switch (testCase.State)
             {
+                case TestState.Running:
+                    return noFilter || searchQuery.FilterRunningTests;
+
                 case TestState.Passed:
                     return noFilter || searchQuery.FilterPassedTests;
 
@@ -261,6 +266,13 @@ namespace Xunit.Runner.Wpf.ViewModel
                 default:
                     return TaskbarProgressBarState.Normal;
             }
+        }
+
+        private int testsRunning = 0;
+        public int TestsRunning
+        {
+            get { return testsRunning; }
+            set { Set(ref testsRunning, value); }
         }
 
         private int testsPassed = 0;
@@ -560,12 +572,12 @@ namespace Xunit.Runner.Wpf.ViewModel
 
         private async void OnExecuteRunAll()
         {
-            Debug.Assert(this.runningTests == null);
+            Debug.Assert(this.testsToRun == null);
             UpdateTestCaseInfo(useSelected: false);
 
             await ExecuteTestSessionOperation(RunFilteredTests);
 
-            this.runningTests = null;
+            this.testsToRun = null;
         }
 
         private List<Task> RunFilteredTests()
@@ -575,13 +587,13 @@ namespace Xunit.Runner.Wpf.ViewModel
 
         private async void OnExecuteRunSelected()
         {
-            Debug.Assert(this.runningTests == null);
+            Debug.Assert(this.testsToRun == null);
             Debug.Assert(this.SelectedTestCase != null);
             UpdateTestCaseInfo(useSelected: true);
 
             await ExecuteTestSessionOperation(RunSelectedTests);
 
-            this.runningTests = null;
+            this.testsToRun = null;
         }
 
         private List<Task> RunSelectedTests()
@@ -593,37 +605,38 @@ namespace Xunit.Runner.Wpf.ViewModel
         {
             Debug.Assert(this.isBusy);
             Debug.Assert(this.cancellationTokenSource != null);
-            Debug.Assert(this.runningTests == null);
+            Debug.Assert(this.testsToRun == null);
 
             TestsCompleted = 0;
+            TestsRunning = 0;
             TestsPassed = 0;
             TestsFailed = 0;
             TestsSkipped = 0;
             CurrentRunState = TestState.NotRun;
             Output = string.Empty;
 
-            this.runningTests = tests;
+            this.testsToRun = tests;
 
-            foreach (var tc in this.runningTests)
+            foreach (var tc in this.testsToRun)
             {
                 tc.State = TestState.NotRun;
             }
 
-            var runAll = this.runningTests.Count == this.allTestCases.Count;
+            var runAll = this.testsToRun.Count == this.allTestCases.Count;
             var testSessionList = new List<Task>();
 
-            foreach (var assemblyFileName in this.runningTests.Select(x => x.AssemblyFileName).Distinct())
+            foreach (var assemblyFileName in this.testsToRun.Select(x => x.AssemblyFileName).Distinct())
             {
                 Task task;
                 if (runAll)
                 {
-                    task = this.testUtil.RunAll(assemblyFileName, OnTestsFinished, this.cancellationTokenSource.Token);
+                    task = this.testUtil.RunAll(assemblyFileName, OnTestStateChange, this.cancellationTokenSource.Token);
                 }
                 else
                 {
                     var builder = ImmutableArray.CreateBuilder<string>();
 
-                    foreach (var testCase in this.runningTests)
+                    foreach (var testCase in this.testsToRun)
                     {
                         if (testCase.AssemblyFileName == assemblyFileName)
                         {
@@ -631,7 +644,7 @@ namespace Xunit.Runner.Wpf.ViewModel
                         }
                     }
 
-                    task = this.testUtil.RunSpecific(assemblyFileName, builder.ToImmutable(), OnTestsFinished, this.cancellationTokenSource.Token);
+                    task = this.testUtil.RunSpecific(assemblyFileName, builder.ToImmutable(), OnTestStateChange, this.cancellationTokenSource.Token);
                 }
 
                 testSessionList.Add(task);
@@ -711,28 +724,43 @@ namespace Xunit.Runner.Wpf.ViewModel
             }
         }
 
-        private void OnTestsFinished(IEnumerable<TestResultData> testResultData)
+        private void OnTestStateChange(IEnumerable<TestResultData> testResultData)
         {
-            Debug.Assert(this.runningTests != null);
+            Debug.Assert(this.testsToRun != null);
 
             foreach (var result in testResultData)
             {
-                var testCase = this.runningTests.Single(x => x.UniqueID == result.TestCaseUniqueID);
+                var testCase = this.testsToRun.Single(x => x.UniqueID == result.TestCaseUniqueID);
                 testCase.State = result.TestState;
 
-                TestsCompleted++;
-                switch (result.TestState)
+                if (result.TestState == TestState.Running)
                 {
-                    case TestState.Passed:
-                        TestsPassed++;
-                        break;
-                    case TestState.Failed:
-                        TestsFailed++;
-                        Output = Output + result.Output;
-                        break;
-                    case TestState.Skipped:
-                        TestsSkipped++;
-                        break;
+                    if (runningTestSet.Add(result.TestCaseUniqueID))
+                    {
+                        TestsRunning++;
+                    }
+                }
+                else
+                {
+                    if (runningTestSet.Remove(result.TestCaseUniqueID))
+                    {
+                        TestsRunning--;
+                    }
+
+                    TestsCompleted++;
+                    switch (result.TestState)
+                    {
+                        case TestState.Passed:
+                            TestsPassed++;
+                            break;
+                        case TestState.Failed:
+                            TestsFailed++;
+                            Output = Output + result.Output;
+                            break;
+                        case TestState.Skipped:
+                            TestsSkipped++;
+                            break;
+                    }
                 }
 
                 if (result.TestState > CurrentRunState)
@@ -817,6 +845,18 @@ namespace Xunit.Runner.Wpf.ViewModel
             else
             {
                 assemblyWatcher.DisableWatch();
+            }
+        }
+
+        public bool FilterRunningTests
+        {
+            get { return searchQuery.FilterRunningTests; }
+            set
+            {
+                if (Set(ref searchQuery.FilterRunningTests, value))
+                {
+                    FilterAfterDelay();
+                }
             }
         }
 
