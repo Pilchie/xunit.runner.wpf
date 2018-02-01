@@ -1,4 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- workaround for https://github.com/NuGet/Home/issues/5894 -->
+  <PropertyGroup>
+    <_SdkLanguageName>CSharp</_SdkLanguageName>
+  </PropertyGroup>
+  <Import Project="obj\*.props" Condition=" '$(MSBuildProjectExtension)' == '.tmp_proj'" />
+
   <PropertyGroup>
     <TargetFramework>net46</TargetFramework>
     <RootNamespace>Xunit.Runner.Wpf</RootNamespace>
@@ -10,7 +17,6 @@
     <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-    <EnableDefaultItems>false</EnableDefaultItems>
   </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -29,6 +35,7 @@
     <PackageReference Include="Microsoft.Net.Compilers" Version="2.2.0" PrivateAssets="all" />
     <PackageReference Include="MvvmLight" Version="5.3.0.0" />
     <PackageReference Include="MvvmLightLibs" Version="5.3.0.0" />
+    <PackageReference Include="MSBuild.Sdk.Extras" Version="1.2.0" />  
     <PackageReference Include="NuGet.CommandLine" Version="2.8.3" />
     <PackageReference Include="System.Collections" Version="4.3.0" />
     <PackageReference Include="System.Collections.Immutable" Version="1.4.0-preview1-25305-02" />
@@ -55,38 +62,6 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CommandBindings.cs" />
-    <Compile Include="Converters\TestStateConverter.cs" />
-    <Compile Include="Extensions.cs" />
-    <Compile Include="FilteredCollectionView.cs" />
-    <Compile Include="Impl\RemoteTestUtil.Connection.cs" />
-    <Compile Include="Impl\RemoteTestUtil.BackgroundRunner.cs" />
-    <Compile Include="Impl\RemoteTestUtil.cs" />
-    <Compile Include="Impl\TestAssemblyWatcher.cs" />
-    <Compile Include="ITestAssemblyWatcher.cs" />
-    <Compile Include="ITestUtil.cs" />
-    <Compile Include="Persistence\Settings.cs" />
-    <Compile Include="Persistence\Storage.cs" />
-    <Compile Include="Persistence\Storage.WindowPlacement.cs" />
-    <Compile Include="Extensions.FuncComparer.cs" />
-    <Compile Include="ViewModel\RecentAssemblyViewModel.cs" />
-    <Compile Include="ViewModel\TraitCollectionView.cs" />
-    <Compile Include="ViewModel\AssemblyAndConfigFile.cs" />
-    <Compile Include="ViewModel\MainViewModel.cs" />
-    <Compile Include="ViewModel\SearchQuery.cs" />
-    <Compile Include="ViewModel\TestCaseViewModel.cs" />
-    <Compile Include="ViewModel\TestAssemblyViewModel.cs" />
-    <Compile Include="ViewModel\TraitViewModel.Comparer.cs" />
-    <Compile Include="ViewModel\TraitViewModel.cs" />
-    <Compile Include="ViewModel\ViewModelLocator.cs" />
-    <Compile Include="App.xaml.cs">
-      <DependentUpon>App.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="MainWindow.xaml.cs">
-      <DependentUpon>MainWindow.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Update="Properties\Resources.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -101,8 +76,6 @@
       <SubType>Designer</SubType>
     </None>
     <None Include="App.config" />
-    <ApplicationDefinition Include="App.xaml"/>
-    <Page Include="MainWindow.xaml" />
     <Resource Include="Artwork\Passed_small.png" />
     <Resource Include="Artwork\Passed_large.png" />
     <Resource Include="Artwork\Failed_small.png" />
@@ -113,25 +86,7 @@
     <Resource Include="Artwork\Running_large.png" />
     <Resource Include="Artwork\Running_small.png" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Page Update="@(Page)" SubType="Designer" Generator="MSBuild:Compile" />
-    <Page Update="@(ApplicationDefinition)" SubType="Designer" Generator="MSBuild:Compile" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="@(Page)" />
-    <None Include="@(ApplicationDefinition)" />
-    <None Include="@(Resource)" />
-  </ItemGroup>
-
-  <!--
-     Work around to fix Intellisense file generation for XAML projects
-     https://github.com/dotnet/project-system/issues/2488
-  -->
-  <Target Name="WorkaroundForXAMLIntellisenseBuildIssue" AfterTargets="_CheckCompileDesignTimePrerequisite">
-    <PropertyGroup>
-      <BuildingProject>false</BuildingProject>
-    </PropertyGroup>
-  </Target>
+  <Import Project="$(MSBuildSDKExtrasTargets)" Condition="Exists('$(MSBuildSDKExtrasTargets)')" />
+  <!-- workaround for https://github.com/NuGet/Home/issues/5894 -->
+  <Import Project="obj\*.targets" Condition=" '$(MSBuildProjectExtension)' == '.tmp_proj'" />
 </Project>
