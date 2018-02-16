@@ -1,24 +1,25 @@
-﻿<Window x:Class="Xunit.Runner.Wpf.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Xunit.Runner.Wpf"
-        xmlns:converters="clr-namespace:Xunit.Runner.Wpf.Converters"
-        xmlns:vm="clr-namespace:Xunit.Runner.Wpf.ViewModel"
-        xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
-        xmlns:cmd="clr-namespace:GalaSoft.MvvmLight.Command;assembly=GalaSoft.MvvmLight.Platform"
-        xmlns:sys="clr-namespace:System;assembly=mscorlib"
-        mc:Ignorable="d"
-        DataContext="{Binding Main, Source={StaticResource Locator}}"
-        Title="xUnit.net Test Runner"
-        Icon="Artwork\Application.ico"
-        ResizeMode="CanResizeWithGrip"
-        Height="600"
-        MinHeight="525"
-        Width="525"
-        MinWidth="425"
-        Name="Main">
+﻿<Window
+    x:Class="Xunit.Runner.Wpf.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:cmd="clr-namespace:GalaSoft.MvvmLight.Command;assembly=GalaSoft.MvvmLight.Platform"
+    xmlns:converters="clr-namespace:Xunit.Runner.Wpf.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
+    xmlns:local="clr-namespace:Xunit.Runner.Wpf"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+    xmlns:vm="clr-namespace:Xunit.Runner.Wpf.ViewModel"
+    Name="Main"
+    Title="xUnit.net Test Runner"
+    Width="525"
+    Height="600"
+    MinWidth="425"
+    MinHeight="525"
+    DataContext="{Binding Main, Source={StaticResource Locator}}"
+    Icon="Artwork\Application.ico"
+    ResizeMode="CanResizeWithGrip"
+    mc:Ignorable="d">
 
     <i:Interaction.Triggers>
         <i:EventTrigger EventName="Loaded">
@@ -43,12 +44,10 @@
 
         <Menu Grid.Row="0">
             <MenuItem Header="_File">
-                <MenuItem Header="E_xit"
-                          Command="{Binding ExitCommand}" />
+                <MenuItem Command="{Binding ExitCommand}" Header="E_xit" />
             </MenuItem>
             <MenuItem Header="_Assembly">
-                <MenuItem Header="_Open"
-                          Command="ApplicationCommands.Open" />
+                <MenuItem Command="ApplicationCommands.Open" Header="_Open" />
                 <MenuItem Header="R_ecent" ItemsSource="{Binding RecentAssemblies}">
                     <MenuItem.ItemContainerStyle>
                         <Style TargetType="MenuItem">
@@ -59,10 +58,14 @@
                     </MenuItem.ItemContainerStyle>
                 </MenuItem>
                 <Separator />
-                <MenuItem Header="_Unload" Command="{Binding AssemblyRemoveAllCommand}"/>
-                <MenuItem Header="_Reload" Command="{Binding AssemblyReloadAllCommand}" />
+                <MenuItem Command="{Binding AssemblyRemoveAllCommand}" Header="_Unload" />
+                <MenuItem Command="{Binding AssemblyReloadAllCommand}" Header="_Reload" />
                 <Separator />
-                <MenuItem Header="_Auto Reload Test Assemblies" IsCheckable="True" IsChecked="{Binding AutoReloadAssemblies}" Command="{Binding AutoReloadAssembliesCommand}" />
+                <MenuItem
+                    Command="{Binding AutoReloadAssembliesCommand}"
+                    Header="_Auto Reload Test Assemblies"
+                    IsCheckable="True"
+                    IsChecked="{Binding AutoReloadAssemblies}" />
             </MenuItem>
             <MenuItem Header="_Project">
                 <MenuItem Header="_Open" />
@@ -86,10 +89,11 @@
                 <RowDefinition Height="auto" />
             </Grid.RowDefinitions>
 
-            <GroupBox Header="Refinements"
-                      Margin="3"
-                      Grid.Column="0"
-                      Grid.Row="0">
+            <GroupBox
+                Grid.Row="0"
+                Grid.Column="0"
+                Margin="3"
+                Header="Refinements">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="auto" />
@@ -100,25 +104,24 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <Label Content="Search:"
-                           Grid.Row="0" />
-                    <TextBox Grid.Row="1"
-                             Text="{Binding FilterString, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <Label Grid.Row="0" Content="Search:" />
+                    <TextBox Grid.Row="1" Text="{Binding FilterString, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                    <Label Content="Assemblies:"
-                           Grid.Row="2" />
-                    <ListBox Height="175"
-                             ItemsSource="{Binding Assemblies}"
-                             SelectionMode="Extended"
-                             Grid.Row="3">
+                    <Label Grid.Row="2" Content="Assemblies:" />
+                    <ListBox
+                        Grid.Row="3"
+                        Height="175"
+                        ItemsSource="{Binding Assemblies}"
+                        SelectionMode="Extended">
                         <ListBox.ItemTemplate>
                             <DataTemplate DataType="vm:TestAssemblyViewModel">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="{Binding DisplayName}" />
 
-                                    <TextBlock Text=" Discovering tests..."
-                                               FontStyle="Italic"
-                                               Foreground="Gray">
+                                    <TextBlock
+                                        FontStyle="Italic"
+                                        Foreground="Gray"
+                                        Text=" Discovering tests...">
 
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
@@ -138,41 +141,36 @@
 
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="{x:Type ListBoxItem}">
-                                <Setter Property="IsSelected" Value="{Binding Mode=TwoWay, Path=IsSelected}"/>
+                                <Setter Property="IsSelected" Value="{Binding Mode=TwoWay, Path=IsSelected}" />
                             </Style>
                         </ListBox.ItemContainerStyle>
 
                         <ListBox.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="Reload" Command="{Binding AssemblyReloadCommand}" />
-                                <MenuItem Header="Reload All" Command="{Binding AssemblyReloadAllCommand}" />
+                                <MenuItem Command="{Binding AssemblyReloadCommand}" Header="Reload" />
+                                <MenuItem Command="{Binding AssemblyReloadAllCommand}" Header="Reload All" />
                                 <Separator />
-                                <MenuItem Header="Remove" Command="{Binding AssemblyRemoveCommand}" />
-                                <MenuItem Header="Remove All" Command="{Binding AssemblyRemoveAllCommand}" />
+                                <MenuItem Command="{Binding AssemblyRemoveCommand}" Header="Remove" />
+                                <MenuItem Command="{Binding AssemblyRemoveAllCommand}" Header="Remove All" />
                             </ContextMenu>
                         </ListBox.ContextMenu>
                     </ListBox>
 
-                    <Label Content="Traits:"
-                           Grid.Row="4" />
+                    <Label Grid.Row="4" Content="Traits:" />
 
-                    <TreeView Grid.Row="5"
-                              ItemsSource="{Binding Traits}">
+                    <TreeView Grid.Row="5" ItemsSource="{Binding Traits}">
 
                         <TreeView.Resources>
-                            <HierarchicalDataTemplate DataType="{x:Type vm:TraitViewModel}"
-                                                      ItemsSource="{Binding Children}">
+                            <HierarchicalDataTemplate DataType="{x:Type vm:TraitViewModel}" ItemsSource="{Binding Children}">
 
-                                <CheckBox IsChecked="{Binding IsChecked}" Content="{Binding Text}" >
+                                <CheckBox Content="{Binding Text}" IsChecked="{Binding IsChecked}">
                                     <i:Interaction.Triggers>
                                         <i:EventTrigger EventName="Checked">
-                                            <cmd:EventToCommand Command="{Binding DataContext.TraitCheckedChangedCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                CommandParameter="{Binding}" />
+                                            <cmd:EventToCommand Command="{Binding DataContext.TraitCheckedChangedCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
                                         </i:EventTrigger>
 
                                         <i:EventTrigger EventName="Unchecked">
-                                            <cmd:EventToCommand Command="{Binding DataContext.TraitCheckedChangedCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                CommandParameter="{Binding}" />
+                                            <cmd:EventToCommand Command="{Binding DataContext.TraitCheckedChangedCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
                                         </i:EventTrigger>
                                     </i:Interaction.Triggers>
                                 </CheckBox>
@@ -188,7 +186,7 @@
 
                         <TreeView.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="Clear" Command="{Binding TraitsClearCommand}" />
+                                <MenuItem Command="{Binding TraitsClearCommand}" Header="Clear" />
                             </ContextMenu>
                         </TreeView.ContextMenu>
 
@@ -196,36 +194,40 @@
                 </Grid>
             </GroupBox>
 
-            <Grid Grid.Column="0"
-                  Grid.Row="1">
+            <Grid Grid.Row="1" Grid.Column="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <Button Content="_Run All"
-                        Command="{Binding RunAllCommand}"
-                        Grid.Column="0" Margin="10,0,0,0"/>
-                <Button Content="Run _Selected"
-                        Command="{Binding RunSelectedCommand}"
-                        Grid.Column="1"/>
-                <Button Content="_Cancel"
-                        Command="{Binding CancelCommand}"
-                        Grid.Column="2" Margin="0,0,10,0" />
+                <Button
+                    Grid.Column="0"
+                    Margin="10,0,0,0"
+                    Command="{Binding RunAllCommand}"
+                    Content="_Run All" />
+                <Button
+                    Grid.Column="1"
+                    Command="{Binding RunSelectedCommand}"
+                    Content="Run _Selected" />
+                <Button
+                    Grid.Column="2"
+                    Margin="0,0,10,0"
+                    Command="{Binding CancelCommand}"
+                    Content="_Cancel" />
             </Grid>
 
-            <Grid Grid.Column="1"
-                  Grid.Row="0">
+            <Grid Grid.Row="0" Grid.Column="1">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" MinHeight="200px" />
                     <RowDefinition Height="auto" />
-                    <RowDefinition Height="*"  MinHeight="200px"/>
+                    <RowDefinition Height="*" MinHeight="200px" />
                 </Grid.RowDefinitions>
 
-                <GroupBox Header="{Binding TestCasesCaption}"
-                          Margin="3"
-                          Grid.Row="0">
+                <GroupBox
+                    Grid.Row="0"
+                    Margin="3"
+                    Header="{Binding TestCasesCaption}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="auto" />
@@ -233,71 +235,82 @@
                         </Grid.RowDefinitions>
 
                         <StackPanel Orientation="Horizontal">
-                            <ToggleButton IsChecked="{Binding FilterPassedTests}"
-                                          BorderThickness="0"
-                                          Background="Transparent"
-                                          Margin="0,4,2,4"
-                                          Grid.Column="0"
-                                          Command="{Binding TestFilterChanged}">
+                            <ToggleButton
+                                Grid.Column="0"
+                                Margin="0,4,2,4"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Command="{Binding TestFilterChanged}"
+                                IsChecked="{Binding FilterPassedTests}">
                                 <StackPanel Orientation="Horizontal">
                                     <Image Source="Artwork\Passed_large.png" />
-                                    <TextBlock Margin="4,0"
-                                               FontSize="16"
-                                               Text="{Binding TestsPassed, StringFormat={}{0:#\,0}}"
-                                               VerticalAlignment="Center" />
+                                    <TextBlock
+                                        Margin="4,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="16"
+                                        Text="{Binding TestsPassed, StringFormat={}{0:#\,0}}" />
                                 </StackPanel>
                             </ToggleButton>
 
-                            <ToggleButton IsChecked="{Binding FilterFailedTests}"
-                                          BorderThickness="0"
-                                          Background="Transparent"
-                                          Margin="2,4"
-                                          Grid.Column="1"
-                                          Command="{Binding TestFilterChanged}">
+                            <ToggleButton
+                                Grid.Column="1"
+                                Margin="2,4"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Command="{Binding TestFilterChanged}"
+                                IsChecked="{Binding FilterFailedTests}">
                                 <StackPanel Orientation="Horizontal">
                                     <Image Source="Artwork\Failed_large.png" />
-                                    <TextBlock Margin="4,0"
-                                               FontSize="16"
-                                               Text="{Binding TestsFailed, StringFormat={}{0:#\,0}}"
-                                               VerticalAlignment="Center" />
+                                    <TextBlock
+                                        Margin="4,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="16"
+                                        Text="{Binding TestsFailed, StringFormat={}{0:#\,0}}" />
                                 </StackPanel>
                             </ToggleButton>
 
-                            <ToggleButton IsChecked="{Binding FilterSkippedTests}"
-                                          BorderThickness="0"
-                                          Background="Transparent"
-                                          Margin="2,4,0,4"
-                                          Grid.Column="2"
-                                          Command="{Binding TestFilterChanged}">
+                            <ToggleButton
+                                Grid.Column="2"
+                                Margin="2,4,0,4"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Command="{Binding TestFilterChanged}"
+                                IsChecked="{Binding FilterSkippedTests}">
                                 <StackPanel Orientation="Horizontal">
                                     <Image Source="Artwork\Skipped_large.png" />
-                                    <TextBlock Margin="4,0"
-                                               FontSize="16"
-                                               Text="{Binding TestsSkipped, StringFormat={}{0:#\,0}}"
-                                               VerticalAlignment="Center" />
+                                    <TextBlock
+                                        Margin="4,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="16"
+                                        Text="{Binding TestsSkipped, StringFormat={}{0:#\,0}}" />
                                 </StackPanel>
                             </ToggleButton>
 
-                            <ToggleButton IsChecked="{Binding FilterRunningTests}"
-                                          BorderThickness="0"
-                                          Background="Transparent"
-                                          Margin="2,4,0,4"
-                                          Grid.Column="2"
-                                          Command="{Binding TestFilterChanged}">
+                            <ToggleButton
+                                Grid.Column="2"
+                                Margin="2,4,0,4"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Command="{Binding TestFilterChanged}"
+                                IsChecked="{Binding FilterRunningTests}">
                                 <StackPanel Orientation="Horizontal">
                                     <Image Source="Artwork\Running_large.png" />
-                                    <TextBlock Margin="4,0"
-                                               FontSize="16"
-                                               Text="{Binding TestsRunning, StringFormat={}{0:#\,0}}"
-                                               VerticalAlignment="Center" />
+                                    <TextBlock
+                                        Margin="4,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="16"
+                                        Text="{Binding TestsRunning, StringFormat={}{0:#\,0}}" />
                                 </StackPanel>
                             </ToggleButton>
                         </StackPanel>
 
-                        <ListBox x:Name="TestCases" ItemsSource="{Binding FilteredTestCases}"
-                                 SelectionMode="Extended"
-                                 SelectedItem="{Binding SelectedTestCase, Mode=TwoWay}"
-                                 Grid.Row="1" SelectionChanged="TestCases_SelectionChanged">
+                        <ListBox
+                            x:Name="TestCases"
+                            Grid.Row="1"
+                            ItemsSource="{Binding FilteredTestCases}"
+                            SelectedItem="{Binding SelectedTestCase, Mode=TwoWay}"
+                            SelectionChanged="TestCases_SelectionChanged"
+                            SelectionMode="Extended">
                             <ListBox.ItemTemplate>
                                 <DataTemplate DataType="vm:TestCaseViewModel">
                                     <Grid>
@@ -306,49 +319,71 @@
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
 
-                                        <Image Width="16"
-                                               Margin="0,0,2,0"
-                                               Source="{Binding Path=State, Mode=OneWay, Converter={StaticResource TestStateConverter}}"
-                                               Grid.Column="0" />
+                                        <Image
+                                            Grid.Column="0"
+                                            Width="16"
+                                            Margin="0,0,2,0"
+                                            Source="{Binding Path=State, Mode=OneWay, Converter={StaticResource TestStateConverter}}" />
 
-                                        <TextBlock Text="{Binding DisplayName}"
-                                                   VerticalAlignment="Center"
-                                                   Grid.Column="1" />
+                                        <TextBlock
+                                            Grid.Column="1"
+                                            VerticalAlignment="Center"
+                                            Text="{Binding DisplayName}" />
                                     </Grid>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
+                            <ListBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding RunSelectedCommand}" />
+                            </ListBox.InputBindings>
+                            <i:Interaction.Triggers>
+                                <i:EventTrigger EventName="MouseDoubleClick">
+                                    <cmd:EventToCommand Command="{Binding Path=RunSelectedCommand}" PassEventArgsToCommand="False" />
+                                </i:EventTrigger>
+                            </i:Interaction.Triggers>
                         </ListBox>
                     </Grid>
                 </GroupBox>
 
-                <GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" Height="3" Background="White"/>
+                <GridSplitter
+                    Grid.Row="1"
+                    Height="3"
+                    HorizontalAlignment="Stretch"
+                    Background="White" />
 
-                <GroupBox Header="Output"
-                          Margin="3"
-                          Grid.Row="2">
-                    <TextBox IsReadOnly="True"
-                             HorizontalScrollBarVisibility="Auto"
-                             VerticalScrollBarVisibility="Visible"
-                             FontFamily="Consolas"
-                             Text="{Binding Output}"/>
+                <GroupBox
+                    Grid.Row="2"
+                    Margin="3"
+                    Header="Output">
+                    <TextBox
+                        FontFamily="Consolas"
+                        HorizontalScrollBarVisibility="Auto"
+                        IsReadOnly="True"
+                        Text="{Binding Output}"
+                        VerticalScrollBarVisibility="Visible" />
                 </GroupBox>
             </Grid>
 
-            <GridSplitter Grid.Column="0" VerticalAlignment="Stretch" Width="3" Background="White"/>
+            <GridSplitter
+                Grid.Column="0"
+                Width="3"
+                VerticalAlignment="Stretch"
+                Background="White" />
 
-            <ProgressBar Foreground="{Binding Path=CurrentRunState, Converter={StaticResource TestStateConverter}, Mode=OneWay}"
-                         Minimum="0"
-                         Maximum="{Binding MaximumProgress}"
-                         Value="{Binding Path=TestsCompleted}"
-                         Grid.Column="1"
-                         Grid.Row="1"
-                         Margin="3" />
+            <ProgressBar
+                Grid.Row="1"
+                Grid.Column="1"
+                Margin="3"
+                Foreground="{Binding Path=CurrentRunState, Converter={StaticResource TestStateConverter}, Mode=OneWay}"
+                Maximum="{Binding MaximumProgress}"
+                Minimum="0"
+                Value="{Binding Path=TestsCompleted}" />
         </Grid>
 
         <StackPanel Grid.Row="2">
-            <Border BorderBrush="LightGray"
-                    BorderThickness="1"
-                    Margin="3" />
+            <Border
+                Margin="3"
+                BorderBrush="LightGray"
+                BorderThickness="1" />
             <StatusBar>
                 <StatusBar.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -358,7 +393,7 @@
                                 <ColumnDefinition Width="auto" />
                                 <ColumnDefinition Width="auto" />
                                 <ColumnDefinition Width="auto" />
-                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="16" />
                             </Grid.ColumnDefinitions>
                         </Grid>
                     </ItemsPanelTemplate>
@@ -366,28 +401,25 @@
 
                 <StatusBarItem Grid.Column="1">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Tests passed: "
-                                   Foreground="DarkGreen"/>
+                        <TextBlock Foreground="DarkGreen" Text="Tests passed: " />
 
-                        <TextBlock Text="{Binding TestsPassed, StringFormat={}{0:#\,0}}"/>
+                        <TextBlock Text="{Binding TestsPassed, StringFormat={}{0:#\,0}}" />
                     </StackPanel>
                 </StatusBarItem>
 
                 <StatusBarItem Grid.Column="2">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Tests failed: "
-                                   Foreground="DarkRed"/>
+                        <TextBlock Foreground="DarkRed" Text="Tests failed: " />
 
-                        <TextBlock Text="{Binding TestsFailed, StringFormat={}{0:#\,0}}"/>
+                        <TextBlock Text="{Binding TestsFailed, StringFormat={}{0:#\,0}}" />
                     </StackPanel>
                 </StatusBarItem>
 
                 <StatusBarItem Grid.Column="3">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Tests skipped: "
-                                   Foreground="DarkGoldenrod"/>
+                        <TextBlock Foreground="DarkGoldenrod" Text="Tests skipped: " />
 
-                        <TextBlock Text="{Binding TestsSkipped, StringFormat={}{0:#\,0}}"/>
+                        <TextBlock Text="{Binding TestsSkipped, StringFormat={}{0:#\,0}}" />
                     </StackPanel>
                 </StatusBarItem>
             </StatusBar>
