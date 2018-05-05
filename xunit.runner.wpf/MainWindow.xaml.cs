@@ -11,12 +11,15 @@ namespace Xunit.Runner.Wpf
     {
         public static Window Instance { get; private set; }
 
+        // WPF generates fields that are marked as non-nullable, but not definitely initialized.
+#pragma warning disable CS8618
         public MainWindow()
         {
             Instance = this;
 
             InitializeComponent();
         }
+#pragma warning restore
 
         protected override void OnSourceInitialized(EventArgs e)
         {

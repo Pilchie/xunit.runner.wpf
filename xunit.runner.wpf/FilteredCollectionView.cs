@@ -283,7 +283,13 @@ namespace Xunit.Runner.Wpf
 
         object IList.this[int index]
         {
-            get { return this[index]; }
+            get
+            {
+                // Can't figure out how to not get a warning here.
+#pragma warning disable CS8603
+                return this[index];
+#pragma warning restore
+            }
             set { throw new NotSupportedException(); }
         }
 

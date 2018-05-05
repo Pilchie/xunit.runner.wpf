@@ -123,7 +123,7 @@ namespace Xunit.Runner.Wpf.Impl
         private async Task ProcessResultsCore<T>(Connection connection, Func<ClientReader, T> readValue, Action<List<T>> callback, CancellationToken cancellationToken)
             where T : class
         {
-            var queue = new ConcurrentQueue<T>();
+            var queue = new ConcurrentQueue<T?>();
             var backgroundReader = new BackgroundReader<T>(queue, new ClientReader(connection.Stream), readValue);
             var backgroundProducer = new BackgroundProducer<T>(connection, _dispatcher, queue, callback);
 

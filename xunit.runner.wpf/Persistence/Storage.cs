@@ -16,7 +16,7 @@ namespace Xunit.Runner.Wpf.Persistence
 
         private static IsolatedStorageFile GetStorageFile() => IsolatedStorageFile.GetUserStoreForDomain();
 
-        public static XmlTextReader OpenXmlFile(string fileName)
+        public static XmlTextReader? OpenXmlFile(string fileName)
         {
             var storage = GetStorageFile();
             if (!storage.FileExists(fileName))

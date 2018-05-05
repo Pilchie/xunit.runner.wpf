@@ -14,7 +14,7 @@ namespace Xunit.Runner.Wpf.Impl
         private readonly IDictionary<string, FileSystemWatcher> watchedAssemblies = new Dictionary<string, FileSystemWatcher>();
         private readonly Dispatcher dispatcher;
         private bool isEnabled = false;
-        private ReloadDebouncer debouncer;
+        private ReloadDebouncer? debouncer;
 
         public TestAssemblyWatcher(Dispatcher dispatcher)
         {
