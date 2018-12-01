@@ -44,7 +44,7 @@ namespace Xunit.Runner.Wpf.ViewModel
         public ISet<TraitViewModel> GetCheckedTraits()
         {
             return new HashSet<TraitViewModel>(
-                Collection.SelectMany(x => x.Children).Where(x => x.IsChecked == true),
+                Collection.SelectMany(x => x.Children).Where(x => x.IsChecked == true || x.IsChecked == false),
                 comparer: TraitViewModel.EqualityComparer);
         }
     }

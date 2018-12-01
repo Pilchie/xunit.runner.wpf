@@ -22,7 +22,7 @@ namespace Xunit.Runner.Wpf.ViewModel
         private TraitViewModel(TraitViewModel parent, string text)
         {
             this._parent = parent;
-            this._isChecked = false;
+            this._isChecked = null;
             this._isExpanded = true;
             this._text = text;
             this.Children = new ObservableCollection<TraitViewModel>();
@@ -37,7 +37,7 @@ namespace Xunit.Runner.Wpf.ViewModel
 
             this._isChecked = value;
 
-            if (updateChildren && value != null)
+            if (updateChildren )
             {
                 foreach (var child in this.Children)
                 {
