@@ -84,6 +84,8 @@ namespace Xunit.Runner.Wpf.Impl
             processStartInfo.FileName = typeof(Xunit.Runner.Worker.Program).Assembly.Location;
             processStartInfo.Arguments = $"{pipeName} {Process.GetCurrentProcess().Id}";
             processStartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            processStartInfo.UseShellExecute = false;
+            processStartInfo.CreateNoWindow = true;
             var process = Process.Start(processStartInfo);
             return new ProcessInfo(pipeName, process);
         }
