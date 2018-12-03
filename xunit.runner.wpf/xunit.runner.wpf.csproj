@@ -1,14 +1,23 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Xunit.Runner.Wpf</RootNamespace>
     <TargetFramework>netcoreapp3.0</TargetFramework>
-    <NuPkgVersion Condition="'$(appveyor_build_version)' != ''">$(appveyor_build_version)</NuPkgVersion>
-    <NuPkgVersion Condition="'$(NuPkgVersion)' == ''">1.0.0-local</NuPkgVersion>
-    <ApplicationIcon>Artwork\Application.ico</ApplicationIcon>
     <UseWpf>true</UseWpf>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <RootNamespace>Xunit.Runner.Wpf</RootNamespace>
+    <NoWarn>NU1701;$(NoWarn)</NoWarn>
+    <ApplicationIcon>Artwork\Application.ico</ApplicationIcon>
+    <Authors>Pilchie</Authors>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackAsTool>true</PackAsTool>
+    <Description>XUnit Gui written in WPF</Description>
+    <PackageProjectUrl>https://github.com/Pilchie/xunit.runner.wpf</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Pilchie/xunit.runner.wpf</RepositoryUrl>
+    <PackageTags>XUnit Gui test runner</PackageTags>
+    <NeutralLanguage>en-us</NeutralLanguage>
+    <PackageVersion Condition="'$(appveyor_build_vzersion)' != ''">$(appveyor_build_version)</PackageVersion>
+    <PackageVersion Condition="'$(NuPkgVersion)' == ''">1.0.0-local</PackageVersion>
+    <AssemblyVersion Condition="'$(appveyor_build_version)' != ''">$(appveyor_build_version)</AssemblyVersion>
+    <FileVersion Condition="'$(appveyor_build_version)' != ''">$(appveyor_build_version)</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,13 +28,6 @@
     <PackageReference Include="System.Windows.Interactivity.WPF" Version="2.0.20525" />
     <PackageReference Include="WindowsAPICodePack" Version="1.1.0" />
     <PackageReference Include="xunit.runner.utility" Version="2.4.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <NuGetManifest Include="xunit.runner.wpf.nuspec">
-      <Version>$(NuPkgVersion)</Version>
-      <PackageAnalysis>False</PackageAnalysis>
-    </NuGetManifest>
   </ItemGroup>
 
   <ItemGroup>
@@ -40,4 +42,5 @@
     <Resource Include="Artwork\**\*.png" />
     <Resource Include="Artwork\Application.ico" />
   </ItemGroup>
+
 </Project>
