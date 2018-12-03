@@ -3,11 +3,11 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>Xunit.Runner.Worker</RootNamespace>
-    <TargetFramework>net452</TargetFramework>
+    <TargetFramework>net472</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="xunit.runner.utility" Version="2.1.0" />
+    <PackageReference Include="xunit.runner.utility" Version="2.4.1" />
     <ProjectReference Include="..\xunit.runner.data\xunit.runner.data.csproj" />
   </ItemGroup>
 

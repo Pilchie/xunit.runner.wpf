@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <RootNamespace>Xunit.Runner.Data</RootNamespace>
-    <TargetFramework>net452</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
 </Project>

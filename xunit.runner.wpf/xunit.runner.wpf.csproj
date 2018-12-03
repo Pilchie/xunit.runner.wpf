@@ -9,6 +9,7 @@
     <Authors>Pilchie</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackAsTool>true</PackAsTool>
+    <AssetTargetFallback>net472</AssetTargetFallback>
     <Description>XUnit Gui written in WPF</Description>
     <PackageProjectUrl>https://github.com/Pilchie/xunit.runner.wpf</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Pilchie/xunit.runner.wpf</RepositoryUrl>
@@ -27,7 +28,6 @@
     <PackageReference Include="System.Collections.Immutable" Version="1.4.0-preview1-25305-02" />
     <PackageReference Include="System.Windows.Interactivity.WPF" Version="2.0.20525" />
     <PackageReference Include="WindowsAPICodePack" Version="1.1.0" />
-    <PackageReference Include="xunit.runner.utility" Version="2.4.1" />
   </ItemGroup>
 
   <ItemGroup>
