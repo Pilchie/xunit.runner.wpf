@@ -12,7 +12,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 using GalaSoft.MvvmLight;
-using GalaSoft.MvvmLight.CommandWpf;
+using GalaSoft.MvvmLight.Command;
 using Microsoft.Win32;
 using Microsoft.WindowsAPICodePack.Taskbar;
 using Xunit.Runner.Data;

@@ -5,6 +5,7 @@ using Xunit.Runner.Wpf.Persistence;
 
 namespace Xunit.Runner.Wpf
 {
+    using GalaSoft.MvvmLight.Command;
     using ViewModel;
 
     public partial class MainWindow : Window

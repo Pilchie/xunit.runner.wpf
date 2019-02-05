@@ -1,5 +1,6 @@
 ﻿using System;
 using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Xunit.Runner.Worker.MessageSinks
 {

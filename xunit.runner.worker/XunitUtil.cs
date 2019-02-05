@@ -9,7 +9,7 @@ namespace Xunit.Runner.Worker
         protected static void Go(string assemblyFileName, Stream stream, AppDomainSupport appDomainSupport,
             Action<XunitFrontController, TestAssemblyConfiguration, ClientWriter> action)
         {
-            using (AssemblyHelper.SubscribeResolve())
+            using (AssemblyHelper.SubscribeResolveForAssembly(assemblyFileName))
             using (var xunit = new XunitFrontController(appDomainSupport, assemblyFileName, shadowCopy: false))
             using (var writer = new ClientWriter(stream))
             {
