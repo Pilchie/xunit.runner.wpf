@@ -144,9 +144,22 @@ namespace Xunit.Runner.Wpf.ViewModel
                 {
                     if (searchQuery.TraitSet.Contains(cur))
                     {
-                        anyMatch = true;
+                        if (cur.IsChecked == true)
+                        {
+                            anyMatch = true;
+                        }
+                        else if (cur.IsChecked == false)
+                        {
+                            return false;
+                        }
                         break;
                     }
+                }
+
+                var traitsToExclude = searchQuery.TraitSet.Where(x => x.IsChecked == false);
+                if (traitsToExclude.Any() && testCase.Traits.Length == 0)
+                {
+                    return true;
                 }
 
                 if (!anyMatch)

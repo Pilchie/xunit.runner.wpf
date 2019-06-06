@@ -163,7 +163,10 @@
                         <TreeView.Resources>
                             <HierarchicalDataTemplate DataType="{x:Type vm:TraitViewModel}" ItemsSource="{Binding Children}">
 
-                                <CheckBox Content="{Binding Text}" IsChecked="{Binding IsChecked}">
+                                <CheckBox
+                                    Content="{Binding Text}"
+                                    IsChecked="{Binding IsChecked}"
+                                    IsThreeState="True">
                                     <i:Interaction.Triggers>
                                         <i:EventTrigger EventName="Checked">
                                             <cmd:EventToCommand Command="{Binding DataContext.TraitCheckedChangedCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
@@ -172,8 +175,15 @@
                                         <i:EventTrigger EventName="Unchecked">
                                             <cmd:EventToCommand Command="{Binding DataContext.TraitCheckedChangedCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
                                         </i:EventTrigger>
+
+                                        <i:EventTrigger EventName="Indeterminate">
+                                            <cmd:EventToCommand Command="{Binding DataContext.TraitCheckedChangedCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
+                                        </i:EventTrigger>
+
                                     </i:Interaction.Triggers>
                                 </CheckBox>
+
+
 
                             </HierarchicalDataTemplate>
                         </TreeView.Resources>
