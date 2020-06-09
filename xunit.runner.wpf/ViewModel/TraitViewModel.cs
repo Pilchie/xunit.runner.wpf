@@ -7,7 +7,7 @@ namespace Xunit.Runner.Wpf.ViewModel
 {
     public partial class TraitViewModel : ViewModelBase
     {
-        private readonly TraitViewModel _parent;
+        private readonly TraitViewModel? _parent;
         private bool? _isChecked;
         private bool _isExpanded;
         private string _text;
@@ -19,7 +19,7 @@ namespace Xunit.Runner.Wpf.ViewModel
         {
         }
 
-        private TraitViewModel(TraitViewModel parent, string text)
+        private TraitViewModel(TraitViewModel? parent, string text)
         {
             this._parent = parent;
             this._isChecked = false;

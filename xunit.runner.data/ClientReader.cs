@@ -7,7 +7,7 @@ namespace Xunit.Runner.Data
     {
         private readonly BinaryReader _reader;
         private bool _closed;
-        private Exception _exception;
+        private Exception? _exception;
 
         public bool IsConnected => !_closed;
 

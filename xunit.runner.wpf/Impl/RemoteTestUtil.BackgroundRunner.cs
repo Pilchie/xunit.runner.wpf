@@ -55,13 +55,13 @@ namespace Xunit.Runner.Wpf.Impl
         /// <typeparam name="T"></typeparam>
         private sealed class BackgroundReader<T> where T : class
         {
-            private readonly ConcurrentQueue<T> _queue;
+            private readonly ConcurrentQueue<T?> _queue;
             private readonly ClientReader _reader;
             private readonly Func<ClientReader, T> _readValue;
 
             internal ClientReader Reader => _reader;
 
-            internal BackgroundReader(ConcurrentQueue<T> queue, ClientReader reader, Func<ClientReader, T> readValue)
+            internal BackgroundReader(ConcurrentQueue<T?> queue, ClientReader reader, Func<ClientReader, T> readValue)
             {
                 _queue = queue;
                 _reader = reader;
@@ -111,7 +111,7 @@ namespace Xunit.Runner.Wpf.Impl
             private const int MaxResultPerTick = 1000;
 
             private readonly Connection _connection;
-            private readonly ConcurrentQueue<T> _queue;
+            private readonly ConcurrentQueue<T?> _queue;
             private readonly DispatcherTimer _timer;
             private readonly Action<List<T>> _callback;
             private readonly int _maxPerTick;
@@ -122,7 +122,7 @@ namespace Xunit.Runner.Wpf.Impl
             internal BackgroundProducer(
                 Connection connection, 
                 Dispatcher dispatcher, 
-                ConcurrentQueue<T> queue,
+                ConcurrentQueue<T?> queue,
                 Action<List<T>> callback,
                 int maxResultPerTick = MaxResultPerTick,
                 TimeSpan? interval = null)
@@ -144,8 +144,7 @@ namespace Xunit.Runner.Wpf.Impl
                 var i = 0;
                 var list = new List<T>();
                 var isDone = false;
-                T value;
-                while (i < _maxPerTick && _queue.TryDequeue(out value))
+                while (i < _maxPerTick && _queue.TryDequeue(out T? value))
                 {
                     if (value == null)
                     {

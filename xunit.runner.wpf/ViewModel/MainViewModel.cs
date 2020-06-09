@@ -33,7 +33,7 @@ namespace Xunit.Runner.Wpf.ViewModel
 
         private CancellationTokenSource filterCancellationTokenSource = new CancellationTokenSource();
 
-        private CancellationTokenSource cancellationTokenSource;
+        private CancellationTokenSource? cancellationTokenSource;
         private bool isBusy;
         private SearchQuery searchQuery = new SearchQuery();
         private bool autoReloadAssemblies;
@@ -54,7 +54,7 @@ namespace Xunit.Runner.Wpf.ViewModel
 
         public ObservableCollection<RecentAssemblyViewModel> RecentAssemblies { get; } = new ObservableCollection<RecentAssemblyViewModel>();
 
-        private ImmutableList<TestCaseViewModel> testsToRun;
+        private ImmutableList<TestCaseViewModel>? testsToRun;
 
         public ICommand ExitCommand { get; }
         public ICommand WindowLoadedCommand { get; }
@@ -63,7 +63,6 @@ namespace Xunit.Runner.Wpf.ViewModel
         public RelayCommand RunSelectedCommand { get; }
         public RelayCommand CancelCommand { get; }
         public ICommand TraitCheckedChangedCommand { get; }
-        public ICommand TraitSelectionChangedCommand { get; }
         public ICommand TraitsClearCommand { get; }
         public ICommand AssemblyReloadCommand { get; }
         public ICommand AssemblyReloadAllCommand { get; }
@@ -215,8 +214,8 @@ namespace Xunit.Runner.Wpf.ViewModel
             get { return Assemblies.Where(x => x.IsSelected).ToList(); }
         }
 
-        private string testCasesCaption;
-        public string TestCasesCaption
+        private string? testCasesCaption;
+        public string? TestCasesCaption
         {
             get { return testCasesCaption; }
             private set { Set(ref testCasesCaption, value); }
@@ -234,8 +233,8 @@ namespace Xunit.Runner.Wpf.ViewModel
             }
         }
 
-        private TestCaseViewModel selectedTest;
-        public TestCaseViewModel SelectedTestCase
+        private TestCaseViewModel? selectedTest;
+        public TestCaseViewModel? SelectedTestCase
         {
             get { return selectedTest; }
 
@@ -401,7 +400,7 @@ namespace Xunit.Runner.Wpf.ViewModel
                     var taskList = new List<Task>();
                     foreach (var assembly in assemblies)
                     {
-                        taskList.Add(this.testUtil.Discover(assembly.AssemblyFileName, this.OnTestsDiscovered, this.cancellationTokenSource.Token));
+                        taskList.Add(this.testUtil.Discover(assembly.AssemblyFileName, this.OnTestsDiscovered, CancellationToken));
 
                         var assemblyViewModel = new TestAssemblyViewModel(assembly);
 
@@ -426,6 +425,11 @@ namespace Xunit.Runner.Wpf.ViewModel
                 RebuildRecentAssembliesMenu();
             }
         }
+
+        private CancellationToken CancellationToken
+            => cancellationTokenSource == null
+                ? CancellationToken.None
+                : cancellationTokenSource.Token;
 
         public bool ReloadAssemblies(IEnumerable<string> assemblies)
         {
@@ -454,7 +458,7 @@ namespace Xunit.Runner.Wpf.ViewModel
                         var assemblyFileName = assemblyViewModel.FileName;
                         RemoveAssemblyTestCases(assemblyFileName);
 
-                        taskList.Add(this.testUtil.Discover(assemblyFileName, OnTestsDiscovered, cancellationTokenSource.Token));
+                        taskList.Add(this.testUtil.Discover(assemblyFileName, OnTestsDiscovered, CancellationToken));
                     }
 
                     return taskList;
@@ -549,7 +553,7 @@ namespace Xunit.Runner.Wpf.ViewModel
                 var assemblyFileName = enumerable.First();
                 enumerable = enumerable.Skip(1);
 
-                var configFileName = (string)null;
+                var configFileName = (string?)null;
                 if (IsConfigFile(enumerable.FirstOrDefault()))
                 {
                     configFileName = enumerable.First();
@@ -630,7 +634,7 @@ namespace Xunit.Runner.Wpf.ViewModel
                 Task task;
                 if (runAll)
                 {
-                    task = this.testUtil.RunAll(assemblyFileName, OnTestStateChange, this.cancellationTokenSource.Token);
+                    task = this.testUtil.RunAll(assemblyFileName, OnTestStateChange, CancellationToken);
                 }
                 else
                 {
@@ -644,7 +648,7 @@ namespace Xunit.Runner.Wpf.ViewModel
                         }
                     }
 
-                    task = this.testUtil.RunSpecific(assemblyFileName, builder.ToImmutable(), OnTestStateChange, this.cancellationTokenSource.Token);
+                    task = this.testUtil.RunSpecific(assemblyFileName, builder.ToImmutable(), OnTestStateChange, CancellationToken);
                 }
 
                 testSessionList.Add(task);
@@ -778,7 +782,7 @@ namespace Xunit.Runner.Wpf.ViewModel
         private void OnExecuteCancel()
         {
             Debug.Assert(CanExecuteCancel());
-            this.cancellationTokenSource.Cancel();
+            cancellationTokenSource?.Cancel();
         }
 
         private void OnExecuteTraitCheckedChanged(TraitViewModel trait)

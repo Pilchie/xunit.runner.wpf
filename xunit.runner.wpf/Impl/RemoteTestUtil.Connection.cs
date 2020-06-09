@@ -8,10 +8,10 @@ namespace Xunit.Runner.Wpf.Impl
     {
         private sealed class Connection : IDisposable
         {
-            private NamedPipeClientStream _stream;
+            private NamedPipeClientStream? _stream;
             private ClientReader _reader;
 
-            internal NamedPipeClientStream Stream => _stream;
+            internal NamedPipeClientStream Stream => _stream ?? throw new ObjectDisposedException(nameof(Connection));
 
             internal ClientReader Reader => _reader;
 

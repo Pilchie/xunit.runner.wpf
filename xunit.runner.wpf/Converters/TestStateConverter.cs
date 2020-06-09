@@ -33,7 +33,7 @@ namespace Xunit.Runner.Wpf.Converters
             return image;
         }
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             var state = (TestState)value;
             if (targetType == typeof(Brush))

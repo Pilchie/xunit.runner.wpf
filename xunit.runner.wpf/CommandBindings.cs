@@ -16,16 +16,14 @@ namespace Xunit.Runner.Wpf
             }
         }
 
-        public static CommandBindingCollection GetRegistration(UIElement element)
+        public static CommandBindingCollection? GetRegistration(UIElement element)
             => (element != null ? (CommandBindingCollection)element.GetValue(Registration) : null);
 
         private static void OnRegistrationChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
         {
-            UIElement element = sender as UIElement;
-            if (element != null)
+            if (sender is UIElement element)
             {
-                CommandBindingCollection bindings = e.NewValue as CommandBindingCollection;
-                if (bindings != null)
+                if (e.NewValue is CommandBindingCollection bindings)
                 {
                     element.CommandBindings.AddRange(bindings);
                 }
